@@ -1,7 +1,7 @@
 # 🎬 WebCG-K
 
-> **Next-Generation Web-Based Broadcast Graphics System**  
-> React 19과 Supabase 실시간 동기화 아키텍처로 구현된 방송 자막 송출 및 타임라인 컨트롤러 시스템
+> **Next-Generation Web-Based Broadcast Graphics Playout System**  
+> Web-based broadcast graphics playout and timeline controller system built with React 19 and Supabase real-time synchronization.
 
 ---
 
@@ -15,143 +15,143 @@
 
 ---
 
-## 🎯 프로젝트가 해결하는 문제 (Why WebCG-K)
+## 🎯 Problems Solved by WebCG-K (Why WebCG-K)
 
-방송 그래픽(CG) 분야는 오랫동안 고가의 하드웨어 장비와 폐쇄적인 소프트웨어 생태계에 의존해 왔습니다. 지상파, 케이블, 인터넷 방송을 막론하고 자막과 그래픽을 생성하고 송출하는 과정은 여전히 복잡하고 유연성이 떨어집니다.
+The broadcast graphics (CG) industry has long been constrained by expensive hardware dependencies and closed software ecosystems. Whether in terrestrial, cable, or online streaming playout, generating and broadcasting graphics and lower-thirds remains structurally rigid and complex.
 
-WebCG-K는 **웹 브라우저만으로 완전한 방송 그래픽 파이프라인을 구축**하여 이 문제를 해결합니다:
+WebCG-K resolves these issues by **establishing a complete broadcast graphics pipeline powered entirely within the web browser**:
 
-*   **하드웨어 종속성 제거**: 고가의 전용 CG 장비 없이, OBS/vMix의 Browser Source로 투명 배경 그래픽을 바로 송출합니다. 모든 저작과 제어가 웹에서 이루어집니다.
-*   **방송사 네트워크 표준화**: 여러 지역국/브랜치에서 동일한 그리드 템플릿을 공유하여, 어느 지국에서든 동일한 프로토콜과 정렬로 일관된 브랜드 그래픽을 송출할 수 있습니다.
-*   **런다운을 넘어선 타임라인 제어**: 기존의 단방향 큐시트 방식에서 벗어나, 멀티트랙 타임라인 UI로 여러 그래픽을 z-index 레이어로 중첩하고 자유롭게 타이밍을 조정할 수 있습니다.
-*   **AI로 생산성 극대화**: 원고와 스크립트만 입력하면 AI가 방송 도메인 지식을 바탕으로 자막 종류를 추론하고 완성된 큐시트를 자동 생성합니다. 반복적인 수작업을 제거하고 창의적인 결정에 집중할 수 있습니다.
+*   **Zero Hardware Lock-in**: Directly play out high-quality transparent graphics through OBS/vMix Browser Sources without specialized, high-cost graphics hardware. All authoring and control take place directly in the web browser.
+*   **Standardized Broadcast Networks**: Share exact split-screen grid templates across regional stations or branch offices, guaranteeing consistent branding, alignment, and playout protocols.
+*   **Timeline Control Beyond Rundowns**: Escape from simple sequential cuesheets. Utilize a multi-track playout timeline editor to stack graphics in layered depth (z-index) and edit playout timings precisely.
+*   **Boost Productivity with AI**: Input news scripts or transcripts, and our AI will automatically identify graphics types (e.g., Intro ➔ Main Title overlay, Interview ➔ speaker identification lower-third) and generate structured playout cuesheets in seconds, eliminating tedious manual entry.
 
 ---
 
-## 🏗️ 시스템 아키텍처 개요 (System Overview)
+## 🏗️ System Architecture Overview
 
-WebCG-K는 자막 저작(Editor), 타임라인 편집(Controller), 무손실 방송 송출(Renderer) 파이프라인이 하나의 통합 데이터 레이어에서 유기적으로 결합하여 동작합니다.
+WebCG-K links visual overlay Authoring (Editor), playout programming (Controller), and lossless broadcast rendering (Renderer) into a single, unified data and sync pipeline.
 
 ```
 ┌────────────────────────────────────────────────────────┐
 │             WebCG-K Frontend (React 19 SPA)            │
 ├────────────────────────────────────────────────────────┤
-│  [저작 레이어] Graphics Editor (Visual Vector Canvas)    │
-│  [편집 레이어] Multi-track Playout Timeline Controller  │
-│  [출력 레이어] Transparent BG OBS Web Renderer          │
+│  [Authoring Layer] Graphics Editor (Visual Vector Canvas)    │
+│  [Playout Layer] Multi-track Playout Timeline Controller  │
+│  [Output Layer] Transparent BG OBS Web Renderer          │
 └───────────────────────────┬────────────────────────────┘
                             │ (Supabase Realtime CDC / Broadcast)
                             ▼
 ┌────────────────────────────────────────────────────────┐
 │             Database & Backend (Supabase)              │
 ├────────────────────────────────────────────────────────┤
-│  PostgreSQL (Schema)  ·  Auth (RLS 보안 격리)           │
-│  Realtime Sync        ·  S3 Storage (폰트 & 이미지)     │
+│  PostgreSQL (Schema)  ·  Auth (RLS Isolation)          │
+│  Realtime Sync        ·  S3 Storage (Fonts & Images)     │
 └────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## 💡 4대 핵심 기술 혁신 (Key Innovations)
+## 💡 4 Key Technical Innovations
 
-### 🎨 1. 방송 자막을 위한 비주얼 벡터 에디터 (Penpot-Style)
-기존의 전통적인 방송 CG 도구들은 템플릿 코드나 수치 입력에 의존하는 딱딱한 폼 형태로 운영되었습니다. WebCG-K는 **Penpot 기반 자유형 벡터 에디터**를 도입하여, 디자이너와 오퍼레이터가 투명한 알파 채널 위에서 드래그앤드롭으로 직접 도형을 그리고 텍스트를 정렬하며 송출 화면을 눈으로 확인하면서 다이렉트로 자막을 편집할 수 있는 직관적인 UX를 실현합니다.
+### 🎨 1. Visual Vector Graphics Editor for Broadcast Overlay (Penpot-Style)
+Traditional broadcast CG tools operate on rigid forms, template scripts, or manual coordinates. WebCG-K introduces a **Penpot-inspired freehand vector editor**, letting designers and playout operators draw shapes, align typography, and inspect overlays directly over a transparent alpha channel, achieving a highly intuitive WYSIWYG editing experience.
 
-### 📐 2. 지역국 표준화를 위한 그리드 템플릿 시스템 (GridEditor)
-다양한 지국(Branch Station)을 가진 대규모 방송 환경에서는 각 지국마다 자막 포맷이 파편화되어 전체 브랜드 정체성이 훼손되기 쉽습니다. **GridEditor**는 공통의 그리드 템플릿(FancyZones 레이아웃 모델)을 DB 레이어에서 공유하여, 각 지국의 오퍼레이터가 글자 크기, 글꼴, 마진 오차 없이 **100% 동일한 정렬 규칙과 프로토콜**에 맞춰 자막을 송출하도록 보증합니다.
+### 📐 2. Grid Template System for Regional Standardization (GridEditor)
+In large-scale broadcasting networks with multiple regional stations (Branch Stations), graphics alignments can easily drift, fracturing brand identity. **GridEditor** resolves this by sharing standardized grid templates (FancyZones-style layout models) in the database layer. This guarantees regional operators play out graphics with **100% identical styling, font scaling, and alignment rules**.
 
-### ⏱️ 3. 다중 트랙 방송 타임라인 (Multi-Track Timeline)
-단방향으로만 흘러가던 기존의 선형 런다운 송출 방식(SPX-GX 등)을 뛰어넘어, 비디오 편집기와 동일한 **Multi-Track 타임라인 UI**를 제공합니다. 배경 효과, 하단 자막(Lower-Third), 우상단 로고, AI 캐릭터 라이브 비디오가 각각 독립된 Track 레이어로 구성되어 서로 겹치거나 깊이감(z-index)이 유지된 상태로 무중단 연속 송출을 가능하게 합니다.
+### ⏱️ 3. Multi-Track Playout Timeline
+Going beyond simple sequential playout systems (e.g., SPX-GC), we introduce a full **Multi-Track Playout Timeline UI** akin to professional video editors. Background elements, lower-thirds, corner bug logos, and live interactive AI characters reside on separate track layers. They composite seamlessly with exact z-index priority, supporting continuous on-air transitions.
 
-### 🤖 4. AI 기반 자동 큐시트 생성 마법사 (AI Cuesheet)
-다듬어지지 않은 날것의 기사 원고, 텍스트 스크립트, 타이밍 메모 등을 복사-붙여넣기만 하면 LLM(Gemini)이 비즈니스 도메인 지식을 바탕으로 자막의 종류를 추론(인트로 → 타이틀 자막, 인터뷰 → 출연자 정보 자막 등)하고, 예상 타이밍이 반영된 **완성형 런다운 큐시트 블록을 1초 만에 자동 빌드**합니다.
+### 🤖 4. AI-Driven Playout Cuesheet Wizard
+Simply copy-paste raw script drafts, program outlines, or transcripts. Our LLM pipeline (Gemini) evaluates the content against broadcast patterns (e.g., Intro ➔ Main Title overlay, Interview ➔ speaker identification lower-third) and automatically constructs **fully populated playout cuesheets with estimated block durations in under a second**.
 
 ---
 
-## 🛠️ 기술 스택 및 기술 선정 이유 (Tech Stack & Rationale)
+## 🛠️ Tech Stack & Rationale
 
-| 분류 | 기술 스택 | 도입 이유 및 교육적 가치 (Rationale) |
+| Category | Tech Stack | Rationale & Educational Value |
 | :--- | :--- | :--- |
-| **Framework** | **React 19 + Vite** | 방송 송출 엔진의 특성상 UI 페인팅 연산이 극도로 가벼워야 하므로, React 19의 향상된 렌더러와 Vite의 즉각적인 HMR 빌드 환경을 조합하여 무손실 프레임워크를 경험합니다. |
-| **Routing** | **TanStack Router** | 파일 시스템 기반 라우팅과 강력한 TypeScript Type-Safety를 통해 복잡한 컨트롤러 및 렌더러 라우트 상태 매개변수를 오류 없이 관리합니다. |
-| **State** | **TanStack Store & Query** | 클라이언트 상태와 서버 상태(Supabase Realtime)의 관심사 분리를 달성하고, 잦은 동기화 요청 속에서도 성능 오버헤드 없는 정밀한 구조적 공유(Structural Sharing)를 달성합니다. |
-| **Backend** | **Supabase (PostgreSQL)** | DB 트랜잭션의 ACID 원칙을 준수함과 동시에, PostgreSQL에 적재된 그래픽 정보의 변화를 즉시 송출 클라이언트에 전파(DB CDC)하는 아키텍처를 학습합니다. |
-| **Styling** | **Tailwind CSS v4** | 최신 브라우저의 GPU 가속 기능이 결합된 CSS Variables와 Modern CSS 아키텍처를 사용하여 UI 구조 개발 속도를 단축합니다. |
-| **Animation** | **Rive (WebGL2) & GSAP** | 고화질 방송 오버레이용 다이내믹 벡터 모션 그래픽을 웹 브라우저에서 60fps로 매끄럽게 처리하기 위해 GPU 웹 렌더러 기반 애니메이션을 도입합니다. |
+| **Framework** | **React 19 + Vite** | Playout engines require extremely lightweight UI painting pipelines. Combining React 19's optimized rendering cycle with Vite's instant HMR provides a highly responsive playout runtime. |
+| **Routing** | **TanStack Router** | Employs file-system routing and robust TypeScript Type-Safety to manage complex routing variables for controllers and renderers without runtime exceptions. |
+| **State** | **TanStack Store & Query** | Achieves clear separation of concerns between client state and server state (Supabase Realtime). Leverages structural sharing to optimize frequent sync cycles without performance overhead. |
+| **Backend** | **Supabase (PostgreSQL)** | Composed of secure PostgreSQL transactions alongside RLS policies. Educates engineers on database change data capture (CDC) to stream overlay updates instantly to on-air rendering clients. |
+| **Styling** | **Tailwind CSS v4** | Speeds up UI structure workflows by utilizing modern CSS features and CSS Variables optimized for GPU hardware acceleration. |
+| **Animation** | **Rive (WebGL2) & GSAP** | Utilizes WebGL2 vector animations and GSAP to deliver buttery-smooth, high-fidelity broadcast graphics at 60fps directly in the browser environment. |
 
 ---
 
-## 📂 프로젝트 폴더 구조 (Project Structure)
+## 📂 Project Structure
 
 ```
 webcg-k/
-├── webcg-k/                 # 프론트엔드 애플리케이션 (React 19 SPA)
+├── webcg-k/                 # Frontend application (React 19 SPA)
 │   ├── src/
-│   │   ├── routes/          # 페이지 라우트 (Dashboard, Controller, Renderer)
-│   │   ├── components/      # GraphicsEditor, Timeline 등 도메인별 컴포넌트
-│   │   ├── services/        # AI, Supabase API 등 인프라스트럭처 연동부
-│   │   ├── stores/          # TanStack 글로벌 상태 관리 스토어
-│   │   └── locales/         # 다국어 번역 키 세트 (ko, en)
-│   └── docs/                # 아키텍처, 트러블슈팅 등 학습 및 아카이빙 폴더
+│   │   ├── routes/          # Page routes (Dashboard, Controller, Renderer)
+│   │   ├── components/      # Domain-specific components (GraphicsEditor, Timeline, etc.)
+│   │   ├── services/        # Infrastructure adapters (AI services, Supabase APIs, etc.)
+│   │   ├── stores/          # TanStack global state stores
+│   │   └── locales/         # Translation resource files (ko, en)
+│   └── docs/                # Architectural manuals, learning resources, and archives
 │
-└── supabase/                # 백엔드 인프라 (Self-hosted Docker)
-    ├── migrations/          # squashed 단일 데이터베이스 마이그레이션 DDL
-    └── docs/                # DB 스키마 테이블 구조서 (DB.md)
+└── supabase/                # Backend infrastructure (Self-hosted Docker)
+    ├── migrations/          # Squashed single database migration DDL scripts
+    └── docs/                # Database schema details (DB.md)
 ```
 
 ---
 
-## 🚀 빠른 시작 가이드 (Quick Start)
+## 🚀 Quick Start Guide
 
-### 사전 준비 사항
-*   Node.js 20 이상
-*   Docker 및 Docker Compose (로컬 Supabase 실행용)
+### Prerequisites
+*   Node.js 20 or higher
+*   Docker & Docker Compose (for local Supabase deployment)
 
-### 설치 및 로컬 부트스트랩
+### Installation & Local Bootstrapping
 
 ```bash
-# 1. 저장소 복제 및 폴더 이동
+# 1. Clone Repository & Navigate
 git clone <repository-url>
 cd webcg-k
 
-# 2. 로컬 Supabase Docker 구동 및 단일 마이그레이션 적용
+# 2. Spin up Local Supabase & Apply Squashed Migration
 npx -y supabase start
-# 단일 Squashed Migration이 즉시 반영되어 컨테이너가 시작됩니다.
+# Container initializes and automatically runs the squashed migration.
 
-# 3. 프론트엔드 의존성 패키지 설치
+# 3. Install Frontend Dependencies
 cd webcg-k
 npm install
 
-# 4. 환경 변수 구성
+# 4. Configure Environment Variables
 cp .env.example .env
-# .env 파일에 VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY 값을 채웁니다.
+# Fill in VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY, and VITE_GEMINI_API_KEY in the .env file.
 
-# 5. 개발 서버 기동
+# 5. Start Local Development Server
 npm run dev
-# → http://localhost:3000 에서 실행됩니다.
+# Running at http://localhost:3000
 ```
 
 ---
 
-## 🔗 지식 베이스 및 문서 가이드 (Documentation Map)
+## 🔗 Knowledge Base & Documentation Map
 
-WebCG-K는 프로젝트 전체가 하나의 훌륭한 **기술 교과서**가 되도록 세부 학습 및 가이드를 분리하여 보존하고 있습니다.
+WebCG-K maintains highly detailed learning guides and documentations to ensure the codebase serves as an **educational textbook**.
 
-### 📚 핵심 지식 베이스 (Core Educational Docs)
-*   **[CONTEXT.md](webcg-k/docs/CONTEXT.md)**: 전체 렌더링 파이프라인 Mermaid 다이어그램 및 Excalidraw 비교 분석서
-*   **[TASKS.md](webcg-k/docs/TASKS.md)**: 현재 진행 중인 마일스톤 및 아키텍처 달성을 통한 학습 목표 가이드
-*   **[CHANGELOG.md](webcg-k/docs/CHANGELOG.md)**: 시간/공간 복잡도(Big-O) 관점을 반영한 기술적 리팩토링 변경 이력
-*   **[HANDOVER.md](webcg-k/docs/HANDOVER.md)**: 작업 복귀 시 뇌 워밍업을 위한 이전 아키텍처 설계 상태 공유서
-*   **[LESSONS.md](webcg-k/docs/LESSONS.md)**: 데이터베이스 `search_path` 세션 충돌 오류를 디버깅한 트러블슈팅 오답 노트
+### 📚 Core Educational Docs
+*   **[CONTEXT.md](webcg-k/docs/CONTEXT.md)**: Complete playout pipeline visualised via Mermaid diagrams, and in-depth renderer comparisons with Excalidraw.
+*   **[TASKS.md](webcg-k/docs/TASKS.md)**: Ongoing development milestones coupled with explicit educational learning objectives.
+*   **[CHANGELOG.md](webcg-k/docs/CHANGELOG.md)**: Technical changelog tracking optimizations along with Big-O complexites and rendering performance gains.
+*   **[HANDOVER.md](webcg-k/docs/HANDOVER.md)**: Handover summaries to warm up your brain when returning to active development.
+*   **[LESSONS.md](webcg-k/docs/LESSONS.md)**: Troubleshot retrospective detailing database `search_path` connection session isolation errors.
 
-### 💻 실무 매뉴얼 및 워크플로우
-*   **[USAGE.md](webcg-k/docs/USAGE.md)**: 웹 자막 편집기의 실무 단축키, 마우스 스냅 가이드 등 통합 사용자 설명서
-*   **[DB.md](supabase/docs/DB.md)**: 데이터베이스 ERD, RLS(행 단위 보안 정책) 사양서
-*   **[REALTIME_SYNC.md](webcg-k/docs/guide/REALTIME_SYNC_ARCHITECTURE.md)**: 초저지연 데이터 동기화 아키텍처 가이드
-*   **[GRID_EDITOR.md](webcg-k/docs/guide/GRID_EDITOR.md)**: Branch Station 표준화를 위한 그리드 에디터 기술 규격서
+### 💻 Production Manuals & Workflows
+*   **[USAGE.md](webcg-k/docs/USAGE.md)**: Complete operator manual detailing graphics editing shortcuts, snap guides, and playout workflows.
+*   **[DB.md](supabase/docs/DB.md)**: Database ERD, schema architectures, and Row-Level Security (RLS) policies.
+*   **[REALTIME_SYNC.md](webcg-k/docs/guide/REALTIME_SYNC_ARCHITECTURE.md)**: Ultra-low latency database synchronization and channel playout architecture.
+*   **[GRID_EDITOR.md](webcg-k/docs/guide/GRID_EDITOR.md)**: Grid editor technical specifications enforcing alignment standards across branch stations.
 
 ---
 
-## 📝 라이선스 (License)
+## 📝 License
 
 [MIT License](LICENSE)

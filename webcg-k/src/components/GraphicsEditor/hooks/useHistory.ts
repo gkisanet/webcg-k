@@ -1,98 +1,120 @@
 /**
- * useHistory - Undo/Redo 히스토리 관리 훅
+ * useHistory - Mutative Patches 기반 Undo/Redo 히스토리 관리 훅
+ *
+ * Why Mutative Patches > JSON.stringify 전체 비교?
+ * 1. Structural Sharing: 변경되지 않은 요소는 동일 참조 유지 → React memo 활용
+ * 2. O(변경된 필드) vs O(전체 요소 × 필드): Delta만 저장하므로 메모리/CPU 절감
+ * 3. Patch 기반 Undo: 전체 스냅샷이 아닌 역연산만 적용 → 히스토리 깊이 무관 상수 시간
  */
 
 import { useState, useCallback } from "react";
+import { create, apply, type Patches } from "mutative";
 
-interface HistoryState<T> {
-    past: T[];
-    present: T;
-    future: T[];
+interface PatchHistory {
+  patches: Patches;
+  inversePatches: Patches;
 }
 
-const MAX_HISTORY = 50; // 최대 히스토리 개수
+interface HistoryState<T> {
+  past: PatchHistory[];
+  present: T;
+  future: PatchHistory[];
+}
+
+const MAX_HISTORY = 50;
 
 export function useHistory<T>(initialState: T) {
-    const [history, setHistory] = useState<HistoryState<T>>({
-        past: [],
-        present: initialState,
+  const [history, setHistory] = useState<HistoryState<T>>({
+    past: [],
+    present: initialState,
+    future: [],
+  });
+
+  const state = history.present;
+
+  // 상태 업데이트 — draft를 직접 변이하는 recipe 함수를 받음
+  const setState = useCallback((recipe: (draft: T) => void) => {
+    setHistory((prev) => {
+      const [nextState, patches, inversePatches] = create(
+        prev.present,
+        recipe,
+        { enablePatches: true },
+      );
+
+      // 변경 사항이 없으면 히스토리에 추가하지 않음
+      if (patches.length === 0) {
+        return prev;
+      }
+
+      return {
+        past: [...prev.past.slice(-MAX_HISTORY + 1), { patches, inversePatches }],
+        present: nextState,
         future: [],
+      };
     });
+  }, []);
 
-    // 현재 상태
-    const state = history.present;
+  // Undo — inversePatches를 현재 상태에 적용하여 이전 상태로 복원
+  const undo = useCallback(() => {
+    setHistory((prev) => {
+      if (prev.past.length === 0) return prev;
 
-    // 상태 업데이트 (히스토리에 추가)
-    const setState = useCallback((newState: T | ((prev: T) => T)) => {
-        setHistory((prev) => {
-            const resolvedState = typeof newState === "function"
-                ? (newState as (prev: T) => T)(prev.present)
-                : newState;
+      const newPast = [...prev.past];
+      const item = newPast.pop()!;
 
-            // 이전 상태와 동일하면 히스토리에 추가하지 않음
-            if (JSON.stringify(resolvedState) === JSON.stringify(prev.present)) {
-                return prev;
-            }
+      const newPresent = apply(
+        prev.present as object,
+        item.inversePatches,
+      ) as T;
 
-            return {
-                past: [...prev.past.slice(-MAX_HISTORY + 1), prev.present],
-                present: resolvedState,
-                future: [], // 새 상태 추가 시 future 초기화
-            };
-        });
-    }, []);
+      return {
+        past: newPast,
+        present: newPresent,
+        future: [item, ...prev.future],
+      };
+    });
+  }, []);
 
-    // Undo
-    const undo = useCallback(() => {
-        setHistory((prev) => {
-            if (prev.past.length === 0) return prev;
+  // Redo — patches를 현재 상태에 적용하여 다음 상태로 전진
+  const redo = useCallback(() => {
+    setHistory((prev) => {
+      if (prev.future.length === 0) return prev;
 
-            const newPast = [...prev.past];
-            const newPresent = newPast.pop()!;
+      const newFuture = [...prev.future];
+      const item = newFuture.shift()!;
 
-            return {
-                past: newPast,
-                present: newPresent,
-                future: [prev.present, ...prev.future],
-            };
-        });
-    }, []);
+      const newPresent = apply(
+        prev.present as object,
+        item.patches,
+      ) as T;
 
-    // Redo
-    const redo = useCallback(() => {
-        setHistory((prev) => {
-            if (prev.future.length === 0) return prev;
+      return {
+        past: [...prev.past, item],
+        present: newPresent,
+        future: newFuture,
+      };
+    });
+  }, []);
 
-            const newFuture = [...prev.future];
-            const newPresent = newFuture.shift()!;
+  // 히스토리 초기화 (새 데이터 로드 시)
+  const resetHistory = useCallback((newState: T) => {
+    setHistory({
+      past: [],
+      present: newState,
+      future: [],
+    });
+  }, []);
 
-            return {
-                past: [...prev.past, prev.present],
-                present: newPresent,
-                future: newFuture,
-            };
-        });
-    }, []);
+  const canUndo = history.past.length > 0;
+  const canRedo = history.future.length > 0;
 
-    // 히스토리 초기화 (새 데이터 로드 시)
-    const resetHistory = useCallback((newState: T) => {
-        setHistory({
-            past: [],
-            present: newState,
-            future: [],
-        });
-    }, []);
-
-    const canUndo = history.past.length > 0;
-    const canRedo = history.future.length > 0;
-
-    return {
-        state,
-        setState,
-        undo,
-        redo,
-        canUndo,
-        canRedo,
-        resetHistory,
-    };
+  return {
+    state,
+    setState,
+    undo,
+    redo,
+    canUndo,
+    canRedo,
+    resetHistory,
+  };
 }

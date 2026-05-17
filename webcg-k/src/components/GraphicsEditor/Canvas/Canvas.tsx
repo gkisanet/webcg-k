@@ -9,6 +9,13 @@ import type { GraphicElement } from "@/routes/dashboard/studio/graphics/$graphic
 import { GridOverlay } from "./GridOverlay";
 import { estimateWrappedTextHeight } from "@/lib/textMeasure";
 import { buildPluginSrcdoc } from "@/lib/webcgkSrcdoc";
+import { registerAction } from "@/lib/actions/actionRegistry";
+import {
+  screenToSceneCoords,
+  snapBoundingBox,
+  collectSnapLines,
+} from "@/lib/element/sceneMath";
+import { InteractionLayer } from "./InteractionLayer";
 
 // CSS 문자열을 React style 객체로 변환
 const parseCssToStyle = (css: string | undefined): React.CSSProperties => {
@@ -108,11 +115,26 @@ export function Canvas({
         shapeH: number; // Shape 높이 (클램핑 기준)
     } | null>(null);
 
-    // 스냅 가이드라인 상태
-    const [snapGuides, setSnapGuides] = useState<{
+    // 스냅 가이드라인 상태 (리사이즈 경로에서 사용, 드래그는 DOM 직접 조작)
+    const [_snapGuides, setSnapGuides] = useState<{
         vertical: number[];  // x 좌표 배열
         horizontal: number[]; // y 좌표 배열
     }>({ vertical: [], horizontal: [] });
+
+    // Drag Ghost — React 우회 직접 DOM 조작용 ref + 상태
+    const ghostRef = useRef<HTMLDivElement>(null);
+    const snapVLinesRef = useRef<HTMLDivElement>(null);
+    const snapHLinesRef = useRef<HTMLDivElement>(null);
+    const dragEndPosRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+    const [dragGhost, setDragGhost] = useState<{
+        id: string;
+        x: number; y: number;
+        width: number; height: number;
+        rotation: number;
+        fill?: string;
+        borderRadius?: number;
+        type: GraphicElement["type"];
+    } | null>(null);
 
     // 🆕 Text Frame 인라인 편집 상태
     // Shape 더블클릭 시 진입: 해당 슬롯의 텍스트를 직접 편집
@@ -121,17 +143,20 @@ export function Canvas({
         slotId: string;
     } | null>(null);
 
-    // Escape 키로 편집 모드 종료
+    // Escape 키로 편집 모드 종료 — Action 시스템
     useEffect(() => {
         if (!editingSlot) return;
-        const handleKeyDown = (e: KeyboardEvent) => {
-            if (e.key === "Escape") {
+        const unreg = registerAction({
+            id: "exitEditingMode",
+            label: "편집 모드 종료",
+            shortcut: "Escape",
+            context: "editor",
+            execute: () => {
                 setEditingSlot(null);
                 setFrameResizing(null);
-            }
-        };
-        window.addEventListener("keydown", handleKeyDown);
-        return () => window.removeEventListener("keydown", handleKeyDown);
+            },
+        });
+        return unreg;
     }, [editingSlot]);
 
     // 그리드 템플릿 로드
@@ -163,9 +188,11 @@ export function Canvas({
         (e: MouseEvent) => {
             if (!svgRef.current) return { x: 0, y: 0 };
             const rect = svgRef.current.getBoundingClientRect();
-            const x = (e.clientX - rect.left) / scale;
-            const y = (e.clientY - rect.top) / scale;
-            return { x, y };
+            return screenToSceneCoords(
+                { x: e.clientX, y: e.clientY },
+                { left: rect.left, top: rect.top },
+                scale,
+            );
         },
         [scale]
     );
@@ -194,6 +221,18 @@ export function Canvas({
                 startY: coords.y,
                 elStartX: element.x,
                 elStartY: element.y,
+            });
+            // Drag Ghost 활성화
+            setDragGhost({
+                id: elementId,
+                x: element.x,
+                y: element.y,
+                width: element.width,
+                height: element.height,
+                rotation: element.rotation,
+                fill: element.fill?.type === "solid" ? element.fill.color : undefined,
+                borderRadius: element.borderRadius,
+                type: element.type,
             });
         },
         [elements, selectedIds, onSelect, getCanvasCoords]
@@ -279,119 +318,55 @@ export function Canvas({
                     newHeight = resizing.elStartHeight + dy;
                 }
 
-                // 리사이즈 스냅 (8px 임계값)
+                // 리사이즈 스냅 — collectSnapLines로 타겟 수집, 핸들별 개별 스냅
                 const SNAP_THRESHOLD = 8;
                 const activeVerticalGuides: number[] = [];
                 const activeHorizontalGuides: number[] = [];
 
-                // 그리드 Zone 경계에 스냅
-                for (const zone of zones) {
-                    const zoneX = Math.round((zone.x / 100) * canvasWidth);
-                    const zoneY = Math.round((zone.y / 100) * canvasHeight);
-                    const zoneRight = Math.round(((zone.x + zone.width) / 100) * canvasWidth);
-                    const zoneBottom = Math.round(((zone.y + zone.height) / 100) * canvasHeight);
+                const snapLines = collectSnapLines(
+                    elements,
+                    resizing.id,
+                    zones.map((z: { x: number; y: number; width: number; height: number }) => ({
+                        x: Math.round((z.x / 100) * canvasWidth),
+                        y: Math.round((z.y / 100) * canvasHeight),
+                        width: Math.round((z.width / 100) * canvasWidth),
+                        height: Math.round((z.height / 100) * canvasHeight),
+                    })),
+                    canvasWidth,
+                    canvasHeight,
+                );
 
-                    // 왼쪽 핸들 스냅
+                for (const v of snapLines.vertical) {
                     if (resizing.handle.includes("left")) {
-                        if (Math.abs(newX - zoneX) < SNAP_THRESHOLD) {
-                            const diff = newX - zoneX;
-                            newX = zoneX;
-                            newWidth += diff;
-                            activeVerticalGuides.push(zoneX);
-                        }
-                        if (Math.abs(newX - zoneRight) < SNAP_THRESHOLD) {
-                            const diff = newX - zoneRight;
-                            newX = zoneRight;
-                            newWidth += diff;
-                            activeVerticalGuides.push(zoneRight);
+                        if (Math.abs(newX - v) < SNAP_THRESHOLD) {
+                            newWidth += newX - v;
+                            newX = v;
+                            activeVerticalGuides.push(v);
                         }
                     }
-
-                    // 오른쪽 핸들 스냅
                     if (resizing.handle.includes("right")) {
-                        const rightEdge = newX + newWidth;
-                        if (Math.abs(rightEdge - zoneRight) < SNAP_THRESHOLD) {
-                            newWidth = zoneRight - newX;
-                            activeVerticalGuides.push(zoneRight);
-                        }
-                        if (Math.abs(rightEdge - zoneX) < SNAP_THRESHOLD) {
-                            newWidth = zoneX - newX;
-                            activeVerticalGuides.push(zoneX);
+                        if (Math.abs(newX + newWidth - v) < SNAP_THRESHOLD) {
+                            newWidth = v - newX;
+                            activeVerticalGuides.push(v);
                         }
                     }
-
-                    // 상단 핸들 스냅
+                }
+                for (const h of snapLines.horizontal) {
                     if (resizing.handle.includes("top")) {
-                        if (Math.abs(newY - zoneY) < SNAP_THRESHOLD) {
-                            const diff = newY - zoneY;
-                            newY = zoneY;
-                            newHeight += diff;
-                            activeHorizontalGuides.push(zoneY);
-                        }
-                        if (Math.abs(newY - zoneBottom) < SNAP_THRESHOLD) {
-                            const diff = newY - zoneBottom;
-                            newY = zoneBottom;
-                            newHeight += diff;
-                            activeHorizontalGuides.push(zoneBottom);
+                        if (Math.abs(newY - h) < SNAP_THRESHOLD) {
+                            newHeight += newY - h;
+                            newY = h;
+                            activeHorizontalGuides.push(h);
                         }
                     }
-
-                    // 하단 핸들 스냅
                     if (resizing.handle.includes("bottom")) {
-                        const bottomEdge = newY + newHeight;
-                        if (Math.abs(bottomEdge - zoneBottom) < SNAP_THRESHOLD) {
-                            newHeight = zoneBottom - newY;
-                            activeHorizontalGuides.push(zoneBottom);
-                        }
-                        if (Math.abs(bottomEdge - zoneY) < SNAP_THRESHOLD) {
-                            newHeight = zoneY - newY;
-                            activeHorizontalGuides.push(zoneY);
+                        if (Math.abs(newY + newHeight - h) < SNAP_THRESHOLD) {
+                            newHeight = h - newY;
+                            activeHorizontalGuides.push(h);
                         }
                     }
                 }
 
-                // 다른 shape 모서리 점에 스냅
-                for (const other of elements) {
-                    if (other.id === resizing.id) continue;
-                    const corners = [
-                        { x: other.x, y: other.y },
-                        { x: other.x + other.width, y: other.y },
-                        { x: other.x, y: other.y + other.height },
-                        { x: other.x + other.width, y: other.y + other.height },
-                    ];
-                    for (const corner of corners) {
-                        if (resizing.handle.includes("left")) {
-                            if (Math.abs(newX - corner.x) < SNAP_THRESHOLD) {
-                                const diff = newX - corner.x;
-                                newX = corner.x;
-                                newWidth += diff;
-                                activeVerticalGuides.push(corner.x);
-                            }
-                        }
-                        if (resizing.handle.includes("right")) {
-                            if (Math.abs(newX + newWidth - corner.x) < SNAP_THRESHOLD) {
-                                newWidth = corner.x - newX;
-                                activeVerticalGuides.push(corner.x);
-                            }
-                        }
-                        if (resizing.handle.includes("top")) {
-                            if (Math.abs(newY - corner.y) < SNAP_THRESHOLD) {
-                                const diff = newY - corner.y;
-                                newY = corner.y;
-                                newHeight += diff;
-                                activeHorizontalGuides.push(corner.y);
-                            }
-                        }
-                        if (resizing.handle.includes("bottom")) {
-                            if (Math.abs(newY + newHeight - corner.y) < SNAP_THRESHOLD) {
-                                newHeight = corner.y - newY;
-                                activeHorizontalGuides.push(corner.y);
-                            }
-                        }
-                    }
-                }
-
-                // 스냅 가이드라인 업데이트
                 setSnapGuides({
                     vertical: [...new Set(activeVerticalGuides)],
                     horizontal: [...new Set(activeHorizontalGuides)],
@@ -420,7 +395,7 @@ export function Canvas({
                 return;
             }
 
-            // 드래그 처리
+            // 드래그 처리 — React 우회, Ghost DOM 직접 조작
             if (!dragging) return;
 
             const dx = coords.x - dragging.startX;
@@ -429,122 +404,75 @@ export function Canvas({
             let newX = dragging.elStartX + dx;
             let newY = dragging.elStartY + dy;
 
-            // 스냅 (8px 임계값)
-            const SNAP_THRESHOLD = 8;
-            const activeVerticalGuides: number[] = [];
-            const activeHorizontalGuides: number[] = [];
-
             const element = elements.find((el) => el.id === dragging.id);
             if (!element) return;
 
-            // 그리드 영역 경계에 스냅
-            for (const zone of zones) {
-                const zoneX = Math.round((zone.x / 100) * canvasWidth);
-                const zoneY = Math.round((zone.y / 100) * canvasHeight);
-                const zoneRight = Math.round(((zone.x + zone.width) / 100) * canvasWidth);
-                const zoneBottom = Math.round(((zone.y + zone.height) / 100) * canvasHeight);
+            const snapLines = collectSnapLines(
+                elements,
+                dragging.id,
+                zones.map((z: { x: number; y: number; width: number; height: number }) => ({
+                    x: Math.round((z.x / 100) * canvasWidth),
+                    y: Math.round((z.y / 100) * canvasHeight),
+                    width: Math.round((z.width / 100) * canvasWidth),
+                    height: Math.round((z.height / 100) * canvasHeight),
+                })),
+                canvasWidth,
+                canvasHeight,
+            );
 
-                // 왼쪽 경계
-                if (Math.abs(newX - zoneX) < SNAP_THRESHOLD) {
-                    newX = zoneX;
-                    activeVerticalGuides.push(zoneX);
-                }
-                // 왼쪽 경계 (요소 왼쪽 → zone 오른쪽)
-                if (Math.abs(newX - zoneRight) < SNAP_THRESHOLD) {
-                    newX = zoneRight;
-                    activeVerticalGuides.push(zoneRight);
-                }
-                // 오른쪽 경계 (요소 오른쪽)
-                if (Math.abs(newX + element.width - zoneRight) < SNAP_THRESHOLD) {
-                    newX = zoneRight - element.width;
-                    activeVerticalGuides.push(zoneRight);
-                }
-                // 요소 오른쪽 → zone 왼쪽
-                if (Math.abs(newX + element.width - zoneX) < SNAP_THRESHOLD) {
-                    newX = zoneX - element.width;
-                    activeVerticalGuides.push(zoneX);
-                }
-                // 위쪽 경계
-                if (Math.abs(newY - zoneY) < SNAP_THRESHOLD) {
-                    newY = zoneY;
-                    activeHorizontalGuides.push(zoneY);
-                }
-                // 위쪽 경계 (요소 위쪽 → zone 아래쪽)
-                if (Math.abs(newY - zoneBottom) < SNAP_THRESHOLD) {
-                    newY = zoneBottom;
-                    activeHorizontalGuides.push(zoneBottom);
-                }
-                // 아래쪽 경계 (요소 아래쪽)
-                if (Math.abs(newY + element.height - zoneBottom) < SNAP_THRESHOLD) {
-                    newY = zoneBottom - element.height;
-                    activeHorizontalGuides.push(zoneBottom);
-                }
-                // 요소 아래쪽 → zone 위쪽
-                if (Math.abs(newY + element.height - zoneY) < SNAP_THRESHOLD) {
-                    newY = zoneY - element.height;
-                    activeHorizontalGuides.push(zoneY);
-                }
+            const snap = snapBoundingBox(
+                { x: newX, y: newY, width: element.width, height: element.height },
+                snapLines,
+            );
+
+            if (snap.snappedX !== undefined) newX = snap.snappedX;
+            if (snap.snappedY !== undefined) newY = snap.snappedY;
+
+            // Ghost DOM 직접 조작 (React 우회 — 60fps 보장)
+            const ghost = ghostRef.current;
+            if (ghost) {
+                ghost.style.display = "";
+                ghost.style.transform = `translate(${newX * scale}px, ${newY * scale}px) rotate(${element.rotation}deg)`;
             }
 
-            // 캔버스 중심선 스냅
-            const centerX = canvasWidth / 2;
-            const centerY = canvasHeight / 2;
-            if (Math.abs(newX + element.width / 2 - centerX) < SNAP_THRESHOLD) {
-                newX = centerX - element.width / 2;
-                activeVerticalGuides.push(centerX);
+            // 스냅 가이드라인 DOM 직접 조작 (React 우회)
+            if (snapVLinesRef.current) {
+                snapVLinesRef.current.innerHTML = snap.activeVertical
+                    .map((x, i) => `<div style="position:absolute;left:${x * scale}px;top:0;bottom:0;width:1px;background:#FF00FF;z-index:10" data-snap-v="${i}"></div>`)
+                    .join("");
             }
-            if (Math.abs(newY + element.height / 2 - centerY) < SNAP_THRESHOLD) {
-                newY = centerY - element.height / 2;
-                activeHorizontalGuides.push(centerY);
-            }
-
-            // 다른 shape 모서리 점에 스냅
-            for (const other of elements) {
-                if (other.id === dragging.id) continue;
-                const corners = [
-                    { x: other.x, y: other.y },
-                    { x: other.x + other.width, y: other.y },
-                    { x: other.x, y: other.y + other.height },
-                    { x: other.x + other.width, y: other.y + other.height },
-                ];
-                for (const corner of corners) {
-                    if (Math.abs(newX - corner.x) < SNAP_THRESHOLD) {
-                        newX = corner.x;
-                        activeVerticalGuides.push(corner.x);
-                    }
-                    if (Math.abs(newX + element.width - corner.x) < SNAP_THRESHOLD) {
-                        newX = corner.x - element.width;
-                        activeVerticalGuides.push(corner.x);
-                    }
-                    if (Math.abs(newY - corner.y) < SNAP_THRESHOLD) {
-                        newY = corner.y;
-                        activeHorizontalGuides.push(corner.y);
-                    }
-                    if (Math.abs(newY + element.height - corner.y) < SNAP_THRESHOLD) {
-                        newY = corner.y - element.height;
-                        activeHorizontalGuides.push(corner.y);
-                    }
-                }
+            if (snapHLinesRef.current) {
+                snapHLinesRef.current.innerHTML = snap.activeHorizontal
+                    .map((y, i) => `<div style="position:absolute;top:${y * scale}px;left:0;right:0;height:1px;background:#FF00FF;z-index:10" data-snap-h="${i}"></div>`)
+                    .join("");
             }
 
-            // 스냅 가이드라인 업데이트
-            setSnapGuides({
-                vertical: [...new Set(activeVerticalGuides)],
-                horizontal: [...new Set(activeHorizontalGuides)],
-            });
-
-            onUpdate(dragging.id, { x: Math.round(newX), y: Math.round(newY) });
+            // 최종 위치를 ref에 기록 (mouseUp에서 커밋)
+            dragEndPosRef.current = { x: Math.round(newX), y: Math.round(newY) };
         },
-        [dragging, resizing, frameResizing, getCanvasCoords, zones, canvasWidth, canvasHeight, elements, onUpdate]
+        [dragging, resizing, frameResizing, getCanvasCoords, zones, canvasWidth, canvasHeight, elements, scale]
     );
 
     // 드래그/리사이즈 종료
     const handleMouseUp = useCallback(() => {
+        // Drag Ghost: 최종 위치를 Store에 1회 커밋 (여기서만 React 리렌더)
+        if (dragging && dragEndPosRef.current) {
+            onUpdate(dragging.id, dragEndPosRef.current);
+        }
+        // Ghost 숨기기
+        if (ghostRef.current) {
+            ghostRef.current.style.display = "none";
+        }
+        // 스냅 가이드라인 DOM 정리
+        if (snapVLinesRef.current) snapVLinesRef.current.innerHTML = "";
+        if (snapHLinesRef.current) snapHLinesRef.current.innerHTML = "";
+
         setDragging(null);
         setResizing(null);
         setFrameResizing(null);
-        setSnapGuides({ vertical: [], horizontal: [] }); // 가이드라인 제거
-    }, []);
+        setDragGhost(null);
+        setSnapGuides({ vertical: [], horizontal: [] });
+    }, [dragging, onUpdate]);
 
     // 빈 영역 클릭 시 선택 해제 + 편집 모드 종료
     const handleCanvasClick = useCallback(
@@ -708,25 +636,6 @@ export function Canvas({
                         {labelText}
                     </text>
                 </g>
-            );
-        };
-
-        // 선택 테두리 렌더링 (SVG rect로 직접 그리기 - 도형에 밀착)
-        const renderSelectionBorder = () => {
-            if (!isSelected) return null;
-            return (
-                <rect
-                    x={element.x}
-                    y={element.y}
-                    width={element.width}
-                    height={element.height}
-                    fill="none"
-                    stroke="#FF00FF"
-                    strokeWidth={2}
-                    strokeDasharray="6,3"
-                    pointerEvents="none"
-                    rx={element.type === "rect" ? (element.borderRadius || 0) : 0}
-                />
             );
         };
 
@@ -1058,7 +967,6 @@ export function Canvas({
                             >🔗</text>
                         )}
                         {/* 선택 테두리 (라벨 포함 안함) */}
-                        {renderSelectionBorder()}
                         {/* 요소 이름 라벨 */}
                         {renderLabel()}
                         {isSelected && renderResizeHandles(element)}
@@ -1085,7 +993,6 @@ export function Canvas({
                             strokeOpacity={strokeOpacity}
                             filter={effectsFilterUrl}
                         />
-                        {renderSelectionBorder()}
                         {renderLabel()}
                         {isSelected && renderResizeHandles(element)}
                     </g>
@@ -1141,7 +1048,6 @@ export function Canvas({
                                 </text>
                             );
                         })()}
-                        {renderSelectionBorder()}
                         {renderLabel()}
                         {isSelected && renderResizeHandles(element)}
                     </g>
@@ -1200,7 +1106,6 @@ export function Canvas({
                                 filter={effectsFilterUrl}
                             />
                         )}
-                        {renderSelectionBorder()}
                         {renderLabel()}
                         {isSelected && renderResizeHandles(element)}
                     </g>
@@ -1240,8 +1145,7 @@ export function Canvas({
                             >
                                 🔌 오버레이 연결 없음
                             </text>
-                            {renderSelectionBorder()}
-                            {renderLabel()}
+                                {renderLabel()}
                             {isSelected && renderResizeHandles(element)}
                         </g>
                     );
@@ -1269,7 +1173,6 @@ export function Canvas({
                             strokeOpacity={0.4}
                             rx={2}
                         />
-                        {renderSelectionBorder()}
                         {renderLabel()}
                         {isSelected && renderResizeHandles(element)}
                     </g>
@@ -1289,7 +1192,6 @@ export function Canvas({
                             stroke="transparent"
                             strokeWidth={0}
                         />
-                        {renderSelectionBorder()}
                         {renderLabel()}
                         {/* 그룹은 리사이즈 핸들 없음 */}
                     </g>
@@ -1450,37 +1352,38 @@ export function Canvas({
                     strokeDasharray="8 8"
                 />
 
-                {/* 스냅 가이드라인 (드래그 중에만 표시) */}
-                {snapGuides.vertical.map((x, i) => (
-                    <line
-                        key={`snap-v-${i}`}
-                        x1={x}
-                        y1={0}
-                        x2={x}
-                        y2={canvasHeight}
-                        stroke="#FF00FF"
-                        strokeWidth={1}
-                        strokeDasharray="4 4"
-                        pointerEvents="none"
-                    />
-                ))}
-                {snapGuides.horizontal.map((y, i) => (
-                    <line
-                        key={`snap-h-${i}`}
-                        x1={0}
-                        y1={y}
-                        x2={canvasWidth}
-                        y2={y}
-                        stroke="#FF00FF"
-                        strokeWidth={1}
-                        strokeDasharray="4 4"
-                        pointerEvents="none"
-                    />
-                ))}
-
                 {/* 요소들 */}
                 {sortedElements.map(renderElement)}
             </svg>
+
+            {/* Layer 2: 상호작용 전용 HTML 레이어 (선택 박스, 리사이즈 핸들, Drag Ghost) */}
+            <InteractionLayer
+                elements={elements}
+                selectedIds={selectedIds}
+                zoom={scale}
+                canvasWidth={canvasWidth}
+                canvasHeight={canvasHeight}
+                dragGhost={dragGhost}
+                ghostRef={ghostRef}
+                snapVLinesRef={snapVLinesRef}
+                snapHLinesRef={snapHLinesRef}
+                onResizeStart={(e, id, handle) => {
+                    const coords = getCanvasCoords(e as unknown as MouseEvent);
+                    const element = elements.find((el) => el.id === id);
+                    if (element) {
+                        setResizing({
+                            id,
+                            handle,
+                            startX: coords.x,
+                            startY: coords.y,
+                            elStartX: element.x,
+                            elStartY: element.y,
+                            elStartWidth: element.width,
+                            elStartHeight: element.height,
+                        });
+                    }
+                }}
+            />
 
             {/* ■ HTML 플러그인 오버레이 레이어
                  SVG foreignObject 내부에서는 iframe 투명 배경이 불가능하므로,

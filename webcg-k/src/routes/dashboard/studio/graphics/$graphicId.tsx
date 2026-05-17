@@ -6,6 +6,8 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
+import { registerAction } from "@/lib/actions/actionRegistry";
+import { useActionDispatcher } from "@/hooks/useActionDispatcher";
 import { ArrowLeft, Save, Undo2, Redo2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/lib/supabase";
@@ -176,30 +178,48 @@ function GraphicEditorPage() {
     }
   }, [graphic, resetHistory]);
 
-  // Undo/Redo 키보드 단축키
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // Ctrl+Z: Undo
-      if ((e.ctrlKey || e.metaKey) && e.key === "z" && !e.shiftKey) {
-        e.preventDefault();
-        if (canUndo) undo();
-        return;
-      }
-      // Ctrl+Y 또는 Ctrl+Shift+Z: Redo
-      if ((e.ctrlKey || e.metaKey) && (e.key === "y" || (e.key === "Z" && e.shiftKey))) {
-        e.preventDefault();
-        if (canRedo) redo();
-        return;
-      }
-    };
 
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+  // Undo/Redo — Action 시스템으로 통합
+  useActionDispatcher("editor");
+
+  useEffect(() => {
+    const unregUndo = registerAction({
+      id: "undo",
+      label: "실행 취소",
+      shortcut: "Ctrl+Z",
+      context: "editor",
+      predicate: () => canUndo,
+      execute: () => undo(),
+    });
+    const unregRedo = registerAction({
+      id: "redo",
+      label: "다시 실행",
+      shortcut: "Ctrl+Y",
+      context: "editor",
+      predicate: () => canRedo,
+      execute: () => redo(),
+    });
+    const unregRedoAlt = registerAction({
+      id: "redoAlt",
+      label: "다시 실행",
+      shortcut: "Ctrl+Shift+Z",
+      context: "editor",
+      predicate: () => canRedo,
+      execute: () => redo(),
+    });
+
+    return () => {
+      unregUndo();
+      unregRedo();
+      unregRedoAlt();
+    };
   }, [undo, redo, canUndo, canRedo]);
 
-  // 요소 변경 핸들러
+  // 요소 변경 핸들러 (기존 배열 교체 → Mutative draft 변이 브릿지)
   const handleElementsChange = (newElements: GraphicElement[]) => {
-    setElements(newElements);
+    setElements((draft) => {
+      draft.splice(0, draft.length, ...newElements);
+    });
     setHasChanges(true);
   };
 

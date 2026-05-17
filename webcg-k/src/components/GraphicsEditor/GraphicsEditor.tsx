@@ -13,6 +13,7 @@ import { LayersPanel } from "./Panels/LayersPanel";
 import { PropertiesPanel } from "./Panels/PropertiesPanel";
 import { X, Image as ImageIcon, Layers, Loader2 } from "lucide-react";
 import { fetchOverlayTemplates } from "@/services/dashboardService";
+import { registerAction } from "@/lib/actions/actionRegistry";
 import "./GraphicsEditor.css";
 
 interface GraphicsEditorProps {
@@ -547,39 +548,47 @@ export function GraphicsEditor({
         setSelectedIds(newSelectedIds);
     }, [elements, selectedIds, onElementsChange]);
 
-    // 키보드 이벤트 핸들러
+    // Action 시스템 — 선언적 단축키 등록 (디스패처는 상위 $graphicId.tsx에서 활성화)
     useEffect(() => {
-        const handleKeyDown = (e: KeyboardEvent) => {
-            // Delete 키: 선택된 요소 삭제
-            if (e.key === "Delete" && selectedIds.length > 0) {
-                deleteElements(selectedIds);
-                return;
-            }
+        const unregDelete = registerAction({
+            id: "deleteSelected",
+            label: "선택 요소 삭제",
+            shortcut: "Delete",
+            context: "editor",
+            predicate: () => selectedIds.length > 0,
+            execute: () => deleteElements(selectedIds),
+        });
+        const unregDuplicate = registerAction({
+            id: "duplicateElements",
+            label: "요소 복제",
+            shortcut: "Ctrl+D",
+            context: "editor",
+            predicate: () => selectedIds.length > 0,
+            execute: () => duplicateElements(),
+        });
+        const unregGroup = registerAction({
+            id: "groupElements",
+            label: "그룹화",
+            shortcut: "Ctrl+G",
+            context: "editor",
+            predicate: () => selectedIds.length >= 2,
+            execute: () => groupElements(),
+        });
+        const unregUngroup = registerAction({
+            id: "ungroupElements",
+            label: "그룹 해제",
+            shortcut: "Ctrl+Shift+G",
+            context: "editor",
+            predicate: () => selectedIds.length > 0,
+            execute: () => ungroupElements(),
+        });
 
-            // Ctrl+D / Cmd+D: 도형 복제
-            if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "d") {
-                e.preventDefault(); // 브라우저 즐겨찾기 단축키 방지
-                duplicateElements();
-                return;
-            }
-
-            // Ctrl+G: 그룹화
-            if ((e.ctrlKey || e.metaKey) && e.key === "g" && !e.shiftKey) {
-                e.preventDefault();
-                groupElements();
-                return;
-            }
-
-            // Ctrl+Shift+G: 그룹 해제
-            if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === "G") {
-                e.preventDefault();
-                ungroupElements();
-                return;
-            }
+        return () => {
+            unregDelete();
+            unregDuplicate();
+            unregGroup();
+            unregUngroup();
         };
-
-        window.addEventListener("keydown", handleKeyDown);
-        return () => window.removeEventListener("keydown", handleKeyDown);
     }, [selectedIds, deleteElements, duplicateElements, groupElements, ungroupElements]);
 
     return (
