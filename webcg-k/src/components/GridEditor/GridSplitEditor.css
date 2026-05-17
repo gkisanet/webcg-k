@@ -14,6 +14,9 @@
     padding: 0.75rem 1rem;
     background-color: var(--app-bg-alt);
     border-bottom: 1px solid var(--border-subtle);
+    overflow-x: auto;
+    flex-shrink: 0;
+    min-height: 48px;
 }
 
 /* 툴 모드 선택 버튼 그룹 */
@@ -63,6 +66,11 @@
     font-size: 0.75rem;
     color: var(--text-secondary);
     font-family: 'JetBrains Mono', monospace;
+    white-space: nowrap;
+    flex-shrink: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 200px;
 }
 
 .grid-split-info .info-item.highlight {
@@ -75,11 +83,16 @@
 }
 
 .grid-split-canvas {
-    flex: 1;
+    /* flex: 1 제거 — aspect-ratio와 충돌하여 브라우저 리사이즈 시 squash 발생 */
+    flex: 0 1 auto;
     position: relative;
-    margin: 2rem auto;
+    /* aspect-ratio를 inline style(1920/1080)과 함께 사용.
+       width를 100%로 하면 aspect-ratio가 높이를 결정.
+       max-height를 초과하면 브라우저가 width를 재계산하여 16:9 유지 */
+    width: 100%;
     max-width: calc(100% - 4rem);
     max-height: calc(100% - 4rem);
+    margin: auto;
     background-color: #1a1a1a;
     outline: 2px solid var(--border-default);
     border-radius: 0;

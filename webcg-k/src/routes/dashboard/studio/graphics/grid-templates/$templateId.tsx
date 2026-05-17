@@ -152,7 +152,7 @@ function GridTemplateEditorPage() {
     }
     // Blob URL cleanup
     if (bgImage) URL.revokeObjectURL(bgImage);
-    navigate({ to: "/dashboard/studio/graphics" });
+    navigate({ to: "/dashboard/studio/grid-templates" });
   };
 
   // 배경 이미지 업로드 핸들러

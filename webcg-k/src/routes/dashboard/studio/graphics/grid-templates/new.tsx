@@ -104,7 +104,7 @@ function NewGridTemplatePage() {
 
           <Button
             variant="secondary"
-            onClick={() => navigate({ to: "/dashboard/studio/graphics" })}
+            onClick={() => navigate({ to: "/dashboard/studio/grid-templates" })}
             style={{ padding: "0.75rem 1rem", fontSize: "1rem" }}
           >
             취소
