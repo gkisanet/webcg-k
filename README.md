@@ -34,6 +34,40 @@ WebCG-K is a web-based broadcast graphics system that generates and controls tra
 └──────────────────────────────────────────────┘
 ```
 
+## Key Innovations
+
+### Penpot-Style Visual Editor for Broadcast Graphics
+
+Traditional broadcast CG tools force operators to work with rigid, code-driven templates. WebCG-K brings a **Penpot-inspired freeform vector editor** into the broadcast domain — operators design graphics visually with drag-and-drop, direct manipulation, and real-time preview on a transparent background. No need to switch between a design tool and a playout system: what you design is what goes on air.
+
+### GridEditor: Standardized Graphics Across Branch Stations
+
+Broadcast networks with multiple regional branches face a fragmentation problem — each station creates graphics differently, leading to inconsistent branding and wasted effort. The **GridEditor** solves this by constraining graphics creation to a **shared grid template system**:
+
+- Graphics are composed within predefined, reusable grid zones — every title, lower-third, and overlay snaps into a consistent layout.
+- Templates are stored centrally in Supabase and replicated in real time. When a branch station loads a graphic, they get the same grid, same fonts, same positioning — **identical protocol, identical output**.
+- This turns one-off graphic creation into a **reusable asset pipeline**: design once, deploy everywhere, and maintain brand consistency without manual coordination.
+
+### Multi-Track Timeline: Beyond the Traditional Rundown
+
+Existing systems like SPX-GX rely on a **linear rundown** — one cue after another, with limited control over layered graphics. WebCG-K introduces a **multi-track timeline UI** inspired by video editors:
+
+- Each graphic occupies its own **track**, with independent in/out points and duration.
+- Tracks are stacked by **z-index** — background plates, lower-thirds, logos, and character overlays all play simultaneously with correct depth ordering.
+- Operators can scrub, trim, overlap, and layer graphics **visually on the timeline**, seeing exactly what will play at any given moment.
+
+This shifts broadcast graphics control from "execute the next cue" to **"compose the full visual output over time"** — a fundamentally more expressive paradigm.
+
+### AI Cuesheet: Automatic Rundown from Raw Input
+
+Building a broadcast rundown manually is repetitive and error-prone. The **AI Cuesheet** feature automates this: streamers and producers paste raw broadcast data (scripts, segment notes, guest names, timing instructions), and the system generates a complete, structured cuesheet with:
+
+- Correctly ordered segments and graphics cues.
+- Inferred timing based on content length and broadcast conventions.
+- Auto-assigned graphic templates mapped to segment types (intro → title card, interview → lower-third with guest name, etc.).
+
+This eliminates the mechanical work of rundown assembly, letting the production team focus on **creative decisions** rather than data entry.
+
 ## Project Structure
 
 ```
