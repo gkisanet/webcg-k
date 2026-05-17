@@ -16,35 +16,42 @@
 import type { GraphicElement } from "@/routes/dashboard/studio/graphics/$graphicId";
 import type { RefObject } from "react";
 
-const HANDLE_SIZE = 10;
-const HANDLE_OFFSET = HANDLE_SIZE / 2;
+const HANDLE_SIZE = 8;
 
-type ResizeHandle =
-  | "nw-resize"
-  | "n-resize"
-  | "ne-resize"
-  | "e-resize"
-  | "se-resize"
-  | "s-resize"
-  | "sw-resize"
-  | "w-resize";
+// PowerPoint 스타일: 코너는 정사각형, 엣지는 얇은 직사각형
+const CORNER_HANDLE = {
+  width: HANDLE_SIZE,
+  height: HANDLE_SIZE,
+  borderRadius: 2,
+};
+
+const EDGE_HANDLE = {
+  width: 4,
+  height: HANDLE_SIZE,
+  borderRadius: 1,
+};
 
 interface HandleDef {
-  handle: ResizeHandle;
+  handle: string;
   cursor: string;
   top: string | number;
   left: string | number;
+  width: number;
+  height: number;
+  borderRadius: number;
 }
 
 const HANDLES: HandleDef[] = [
-  { handle: "nw-resize", cursor: "nw-resize", top: -HANDLE_OFFSET, left: -HANDLE_OFFSET },
-  { handle: "n-resize", cursor: "n-resize", top: -HANDLE_OFFSET, left: "50%" },
-  { handle: "ne-resize", cursor: "ne-resize", top: -HANDLE_OFFSET, left: `calc(100% - ${HANDLE_OFFSET}px)` },
-  { handle: "e-resize", cursor: "e-resize", top: "50%", left: `calc(100% - ${HANDLE_OFFSET}px)` },
-  { handle: "se-resize", cursor: "se-resize", top: `calc(100% - ${HANDLE_OFFSET}px)`, left: `calc(100% - ${HANDLE_OFFSET}px)` },
-  { handle: "s-resize", cursor: "s-resize", top: `calc(100% - ${HANDLE_OFFSET}px)`, left: "50%" },
-  { handle: "sw-resize", cursor: "sw-resize", top: `calc(100% - ${HANDLE_OFFSET}px)`, left: -HANDLE_OFFSET },
-  { handle: "w-resize", cursor: "w-resize", top: "50%", left: -HANDLE_OFFSET },
+  // 코너 — 정사각형 핸들
+  { handle: "nw-resize", cursor: "nw-resize", top: -CORNER_HANDLE.height / 2, left: -CORNER_HANDLE.width / 2, ...CORNER_HANDLE },
+  { handle: "ne-resize", cursor: "ne-resize", top: -CORNER_HANDLE.height / 2, left: `calc(100% - ${CORNER_HANDLE.width / 2}px)`, ...CORNER_HANDLE },
+  { handle: "se-resize", cursor: "se-resize", top: `calc(100% - ${CORNER_HANDLE.height / 2}px)`, left: `calc(100% - ${CORNER_HANDLE.width / 2}px)`, ...CORNER_HANDLE },
+  { handle: "sw-resize", cursor: "sw-resize", top: `calc(100% - ${CORNER_HANDLE.height / 2}px)`, left: -CORNER_HANDLE.width / 2, ...CORNER_HANDLE },
+  // 엣지 — 얇은 직사각형 핸들
+  { handle: "n-resize", cursor: "n-resize", top: -EDGE_HANDLE.height / 2, left: "50%", width: 20, height: EDGE_HANDLE.height, borderRadius: EDGE_HANDLE.borderRadius },
+  { handle: "s-resize", cursor: "s-resize", top: `calc(100% - ${EDGE_HANDLE.height / 2}px)`, left: "50%", width: 20, height: EDGE_HANDLE.height, borderRadius: EDGE_HANDLE.borderRadius },
+  { handle: "e-resize", cursor: "e-resize", top: "50%", left: `calc(100% - ${EDGE_HANDLE.width / 2}px)`, width: EDGE_HANDLE.width, height: 20, borderRadius: EDGE_HANDLE.borderRadius },
+  { handle: "w-resize", cursor: "w-resize", top: "50%", left: -EDGE_HANDLE.width / 2, width: EDGE_HANDLE.width, height: 20, borderRadius: EDGE_HANDLE.borderRadius },
 ];
 
 export interface DragGhostData {
@@ -64,7 +71,6 @@ interface InteractionLayerProps {
   canvasWidth: number;
   canvasHeight: number;
   onResizeStart: (e: React.MouseEvent, id: string, handle: string) => void;
-  // Drag Ghost — React 우회 직접 DOM 조작용
   dragGhost: DragGhostData | null;
   ghostRef: RefObject<HTMLDivElement | null>;
   snapVLinesRef: RefObject<HTMLDivElement | null>;
@@ -101,19 +107,20 @@ export function InteractionLayer({
       <div ref={snapVLinesRef} style={{ pointerEvents: "none" }} />
       <div ref={snapHLinesRef} style={{ pointerEvents: "none" }} />
 
-      {/* Drag Ghost — React 우회: mouseMove가 직접 transform 조작 */}
+      {/* Drag Ghost — left/top=0으로 초기화, translate로만 위치 제어 (이중 계산 방지) */}
       {dragGhost && (
         <div
           ref={ghostRef}
           style={{
             position: "absolute",
-            left: dragGhost.x * zoom,
-            top: dragGhost.y * zoom,
+            left: 0,
+            top: 0,
             width: dragGhost.width * zoom,
             height: dragGhost.height * zoom,
             backgroundColor: dragGhost.fill || "rgba(59, 130, 246, 0.3)",
             border: "2px solid rgba(59, 130, 246, 0.6)",
             borderRadius: (dragGhost.borderRadius || 0) * zoom,
+            transform: `translate(${dragGhost.x * zoom}px, ${dragGhost.y * zoom}px) rotate(${dragGhost.rotation}deg)`,
             transformOrigin: "center center",
             pointerEvents: "none",
             zIndex: 100,
@@ -123,7 +130,7 @@ export function InteractionLayer({
         />
       )}
 
-      {/* 선택된 요소: 바운딩 박스 + 리사이즈 핸들 */}
+      {/* 선택된 요소: 바운딩 박스 + 리사이즈 핸들 (PowerPoint 스타일) */}
       {selectedElems.map((el) => (
         <div
           key={`bbox-${el.id}`}
@@ -133,33 +140,35 @@ export function InteractionLayer({
             top: el.y * zoom,
             width: el.width * zoom,
             height: el.height * zoom,
-            border: "2px solid #FF00FF",
+            border: "2px solid #00d4ff",
             borderRadius: el.type === "rect" && el.borderRadius ? el.borderRadius * zoom : 0,
             transform: `rotate(${el.rotation}deg)`,
             transformOrigin: "center center",
             pointerEvents: "none",
           }}
         >
-          {HANDLES.map(({ handle, cursor, top, left }) => (
+          {HANDLES.map(({ handle, cursor, top, left, width, height, borderRadius }) => (
             <div
               key={handle}
               onMouseDown={(e) => {
                 e.stopPropagation();
+                e.preventDefault();
                 onResizeStart(e, el.id, handle);
               }}
               style={{
                 position: "absolute",
                 top,
                 left,
-                width: HANDLE_SIZE,
-                height: HANDLE_SIZE,
+                width,
+                height,
                 backgroundColor: "#fff",
-                border: "2px solid #FF00FF",
-                borderRadius: 2,
+                border: "1.5px solid #00d4ff",
+                borderRadius,
                 cursor,
                 pointerEvents: "auto",
                 zIndex: 20,
                 transform: "translate(-50%, -50%)",
+                boxShadow: "0 0 0 1px rgba(0,0,0,0.3)",
               }}
             />
           ))}

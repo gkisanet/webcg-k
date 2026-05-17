@@ -294,6 +294,13 @@ export function Canvas({
                 const element = elements.find((el) => el.id === resizing.id);
                 if (!element) return;
 
+                // handle 방향 정규화 — "nw-resize" / "top-left" 양쪽 모두 지원
+                const h = resizing.handle;
+                const isWest  = h.includes("left")  || h.startsWith("w") || h.includes("w-resize");
+                const isEast  = h.includes("right") || h.startsWith("e") || h.includes("e-resize");
+                const isNorth = h.includes("top")   || h.startsWith("n") || h.includes("nw") || h.includes("ne") || h.includes("n-resize");
+                const isSouth = h.includes("bottom")|| h.startsWith("s") || h.includes("sw") || h.includes("se") || h.includes("s-resize");
+
                 const dx = coords.x - resizing.startX;
                 const dy = coords.y - resizing.startY;
 
@@ -302,19 +309,18 @@ export function Canvas({
                 let newWidth = resizing.elStartWidth;
                 let newHeight = resizing.elStartHeight;
 
-                // 핸들 위치에 따라 리사이즈
-                if (resizing.handle.includes("left")) {
+                if (isWest) {
                     newX = resizing.elStartX + dx;
                     newWidth = resizing.elStartWidth - dx;
                 }
-                if (resizing.handle.includes("right")) {
+                if (isEast) {
                     newWidth = resizing.elStartWidth + dx;
                 }
-                if (resizing.handle.includes("top")) {
+                if (isNorth) {
                     newY = resizing.elStartY + dy;
                     newHeight = resizing.elStartHeight - dy;
                 }
-                if (resizing.handle.includes("bottom")) {
+                if (isSouth) {
                     newHeight = resizing.elStartHeight + dy;
                 }
 
@@ -337,32 +343,32 @@ export function Canvas({
                 );
 
                 for (const v of snapLines.vertical) {
-                    if (resizing.handle.includes("left")) {
+                    if (isWest) {
                         if (Math.abs(newX - v) < SNAP_THRESHOLD) {
                             newWidth += newX - v;
                             newX = v;
                             activeVerticalGuides.push(v);
                         }
                     }
-                    if (resizing.handle.includes("right")) {
+                    if (isEast) {
                         if (Math.abs(newX + newWidth - v) < SNAP_THRESHOLD) {
                             newWidth = v - newX;
                             activeVerticalGuides.push(v);
                         }
                     }
                 }
-                for (const h of snapLines.horizontal) {
-                    if (resizing.handle.includes("top")) {
-                        if (Math.abs(newY - h) < SNAP_THRESHOLD) {
-                            newHeight += newY - h;
-                            newY = h;
-                            activeHorizontalGuides.push(h);
+                for (const hItem of snapLines.horizontal) {
+                    if (isNorth) {
+                        if (Math.abs(newY - hItem) < SNAP_THRESHOLD) {
+                            newHeight += newY - hItem;
+                            newY = hItem;
+                            activeHorizontalGuides.push(hItem);
                         }
                     }
-                    if (resizing.handle.includes("bottom")) {
-                        if (Math.abs(newY + newHeight - h) < SNAP_THRESHOLD) {
-                            newHeight = h - newY;
-                            activeHorizontalGuides.push(h);
+                    if (isSouth) {
+                        if (Math.abs(newY + newHeight - hItem) < SNAP_THRESHOLD) {
+                            newHeight = hItem - newY;
+                            activeHorizontalGuides.push(hItem);
                         }
                     }
                 }
@@ -374,13 +380,13 @@ export function Canvas({
 
                 // 최소 크기 보장
                 if (newWidth < 10) {
-                    if (resizing.handle.includes("left")) {
+                    if (isWest) {
                         newX = resizing.elStartX + resizing.elStartWidth - 10;
                     }
                     newWidth = 10;
                 }
                 if (newHeight < 10) {
-                    if (resizing.handle.includes("top")) {
+                    if (isNorth) {
                         newY = resizing.elStartY + resizing.elStartHeight - 10;
                     }
                     newHeight = 10;
@@ -473,6 +479,27 @@ export function Canvas({
         setDragGhost(null);
         setSnapGuides({ vertical: [], horizontal: [] });
     }, [dragging, onUpdate]);
+
+    // window 레벨 이벤트 리스너 — 리사이즈 핸들(HTML div)에서 시작된 드래그가
+    // SVG onMouseMove에 도달하지 못하는 문제를 해결
+    useEffect(() => {
+        const isActive = !!(dragging || resizing || frameResizing);
+        if (!isActive) return;
+
+        const onMouseMove = (e: globalThis.MouseEvent) => {
+            handleMouseMove(e as unknown as MouseEvent);
+        };
+        const onMouseUp = () => {
+            handleMouseUp();
+        };
+
+        window.addEventListener("mousemove", onMouseMove);
+        window.addEventListener("mouseup", onMouseUp);
+        return () => {
+            window.removeEventListener("mousemove", onMouseMove);
+            window.removeEventListener("mouseup", onMouseUp);
+        };
+    }, [dragging, resizing, frameResizing, handleMouseMove, handleMouseUp]);
 
     // 빈 영역 클릭 시 선택 해제 + 편집 모드 종료
     const handleCanvasClick = useCallback(
@@ -969,7 +996,6 @@ export function Canvas({
                         {/* 선택 테두리 (라벨 포함 안함) */}
                         {/* 요소 이름 라벨 */}
                         {renderLabel()}
-                        {isSelected && renderResizeHandles(element)}
                         {/* 🆕 Text Frame 리사이즈 핸들 (선택 + 바인딩 활성 시) */}
                         {isSelected && renderTextFrameHandles(element)}
                     </g>
@@ -994,7 +1020,6 @@ export function Canvas({
                             filter={effectsFilterUrl}
                         />
                         {renderLabel()}
-                        {isSelected && renderResizeHandles(element)}
                     </g>
                 );
 
@@ -1049,7 +1074,6 @@ export function Canvas({
                             );
                         })()}
                         {renderLabel()}
-                        {isSelected && renderResizeHandles(element)}
                     </g>
                 );
             }
@@ -1107,7 +1131,6 @@ export function Canvas({
                             />
                         )}
                         {renderLabel()}
-                        {isSelected && renderResizeHandles(element)}
                     </g>
                 );
             }
@@ -1146,8 +1169,7 @@ export function Canvas({
                                 🔌 오버레이 연결 없음
                             </text>
                                 {renderLabel()}
-                            {isSelected && renderResizeHandles(element)}
-                        </g>
+                            </g>
                     );
                 }
 
@@ -1174,7 +1196,6 @@ export function Canvas({
                             rx={2}
                         />
                         {renderLabel()}
-                        {isSelected && renderResizeHandles(element)}
                     </g>
                 );
             }
@@ -1260,42 +1281,6 @@ export function Canvas({
     };
 
     // 리사이즈 핸들 렌더링
-    const renderResizeHandles = (element: GraphicElement) => {
-        const handleSize = 8;
-        const handles = [
-            { x: element.x - handleSize / 2, y: element.y - handleSize / 2, cursor: "nwse-resize", position: "top-left" },
-            { x: element.x + element.width - handleSize / 2, y: element.y - handleSize / 2, cursor: "nesw-resize", position: "top-right" },
-            { x: element.x - handleSize / 2, y: element.y + element.height - handleSize / 2, cursor: "nesw-resize", position: "bottom-left" },
-            { x: element.x + element.width - handleSize / 2, y: element.y + element.height - handleSize / 2, cursor: "nwse-resize", position: "bottom-right" },
-        ];
-
-        return handles.map((h) => (
-            <rect
-                key={h.position}
-                x={h.x}
-                y={h.y}
-                width={handleSize}
-                height={handleSize}
-                className={`resize-handle ${h.position}`}
-                style={{ cursor: h.cursor }}
-                onMouseDown={(e) => {
-                    e.stopPropagation();
-                    const coords = getCanvasCoords(e as unknown as MouseEvent);
-                    setResizing({
-                        id: element.id,
-                        handle: h.position,
-                        startX: coords.x,
-                        startY: coords.y,
-                        elStartX: element.x,
-                        elStartY: element.y,
-                        elStartWidth: element.width,
-                        elStartHeight: element.height,
-                    });
-                }}
-            />
-        ));
-    };
-
     // zIndex 순으로 정렬
     const sortedElements = [...elements].sort((a, b) => a.zIndex - b.zIndex);
 
