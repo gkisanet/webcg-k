@@ -1,0 +1,436 @@
+/**
+ * DraggableBlock — 타임라인 그래픽 블록 (드래그/리사이즈/트랜지션)
+ * Timeline.tsx에서 분리 — 가장 큰 단일 컴포넌트
+ */
+
+import { useCallback, useRef, useState } from "react";
+import { Wind, Zap } from "lucide-react";
+import {
+	changeBlockTrack,
+	findOverlappingBlockIds,
+	moveBlockFinal,
+	moveBlockTemporary,
+	resizeBlockAbsolute,
+	SNAP_UNIT,
+	snapToGrid,
+} from "../../stores/blockManipulation";
+import {
+	type GraphicBlock,
+	selectBlock,
+	type TransitionType,
+	toggleBlockTransition,
+} from "../../stores/timelineStore";
+import {
+	type BlockEdgeState,
+	TRANSITION_ZONE_WIDTH,
+	useZoom,
+} from "./timelineConstants";
+
+// ─── 트랜지션 아이콘 ────────────────────────────────────────────
+
+function TransitionIcon({ type }: { type: TransitionType }) {
+	const iconStyle = {
+		width: "12px",
+		height: "12px",
+		color: type === "fade" ? "#a855f7" : "#f59e0b",
+	};
+
+	return type === "fade" ? (
+		<Wind style={iconStyle} />
+	) : (
+		<Zap style={iconStyle} />
+	);
+}
+
+// ─── Props ──────────────────────────────────────────────────────
+
+interface DraggableBlockProps {
+	block: GraphicBlock;
+	isSelected: boolean;
+	isDeleteAttempt: boolean;
+	isDimmed: boolean;
+	isCompleted: boolean;
+	edgeState: BlockEdgeState;
+	setOverlappingDuringDrag: (ids: string[]) => void;
+	/** 블록 더블클릭 시 핫 수정 드로어 열기 */
+	onDoubleClick?: (block: GraphicBlock) => void;
+}
+
+// ─── 컴포넌트 ───────────────────────────────────────────────────
+
+export function DraggableBlock({
+	block,
+	isSelected,
+	isDeleteAttempt,
+	isDimmed,
+	isCompleted,
+	edgeState,
+	setOverlappingDuringDrag,
+	onDoubleClick,
+}: DraggableBlockProps) {
+	const [isDragging, setIsDragging] = useState(false);
+	const [isResizing, setIsResizing] = useState<"left" | "right" | null>(null);
+	const [willRevert, setWillRevert] = useState(false);
+	const [hoveringZone, setHoveringZone] = useState<"in" | "out" | null>(null);
+	const dragStartRef = useRef<{
+		x: number;
+		y: number;
+		startPos: number;
+		originalPos: number;
+		originalTrackId: number;
+		currentTrackId: number;
+	} | null>(null);
+	const blockRef = useRef<HTMLDivElement>(null);
+
+	const gridCells = Math.round(block.width / SNAP_UNIT);
+	const transitionZoneWidth = TRANSITION_ZONE_WIDTH;
+
+	// 줌 적용
+	const zoom = useZoom();
+	// ref로 최신 줌 레벨 참조 (이벤트 핸들러 클로저용)
+	const zoomLevelRef = useRef(zoom);
+	zoomLevelRef.current = zoom;
+
+	// 트랜지션 영역 클릭
+	const handleTransitionClick = useCallback(
+		(side: "in" | "out", e: React.MouseEvent) => {
+			e.stopPropagation();
+			e.preventDefault();
+			toggleBlockTransition(block.id, side);
+		},
+		[block.id],
+	);
+
+	const handleDragStart = useCallback(
+		(e: React.MouseEvent) => {
+			e.stopPropagation();
+			e.preventDefault();
+			selectBlock(block.id);
+			setIsDragging(true);
+			setWillRevert(false);
+			dragStartRef.current = {
+				x: e.clientX,
+				y: e.clientY,
+				startPos: block.startPosition,
+				originalPos: block.startPosition,
+				originalTrackId: block.trackId,
+				currentTrackId: block.trackId,
+			};
+
+			const handleMouseMove = (moveEvent: MouseEvent) => {
+				if (!dragStartRef.current) return;
+				// 줌 보정: 화면 이동 거리를 논리 거리로 변환
+				const currentZoom = zoomLevelRef.current;
+				const delta = (moveEvent.clientX - dragStartRef.current.x) / currentZoom;
+				const newPos = dragStartRef.current.startPos + delta;
+				const snappedPos = snapToGrid(Math.max(0, newPos));
+
+				moveBlockTemporary(block.id, newPos);
+
+				// Y축 트랙 감지: 마우스 아래 .track[data-track-id] 요소 찾기
+				const elems = document.elementsFromPoint(moveEvent.clientX, moveEvent.clientY);
+				const trackEl = elems.find(el => el.hasAttribute("data-track-id")) as HTMLElement | undefined;
+				if (trackEl) {
+					const targetTrackId = Number(trackEl.getAttribute("data-track-id"));
+					if (targetTrackId !== dragStartRef.current.currentTrackId) {
+						changeBlockTrack(block.id, targetTrackId);
+						dragStartRef.current.currentTrackId = targetTrackId;
+					}
+				}
+
+				const overlapping = findOverlappingBlockIds(
+					block.id,
+					snappedPos,
+					block.width,
+				);
+				setOverlappingDuringDrag(overlapping);
+				setWillRevert(overlapping.length > 0);
+			};
+
+			const handleMouseUp = () => {
+				if (dragStartRef.current) {
+					const finalSuccess = moveBlockFinal(
+						block.id,
+						dragStartRef.current.originalPos,
+					);
+					// 위치 겹침으로 X축 복귀 시 트랙도 원복
+					if (!finalSuccess && dragStartRef.current.currentTrackId !== dragStartRef.current.originalTrackId) {
+						changeBlockTrack(block.id, dragStartRef.current.originalTrackId);
+					}
+				}
+
+				setIsDragging(false);
+				setWillRevert(false);
+				setOverlappingDuringDrag([]);
+				dragStartRef.current = null;
+				window.removeEventListener("mousemove", handleMouseMove);
+				window.removeEventListener("mouseup", handleMouseUp);
+			};
+
+			window.addEventListener("mousemove", handleMouseMove);
+			window.addEventListener("mouseup", handleMouseUp);
+		},
+		[
+			block.id,
+			block.startPosition,
+			block.width,
+			block.trackId,
+			setOverlappingDuringDrag,
+		],
+	);
+
+	const handleResizeStart = useCallback(
+		(e: React.MouseEvent, handle: "left" | "right") => {
+			e.stopPropagation();
+			e.preventDefault();
+			selectBlock(block.id);
+			setIsResizing(handle);
+
+			const trackContent = (e.target as HTMLElement).closest(".track-content");
+			if (!trackContent) return;
+			const trackRect = trackContent.getBoundingClientRect();
+
+			const handleMouseMove = (moveEvent: MouseEvent) => {
+				// 줌 보정: 화면 좌표를 논리 좌표로 변환
+				const currentZoom = zoomLevelRef.current;
+				const mouseX = (moveEvent.clientX - trackRect.left) / currentZoom;
+				resizeBlockAbsolute(block.id, handle, mouseX);
+			};
+
+			const handleMouseUp = () => {
+				setIsResizing(null);
+				window.removeEventListener("mousemove", handleMouseMove);
+				window.removeEventListener("mouseup", handleMouseUp);
+			};
+
+			window.addEventListener("mousemove", handleMouseMove);
+			window.addEventListener("mouseup", handleMouseUp);
+		},
+		[block.id],
+	);
+
+	// 스타일 계산
+	const shakeStyle = isDeleteAttempt
+		? {
+			animation: "shake 0.4s ease-in-out",
+			background: `linear-gradient(90deg, ${block.color || "#3b82f6"}, #ef4444, ${block.color || "#3b82f6"})`,
+			backgroundSize: "200% 100%",
+		}
+		: {};
+
+	let borderStyle = "1px solid rgba(255,255,255,0.2)";
+	let opacity = 1;
+	let bgColor = block.color || "var(--surface-block)";
+
+	if (isDimmed) {
+		opacity = 0.4;
+		bgColor = "#333";
+	} else if (isCompleted) {
+		// 송출 완료: 회색 + 반투명
+		opacity = 0.5;
+		bgColor = "#555";
+		borderStyle = "1px solid rgba(255,255,255,0.1)";
+	} else if (willRevert) {
+		opacity = 0.6;
+		borderStyle = "2px dashed #ef4444";
+	} else if (isSelected) {
+		borderStyle = "2px solid var(--accent-primary)";
+	}
+
+	return (
+		<div
+			ref={blockRef}
+			className={`graphic-block ${isSelected ? "selected" : ""} ${isDragging ? "dragging" : ""}`}
+			style={{
+				left: `${block.startPosition * zoom}px`,
+				width: `${block.width * zoom}px`,
+				backgroundColor: isDeleteAttempt ? undefined : bgColor,
+				position: "absolute",
+				overflow: "visible",
+				cursor: isDragging ? "grabbing" : "grab",
+				opacity: isDragging && !willRevert ? 0.8 : opacity,
+				zIndex: isDragging || isSelected ? 10 : 1,
+				border: borderStyle,
+				transition: isDragging
+					? "none"
+					: "opacity 0.15s, background-color 0.15s",
+				...shakeStyle,
+			}}
+			onMouseDown={handleDragStart}
+			onDoubleClick={(e) => {
+				// 트랜지션/리사이즈 영역 더블클릭은 무시
+				e.stopPropagation();
+				if (onDoubleClick) onDoubleClick(block);
+			}}
+			title={`${block.name} (${gridCells}칸) — 더블클릭: 텍스트 편집`}
+		>
+			{/* Left Transition Zone (In) */}
+			<div
+				style={{
+					position: "absolute",
+					left: 0,
+					top: 0,
+					bottom: 0,
+					width: `${transitionZoneWidth}px`,
+					background:
+						hoveringZone === "in" ? "rgba(0,0,0,0.4)" : "rgba(0,0,0,0.2)",
+					borderRadius: "4px 0 0 4px",
+					cursor: "pointer",
+					display: "flex",
+					alignItems: "center",
+					justifyContent: "center",
+					transition: "background 0.15s",
+					zIndex: 15,
+				}}
+				onMouseEnter={() => setHoveringZone("in")}
+				onMouseLeave={() => setHoveringZone(null)}
+				onClick={(e) => handleTransitionClick("in", e)}
+				onMouseDown={(e) => e.stopPropagation()}
+				title={`In: ${block.transitionIn} (클릭하여 전환)`}
+			>
+				<TransitionIcon type={block.transitionIn} />
+			</div>
+
+			{/* Left Glow */}
+			{edgeState.hasLeftNeighbor && !isDimmed && (
+				<div
+					style={{
+						position: "absolute",
+						left: "-2px",
+						top: 0,
+						bottom: 0,
+						width: "4px",
+						background:
+							"linear-gradient(90deg, rgba(168, 85, 247, 0.8), transparent)",
+						boxShadow: "-2px 0 8px rgba(168, 85, 247, 0.6)",
+						borderRadius: "2px 0 0 2px",
+						pointerEvents: "none",
+						zIndex: 5,
+					}}
+				/>
+			)}
+
+			{/* Left Resize Handle */}
+			<div
+				style={{
+					position: "absolute",
+					left: 0,
+					top: 0,
+					bottom: 0,
+					width: "8px",
+					cursor: "ew-resize",
+					backgroundColor:
+						isResizing === "left" ? "rgba(96, 165, 250, 0.5)" : "transparent",
+					borderRadius: "4px 0 0 4px",
+					zIndex: 25,
+				}}
+				onMouseDown={(e) => handleResizeStart(e, "left")}
+			/>
+
+			{/* 블록 이름 */}
+			<span
+				style={{
+					position: "absolute",
+					left: "50%",
+					top: "50%",
+					transform: "translate(-50%, -50%)",
+					zIndex: 1,
+					pointerEvents: "none",
+					userSelect: "none",
+					whiteSpace: "nowrap",
+					overflow: "hidden",
+					textOverflow: "ellipsis",
+					fontSize: "11px",
+					maxWidth: `${block.width - transitionZoneWidth * 2 - 10}px`,
+					display: "flex",
+					alignItems: "center",
+					gap: "4px",
+				}}
+			>
+				{block.name}
+				{/* 송출 완료 표시 */}
+				{isCompleted && (
+					<span style={{ color: "rgba(255,255,255,0.6)", fontSize: "10px" }}>✓</span>
+				)}
+				{/* 해상도 불완전 경고 */}
+				{block.sourceData?.elements?.some((el: Record<string, unknown>) =>
+					el.type === "image" &&
+					((el.src_2k || el.src) && !el.src_4k)
+				) && (
+						<span title="4K 이미지 누락" style={{ color: "#eab308" }}>⚠</span>
+					)}
+			</span>
+
+			{/* Right Resize Handle */}
+			<div
+				style={{
+					position: "absolute",
+					right: 0,
+					top: 0,
+					bottom: 0,
+					width: "8px",
+					cursor: "ew-resize",
+					backgroundColor:
+						isResizing === "right" ? "rgba(96, 165, 250, 0.5)" : "transparent",
+					borderRadius: "0 4px 4px 0",
+					zIndex: 25,
+				}}
+				onMouseDown={(e) => handleResizeStart(e, "right")}
+			/>
+
+			{/* Right Glow */}
+			{edgeState.hasRightNeighbor && !isDimmed && (
+				<div
+					style={{
+						position: "absolute",
+						right: "-2px",
+						top: 0,
+						bottom: 0,
+						width: "4px",
+						background:
+							"linear-gradient(270deg, rgba(168, 85, 247, 0.8), transparent)",
+						boxShadow: "2px 0 8px rgba(168, 85, 247, 0.6)",
+						borderRadius: "0 2px 2px 0",
+						pointerEvents: "none",
+						zIndex: 5,
+					}}
+				/>
+			)}
+
+			{/* Right Transition Zone (Out) */}
+			<div
+				style={{
+					position: "absolute",
+					right: 0,
+					top: 0,
+					bottom: 0,
+					width: `${transitionZoneWidth}px`,
+					background:
+						hoveringZone === "out" ? "rgba(0,0,0,0.4)" : "rgba(0,0,0,0.2)",
+					borderRadius: "0 4px 4px 0",
+					cursor: "pointer",
+					display: "flex",
+					alignItems: "center",
+					justifyContent: "center",
+					transition: "background 0.15s",
+					zIndex: 15,
+				}}
+				onMouseEnter={() => setHoveringZone("out")}
+				onMouseLeave={() => setHoveringZone(null)}
+				onClick={(e) => handleTransitionClick("out", e)}
+				onMouseDown={(e) => e.stopPropagation()}
+				title={`Out: ${block.transitionOut} (클릭하여 전환)`}
+			>
+				<TransitionIcon type={block.transitionOut} />
+			</div>
+
+			<style>{`
+        @keyframes shake {
+          0%, 100% { transform: translateX(0); }
+          10%, 30%, 50%, 70%, 90% { transform: translateX(-3px); }
+          20%, 40%, 60%, 80% { transform: translateX(3px); }
+        }
+      `}</style>
+		</div>
+	);
+}

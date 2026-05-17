@@ -1,0 +1,47 @@
+{
+	"pageTitle": "프로젝트 송출",
+	"pageSubtitle": "프로젝트 목록 관리, 송출 및 액션 로그 확인",
+	"cuesheetEditor": "큐시트 편집기",
+	"searchPlaceholder": "프로젝트명 검색...",
+	"filter": {
+		"allStatus": "전체 상태",
+		"draft": "초안",
+		"ready": "준비됨",
+		"live": "송출중",
+		"ended": "송출완료",
+		"completed": "완료"
+	},
+	"table": {
+		"projectName": "프로젝트명",
+		"status": "상태",
+		"createdAt": "생성일",
+		"modified": "수정",
+		"items": "아이템",
+		"actions": "액션"
+	},
+	"empty": {
+		"noProjects": "생성된 프로젝트가 없습니다",
+		"noMatch": "검색 조건에 맞는 프로젝트가 없습니다",
+		"createHint": "에서 프로젝트를 생성하세요."
+	},
+	"renderUrl": {
+		"title": "OBS 브라우저 소스 URL (클릭하여 복사)"
+	},
+	"guide": {
+		"title": "📖 컨트롤러 사용법",
+		"basicFlow": "기본 흐름",
+		"step1": "프로젝트 행 클릭 →",
+		"step1Bold": "렌더러 URL 복사",
+		"step2": "OBS 브라우저 소스에 URL 붙여넣기",
+		"step3Bold": "\"송출\"",
+		"step3": "클릭 → 컨트롤러 열기",
+		"step4": "타임라인에서 그래픽 선택 후 송출",
+		"shortcuts": "⌨️ 키보드 단축키",
+		"keyArrows": "블록 경계 이동",
+		"keyUp": "마지막 송출로 복귀",
+		"keySpace": "PGM 송출",
+		"keyDel": "블록/갭 삭제",
+		"keyCtrlArrows": "처음/끝 이동",
+		"keyCtrlWheel": "줌인/줌아웃"
+	}
+}

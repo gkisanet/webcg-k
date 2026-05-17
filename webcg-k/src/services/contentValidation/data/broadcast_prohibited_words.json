@@ -1,0 +1,62 @@
+{
+	"_meta": {
+		"version": "1.0.0",
+		"description": "방송 금칙어/주의어 사전 — 뉴스 CG 텍스트 검증용",
+		"categories": {
+			"prohibited": "절대 사용 금지 (프리플라이트 error)",
+			"caution": "주의 필요 — 대체어 권장 (프리플라이트 warning)",
+			"sensitive": "민감어 — 문맥 확인 필요 (프리플라이트 info)"
+		}
+	},
+	"prohibited": [
+		{ "word": "자살", "replacement": "극단적 선택", "reason": "자살보도 가이드라인" },
+		{ "word": "정신병자", "replacement": "정신질환자", "reason": "차별적 표현" },
+		{ "word": "장애자", "replacement": "장애인", "reason": "차별적 표현" },
+		{ "word": "미친", "replacement": "(삭제)", "reason": "비하 표현" },
+		{ "word": "폭탄주", "replacement": "섞은 술", "reason": "음주 조장 표현" },
+		{ "word": "꿀벅지", "replacement": "(삭제)", "reason": "외모 비하" },
+		{ "word": "된장녀", "replacement": "(삭제)", "reason": "성차별 표현" },
+		{ "word": "김치녀", "replacement": "(삭제)", "reason": "성차별 표현" },
+		{ "word": "한남충", "replacement": "(삭제)", "reason": "성차별 표현" },
+		{ "word": "틀딱", "replacement": "(삭제)", "reason": "세대 비하" },
+		{ "word": "조선족", "replacement": "중국 동포", "reason": "차별적 표현" },
+		{ "word": "불법체류자", "replacement": "미등록 외국인", "reason": "인권위 권고" },
+		{ "word": "기레기", "replacement": "(삭제)", "reason": "비하 표현" },
+		{ "word": "흙수저", "replacement": "(삭제)", "reason": "차별적 표현" },
+		{ "word": "금수저", "replacement": "(삭제)", "reason": "차별적 표현" }
+	],
+	"caution": [
+		{ "word": "사망", "replacement": "숨지다/사망하다", "reason": "고인 존중 — 문맥에 따라 선택" },
+		{ "word": "시신", "replacement": "시신/유해", "reason": "유족 감정 고려" },
+		{ "word": "피의자", "replacement": "혐의자/피의자", "reason": "무죄추정 원칙 확인" },
+		{ "word": "범인", "replacement": "용의자/피의자", "reason": "확정 전 사용 주의" },
+		{ "word": "몰래카메라", "replacement": "불법촬영", "reason": "범죄 경각심 약화 방지" },
+		{ "word": "성매매", "replacement": "성착취/성매매", "reason": "피해자 관점 확인" },
+		{ "word": "귀순", "replacement": "입국/귀순", "reason": "정치적 뉘앙스 주의" },
+		{ "word": "탈북자", "replacement": "북한이탈주민", "reason": "공식 용어 사용" },
+		{ "word": "노숙자", "replacement": "거리 생활인", "reason": "인권위 권고" },
+		{ "word": "미혼모", "replacement": "비혼모/한부모", "reason": "차별적 뉘앙스" },
+		{ "word": "결손가정", "replacement": "한부모가정", "reason": "차별적 표현" },
+		{ "word": "불구", "replacement": "장애", "reason": "차별적 표현" },
+		{ "word": "백치", "replacement": "(삭제)", "reason": "비하 표현" },
+		{ "word": "외국인노동자", "replacement": "이주노동자", "reason": "인권위 권고" },
+		{ "word": "불법이민자", "replacement": "비정규 이주민", "reason": "인권위 권고" },
+		{ "word": "살인마", "replacement": "살인 혐의자", "reason": "무죄추정 원칙" },
+		{ "word": "테러", "replacement": "테러/공격", "reason": "공식 확인 전 사용 주의" },
+		{ "word": "폭동", "replacement": "시위/소요", "reason": "과잉 표현 주의" },
+		{ "word": "빈민가", "replacement": "저소득 지역", "reason": "차별적 표현" },
+		{ "word": "양로원", "replacement": "노인요양시설", "reason": "공식 용어" }
+	],
+	"sensitive": [
+		{ "word": "대통령", "reason": "직함 정확도 확인 (현직/전직)" },
+		{ "word": "교황", "reason": "종교 직함 정확도 확인" },
+		{ "word": "김정은", "reason": "북한 관련 — 편집 지침 확인" },
+		{ "word": "속보", "reason": "긴급 속보 여부 편집부 확인" },
+		{ "word": "단독", "reason": "단독 보도 확인 필수" },
+		{ "word": "긴급", "reason": "긴급 여부 편집부 확인" },
+		{ "word": "확진", "reason": "감염병 관련 — 보건당국 발표 확인" },
+		{ "word": "사상자", "reason": "정확한 수치 확인 필수" },
+		{ "word": "지진", "reason": "기상청 발표 확인 필수" },
+		{ "word": "쓰나미", "reason": "공식 경보 수준 확인" }
+	]
+}

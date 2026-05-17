@@ -1,0 +1,15 @@
+{
+	"pageTitle": "Data Source Management",
+	"pageSubtitle": "Manage external data integrations for automated graphic generation",
+	"tabs": {
+		"liveSources": "Live Sources",
+		"nrcs": "NRCS Integration"
+	},
+	"builtinSources": "Built-in Data Sources",
+	"customSources": "Custom Data Sources",
+	"addSource": "Add Source",
+	"apiTest": "API Test",
+	"testing": "Testing...",
+	"responseTime": "Response: {{ms}}ms",
+	"sourceCount": "{{count}} sources"
+}

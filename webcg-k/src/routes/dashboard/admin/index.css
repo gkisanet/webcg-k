@@ -1,0 +1,1522 @@
+/**
+ * Admin Page Styles
+ * 관리자 페이지 — glassmorphism 카드, 탭 바, 사용량 게이지
+ */
+
+/* ─── 탭 바 ──────────────────────────────────────────── */
+
+.admin-tabs {
+    display: flex;
+    gap: 2px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    margin-bottom: 24px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 8px 8px 0 0;
+    padding: 4px 4px 0;
+}
+
+.admin-tab {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 20px;
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s ease;
+    border-radius: 6px 6px 0 0;
+}
+
+.admin-tab:hover {
+    color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.admin-tab.active {
+    color: var(--accent-primary);
+    border-bottom-color: var(--accent-primary);
+    background: rgba(99, 102, 241, 0.08);
+}
+
+.admin-tab .tab-badge {
+    background: rgba(255, 255, 255, 0.12);
+    color: var(--text-secondary);
+    font-size: 11px;
+    padding: 1px 7px;
+    border-radius: 10px;
+    font-weight: 600;
+}
+
+.admin-tab.active .tab-badge {
+    background: rgba(99, 102, 241, 0.2);
+    color: var(--accent-primary);
+}
+
+/* ─── 통계 카드 ─────────────────────────────────────── */
+
+.admin-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.admin-stat-card {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0.02) 100%);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    padding: 20px;
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    transition: all 0.2s ease;
+}
+
+.admin-stat-card:hover {
+    border-color: rgba(255, 255, 255, 0.15);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+.admin-stat-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.admin-stat-icon.blue {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.3), rgba(59, 130, 246, 0.1));
+    color: #60a5fa;
+}
+
+.admin-stat-icon.purple {
+    background: linear-gradient(135deg, rgba(139, 92, 246, 0.3), rgba(139, 92, 246, 0.1));
+    color: #a78bfa;
+}
+
+.admin-stat-icon.green {
+    background: linear-gradient(135deg, rgba(34, 197, 94, 0.3), rgba(34, 197, 94, 0.1));
+    color: #4ade80;
+}
+
+.admin-stat-icon.amber {
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.3), rgba(245, 158, 11, 0.1));
+    color: #fbbf24;
+}
+
+.admin-stat-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.admin-stat-label {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-bottom: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.admin-stat-value {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--text-primary);
+    line-height: 1.1;
+}
+
+.admin-stat-sub {
+    font-size: 11px;
+    color: var(--text-tertiary);
+    margin-top: 4px;
+}
+
+/* ─── 모델 카드 (호환성 유지) ──────────────────────── */
+
+.model-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+/* ─── 모델 테이블 확장 스타일 ──────────────────────── */
+
+/* 활성 모델 행 하이라이트 */
+.admin-table-wrapper tbody tr.active-row {
+    background: rgba(99, 102, 241, 0.06);
+}
+
+.admin-table-wrapper tbody tr.active-row:hover {
+    background: rgba(99, 102, 241, 0.10);
+}
+
+/* 상태 배지 */
+.model-status-badge {
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-weight: 600;
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--text-tertiary);
+}
+
+.model-status-badge.active {
+    background: rgba(99, 102, 241, 0.15);
+    color: #a78bfa;
+}
+
+/* 테이블 내 사용량 미니 게이지 */
+.table-usage-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.table-usage-bar {
+    height: 4px;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 2px;
+    overflow: hidden;
+    width: 100%;
+}
+
+.table-usage-fill {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 0.6s ease;
+    background: linear-gradient(90deg, #4ade80, #22c55e);
+}
+
+.table-usage-fill.warning {
+    background: linear-gradient(90deg, #fbbf24, #f59e0b);
+}
+
+.table-usage-fill.danger {
+    background: linear-gradient(90deg, #f87171, #ef4444);
+}
+
+/* 정렬 버튼 */
+.th-sort-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: none;
+    border: none;
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+    padding: 0;
+}
+
+.th-sort-btn:hover {
+    color: var(--text-primary);
+}
+
+.model-card {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    padding: 20px;
+    transition: all 0.2s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.model-card:hover {
+    border-color: rgba(255, 255, 255, 0.15);
+}
+
+.model-card.active {
+    border-color: rgba(99, 102, 241, 0.4);
+    background: rgba(99, 102, 241, 0.06);
+}
+
+.model-card.active::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--accent-primary), #818cf8);
+}
+
+.model-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+}
+
+.model-card-name {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.model-card-tier {
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.model-card-tier.free {
+    background: rgba(34, 197, 94, 0.15);
+    color: #4ade80;
+    border: 1px solid rgba(34, 197, 94, 0.2);
+}
+
+.model-card-tier.paid {
+    background: rgba(245, 158, 11, 0.15);
+    color: #fbbf24;
+    border: 1px solid rgba(245, 158, 11, 0.2);
+}
+
+.model-card-limits {
+    display: flex;
+    gap: 16px;
+    margin: 12px 0;
+}
+
+.model-card-limit {
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+.model-card-limit strong {
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+.model-card-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.model-card-actions button {
+    flex: 1;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-secondary);
+    transition: all 0.15s ease;
+}
+
+.model-card-actions button:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+}
+
+.model-card-actions button.primary {
+    background: var(--accent-primary);
+    border-color: var(--accent-primary);
+    color: #fff;
+}
+
+.model-card-actions button.primary:hover {
+    filter: brightness(1.1);
+}
+
+.model-card-actions button:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+/* ─── 사용량 게이지 ─────────────────────────────────── */
+
+.usage-gauge {
+    margin: 12px 0 8px;
+}
+
+.usage-gauge-bar {
+    height: 8px;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 4px;
+    overflow: hidden;
+    position: relative;
+}
+
+.usage-gauge-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.6s ease;
+    background: linear-gradient(90deg, #4ade80, #22c55e);
+}
+
+.usage-gauge-fill.warning {
+    background: linear-gradient(90deg, #fbbf24, #f59e0b);
+}
+
+.usage-gauge-fill.danger {
+    background: linear-gradient(90deg, #f87171, #ef4444);
+}
+
+.usage-gauge-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    color: var(--text-tertiary);
+    margin-top: 4px;
+}
+
+/* ─── 사용량 테이블 ────────────────────────────────── */
+
+.usage-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.usage-summary-item {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 8px;
+    padding: 14px;
+}
+
+.usage-summary-item .label {
+    font-size: 11px;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+}
+
+.usage-summary-item .value {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.usage-summary-item .sub {
+    font-size: 11px;
+    color: var(--text-tertiary);
+    margin-top: 2px;
+}
+
+/* ─── API 키 카드 ──────────────────────────────────── */
+
+.api-key-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 12px;
+}
+
+.api-key-card {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
+    padding: 16px;
+    transition: all 0.15s ease;
+}
+
+.api-key-card:hover {
+    border-color: rgba(255, 255, 255, 0.15);
+}
+
+.api-key-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+}
+
+.api-key-card-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.api-key-card-service {
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 6px;
+    background: rgba(99, 102, 241, 0.12);
+    color: #a78bfa;
+    font-weight: 500;
+}
+
+.api-key-card-key {
+    font-family: 'JetBrains Mono', 'SF Mono', monospace;
+    font-size: 13px;
+    color: var(--text-secondary);
+    background: rgba(0, 0, 0, 0.3);
+    padding: 8px 12px;
+    border-radius: 6px;
+    letter-spacing: 0.5px;
+    margin-bottom: 10px;
+}
+
+.api-key-card-date {
+    font-size: 11px;
+    color: var(--text-tertiary);
+}
+
+.api-key-card-actions {
+    display: flex;
+    gap: 6px;
+    margin-top: 10px;
+}
+
+.api-key-card-actions button {
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    cursor: pointer;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-secondary);
+    transition: all 0.15s ease;
+}
+
+.api-key-card-actions button:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+}
+
+.api-key-card-actions button.danger:hover {
+    background: rgba(239, 68, 68, 0.15);
+    color: #f87171;
+    border-color: rgba(239, 68, 68, 0.3);
+}
+
+/* ─── 추가 카드 (+ 버튼) ──────────────────────────── */
+
+.api-key-add-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 140px;
+    background: rgba(255, 255, 255, 0.02);
+    border: 2px dashed rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    cursor: pointer;
+    color: var(--text-secondary);
+    font-size: 13px;
+    transition: all 0.2s ease;
+}
+
+.api-key-add-card:hover {
+    border-color: var(--accent-primary);
+    color: var(--accent-primary);
+    background: rgba(99, 102, 241, 0.04);
+}
+
+/* ─── 모달 ─────────────────────────────────────────── */
+
+.admin-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.admin-modal {
+    background: var(--app-bg-alt);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 14px;
+    padding: 28px;
+    width: 90%;
+    max-width: 440px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+}
+
+.admin-modal h3 {
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--text-primary);
+}
+
+.admin-modal label {
+    display: block;
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-bottom: 6px;
+    font-weight: 500;
+}
+
+.admin-modal .input-group {
+    margin-bottom: 16px;
+}
+
+.admin-modal input {
+    width: 100%;
+    padding: 10px 12px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    color: var(--text-primary);
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.15s ease;
+}
+
+.admin-modal input:focus {
+    border-color: var(--accent-primary);
+}
+
+.admin-modal-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    margin-top: 24px;
+}
+
+.admin-modal-actions button {
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: all 0.15s ease;
+}
+
+/* ─── 섹션 제목 ───────────────────────────────────── */
+
+.admin-section-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 16px;
+}
+
+.admin-section-title svg {
+    color: var(--text-secondary);
+}
+
+/* ─── 테이블 래퍼 (사용자 목록용) ─────────────────── */
+
+.admin-table-wrapper {
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    border-radius: 10px;
+    overflow: hidden;
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.admin-table-wrapper table {
+    width: 100%;
+    text-align: left;
+    border-collapse: collapse;
+}
+
+.admin-table-wrapper thead tr {
+    background: rgba(255, 255, 255, 0.05);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.10);
+}
+
+.admin-table-wrapper th {
+    padding: 12px 16px;
+    font-weight: 500;
+    font-size: 11px;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+}
+
+.admin-table-wrapper td {
+    padding: 12px 16px;
+    font-size: 13px;
+}
+
+.admin-table-wrapper tbody tr {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    transition: background 0.15s ease;
+}
+
+.admin-table-wrapper tbody tr:hover {
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.admin-table-wrapper tbody tr:last-child {
+    border-bottom: none;
+}
+
+/* 페이지네이션 */
+.admin-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+    padding: 12px 16px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.admin-pagination span {
+    font-size: 12px;
+    color: var(--text-tertiary);
+    margin-right: 8px;
+}
+
+.admin-pagination button {
+    width: 30px;
+    height: 30px;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: var(--text-secondary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s ease;
+}
+
+.admin-pagination button:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.12);
+    color: var(--text-primary);
+}
+
+.admin-pagination button:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+/* ─── 역할 토글 ───────────────────────────────────── */
+
+.role-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s ease;
+}
+
+.role-toggle.admin {
+    background: rgba(99, 102, 241, 0.15);
+    color: #a78bfa;
+    border: 1px solid rgba(99, 102, 241, 0.25);
+}
+
+.role-toggle.admin:hover {
+    background: rgba(99, 102, 241, 0.25);
+}
+
+.role-toggle.user {
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--text-secondary);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.role-toggle.user:hover {
+    background: rgba(255, 255, 255, 0.12);
+}
+
+/* ─── 사용자 아바타 그라데이션 ──────────────────────── */
+
+.user-avatar {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 700;
+    color: #fff;
+    flex-shrink: 0;
+}
+
+/* 그라데이션 팔레트 — 사용자별 해시로 선택 */
+.user-avatar.gradient-0 {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+}
+
+.user-avatar.gradient-1 {
+    background: linear-gradient(135deg, #f83600, #f9d423);
+}
+
+.user-avatar.gradient-2 {
+    background: linear-gradient(135deg, #00b09b, #96c93d);
+}
+
+.user-avatar.gradient-3 {
+    background: linear-gradient(135deg, #a18cd1, #fbc2eb);
+}
+
+.user-avatar.gradient-4 {
+    background: linear-gradient(135deg, #ffecd2, #fcb69f);
+    color: #333;
+}
+
+.user-avatar.gradient-5 {
+    background: linear-gradient(135deg, #84fab0, #8fd3f4);
+    color: #333;
+}
+
+.user-avatar.gradient-6 {
+    background: linear-gradient(135deg, #fa709a, #fee140);
+}
+
+.user-avatar.gradient-7 {
+    background: linear-gradient(135deg, #a1c4fd, #c2e9fb);
+    color: #333;
+}
+
+/* ─── 빈 상태 ──────────────────────────────────────── */
+
+.admin-empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 48px 24px;
+    text-align: center;
+    color: var(--text-secondary);
+}
+
+.admin-empty-state svg {
+    margin-bottom: 12px;
+    opacity: 0.4;
+}
+
+.admin-empty-state p {
+    font-size: 14px;
+}
+
+/* ─── 설정 행 ──────────────────────────────────────── */
+
+.threshold-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 8px;
+    margin-top: 16px;
+}
+
+.threshold-row label {
+    font-size: 13px;
+    color: var(--text-secondary);
+    white-space: nowrap;
+}
+
+.threshold-row input[type="number"] {
+    width: 70px;
+    padding: 6px 8px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 6px;
+    color: var(--text-primary);
+    font-size: 14px;
+    text-align: center;
+    outline: none;
+}
+
+.threshold-row input[type="number"]:focus {
+    border-color: var(--accent-primary);
+}
+
+.threshold-row span {
+    font-size: 12px;
+    color: var(--text-tertiary);
+}
+
+/* ─── 프로바이더 배지 ──────────────────────────────── */
+
+.provider-badge {
+    font-size: 10px;
+    padding: 2px 7px;
+    border-radius: 6px;
+    font-weight: 600;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid;
+    letter-spacing: 0.3px;
+}
+
+/* ─── 모델 설명 ────────────────────────────────────── */
+
+.model-card-desc {
+    font-size: 12px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+    margin-bottom: 8px;
+}
+
+/* ─── 모델 API 키 연결 ─────────────────────────────── */
+
+.model-card-apikey {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 8px 0;
+}
+
+.model-card-apikey label {
+    font-size: 11px;
+    color: var(--text-tertiary);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+}
+
+.model-card-apikey select {
+    flex: 1;
+    padding: 4px 8px;
+    font-size: 11px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    color: var(--text-primary);
+    outline: none;
+}
+
+.model-card-apikey select:focus {
+    border-color: var(--accent-primary);
+}
+
+/* ─── 모델 추가 버튼 ──────────────────────────────── */
+
+.model-add-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    background: var(--accent-primary);
+    border: 1px solid var(--accent-primary);
+    color: #fff;
+    transition: all 0.15s ease;
+}
+
+.model-add-btn:hover {
+    filter: brightness(1.15);
+}
+
+/* ─── 시스템 프롬프트 편집기 ────────────────────────── */
+
+.prompt-editor {
+    margin-top: 16px;
+    padding: 14px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 8px;
+}
+
+.prompt-editor-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.prompt-editor-header h4 {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 0;
+}
+
+.prompt-editor-header button {
+    padding: 4px 10px;
+    border-radius: 5px;
+    font-size: 11px;
+    cursor: pointer;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.15s ease;
+}
+
+.prompt-editor-header button:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+}
+
+.prompt-textarea {
+    width: 100%;
+    min-height: 120px;
+    padding: 10px 12px;
+    background: rgba(0, 0, 0, 0.25);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    color: var(--text-primary);
+    font-size: 12px;
+    font-family: 'JetBrains Mono', 'SF Mono', monospace;
+    line-height: 1.6;
+    resize: vertical;
+    outline: none;
+    transition: border-color 0.15s ease;
+}
+
+.prompt-textarea:focus {
+    border-color: var(--accent-primary);
+}
+
+.prompt-preview {
+    font-size: 12px;
+    color: var(--text-tertiary);
+    line-height: 1.5;
+    font-style: italic;
+}
+
+/* ─── 파라미터 트윅 패널 ───────────────────────────── */
+
+.tweak-panel {
+    margin-top: 12px;
+    padding: 14px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 8px;
+}
+
+.tweak-panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.tweak-panel-header h4 {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 0;
+}
+
+.tweak-panel-header button {
+    padding: 4px 10px;
+    border-radius: 5px;
+    font-size: 11px;
+    cursor: pointer;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.15s ease;
+}
+
+.tweak-panel-header button:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+}
+
+.tweak-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+.tweak-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.tweak-item label {
+    font-size: 11px;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.tweak-item input[type="range"] {
+    width: 100%;
+    accent-color: var(--accent-primary);
+    height: 6px;
+}
+
+.tweak-item input[type="number"] {
+    width: 100%;
+    padding: 6px 8px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    color: var(--text-primary);
+    font-size: 13px;
+    outline: none;
+}
+
+.tweak-item input[type="number"]:focus {
+    border-color: var(--accent-primary);
+}
+
+.tweak-item span {
+    font-size: 12px;
+    color: var(--accent-primary);
+    font-weight: 600;
+    font-family: 'JetBrains Mono', monospace;
+}
+
+.tweak-summary {
+    font-size: 12px;
+    color: var(--text-tertiary);
+    line-height: 1.5;
+}
+
+/* ─── 모달 select 공통 ─────────────────────────────── */
+
+.admin-modal select {
+    width: 100%;
+    padding: 10px 12px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    color: var(--text-primary);
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.15s ease;
+    cursor: pointer;
+}
+
+.admin-modal select:focus {
+    border-color: var(--accent-primary);
+}
+
+.admin-modal select option {
+    background: var(--app-bg-alt);
+    color: var(--text-primary);
+}
+
+/* ============================================
+   API 연결 테스트 패널
+   ============================================ */
+
+.test-connection-panel {
+    margin-top: 0.75rem;
+    padding: 0.75rem;
+    background: rgba(0, 212, 255, 0.03);
+    border: 1px solid rgba(0, 212, 255, 0.12);
+    border-radius: 8px;
+}
+
+.test-connection-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+}
+
+.test-connection-header h4 {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    margin: 0;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.test-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.3rem 0.75rem;
+    font-size: 0.7rem;
+    font-weight: 600;
+    background: linear-gradient(135deg, #00d4ff 0%, #0099ff 100%);
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.test-btn:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 212, 255, 0.3);
+}
+
+.test-btn:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+.test-btn.testing {
+    background: linear-gradient(135deg, #555 0%, #777 100%);
+}
+
+.test-result {
+    margin-top: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    animation: fadeIn 0.3s ease;
+}
+
+.test-result.success {
+    background: rgba(34, 197, 94, 0.08);
+    border: 1px solid rgba(34, 197, 94, 0.2);
+}
+
+.test-result.error {
+    background: rgba(239, 68, 68, 0.08);
+    border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.test-result-header {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+}
+
+.test-result-header strong {
+    color: var(--text-primary);
+    font-size: 0.8rem;
+}
+
+.test-result-provider {
+    font-size: 0.65rem;
+    padding: 1px 6px;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--text-secondary);
+    text-transform: uppercase;
+}
+
+.test-result-time {
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    margin-left: auto;
+}
+
+.test-result-message {
+    margin-top: 0.25rem;
+    color: var(--text-secondary);
+    line-height: 1.4;
+}
+
+.test-result-snippet {
+    margin-top: 0.35rem;
+    padding: 0.3rem 0.5rem;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 4px;
+    overflow-x: auto;
+}
+
+.test-result-snippet code {
+    font-size: 0.65rem;
+    color: var(--text-primary);
+    white-space: pre-wrap;
+    word-break: break-all;
+}
+
+/* animate-spin 유틸리티 (Loader2 아이콘용) */
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.animate-spin {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-4px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+/* ─── 워크스페이스 태그 (MembershipCell) ───────────── */
+
+.ws-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 7px;
+    border-radius: 5px;
+    background: rgba(99, 102, 241, 0.10);
+    border: 1px solid rgba(99, 102, 241, 0.18);
+    font-size: 11px;
+    color: #a5b4fc;
+    white-space: nowrap;
+    transition: all 0.15s ease;
+}
+
+.ws-tag:hover {
+    background: rgba(99, 102, 241, 0.16);
+    border-color: rgba(99, 102, 241, 0.28);
+}
+
+.ws-tag-remove {
+    padding: 0;
+    border: none;
+    background: transparent;
+    color: #ef4444;
+    cursor: pointer;
+    opacity: 0;
+    line-height: 1;
+    transition: opacity 0.15s ease;
+}
+
+.ws-tag:hover .ws-tag-remove {
+    opacity: 0.6;
+}
+
+.ws-tag:hover .ws-tag-remove:hover {
+    opacity: 1;
+}
+
+.ws-tag-add {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2px 5px;
+    border-radius: 4px;
+    border: 1px dashed rgba(255, 255, 255, 0.15);
+    background: transparent;
+    color: var(--text-tertiary);
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.ws-tag-add:hover {
+    border-color: var(--accent-primary);
+    color: var(--accent-primary);
+    background: rgba(99, 102, 241, 0.06);
+}
+
+.ws-add-select {
+    font-size: 11px;
+    padding: 3px 6px;
+    background: var(--app-bg);
+    border: 1px solid var(--border-default);
+    border-radius: 4px;
+    color: var(--text-primary);
+    max-width: 140px;
+    outline: none;
+}
+
+.ws-add-select:focus {
+    border-color: var(--accent-primary);
+}
+
+.ws-add-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 3px;
+    border-radius: 4px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    line-height: 1;
+    transition: all 0.15s ease;
+}
+
+.ws-add-btn.confirm {
+    color: #22c55e;
+}
+
+.ws-add-btn.confirm:hover {
+    background: rgba(34, 197, 94, 0.12);
+}
+
+.ws-add-btn.cancel {
+    color: var(--text-tertiary);
+}
+
+.ws-add-btn.cancel:hover {
+    color: #ef4444;
+    background: rgba(239, 68, 68, 0.08);
+}
+
+
+/* ─── 어드민 탭 콘텐츠 (flex 기반 높이) ─────────────── */
+
+.admin-tab-content {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+}
+
+/* ─── 워크스페이스 탭 레이아웃 ───────────────────────── */
+
+.ws-split-container {
+    display: flex;
+    gap: 1rem;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.ws-panel {
+    flex: 1 1 50%;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
+    padding: 1rem;
+    overflow: hidden;
+}
+
+.ws-panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    flex-shrink: 0;
+}
+
+/* 정보 카드 */
+.ws-info-card {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    flex-shrink: 0;
+}
+
+.ws-meta-row {
+    display: flex;
+    gap: 16px;
+    margin-top: 10px;
+    font-size: 11px;
+    color: var(--text-tertiary);
+}
+
+.ws-meta-row span {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+/* 멤버 섹션 */
+.ws-member-section {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.ws-member-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    flex-shrink: 0;
+}
+
+.ws-member-header h4 {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+/* 빈 상태 */
+.ws-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 4rem 1rem;
+    color: var(--text-tertiary);
+    flex: 1;
+}
+
+.ws-empty p {
+    font-size: 14px;
+}
+
+/* 행 삭제 버튼 */
+.ws-row-delete {
+    padding: 4px;
+    border-radius: 4px;
+    border: none;
+    background: transparent;
+    color: #ef4444;
+    cursor: pointer;
+    opacity: 0.4;
+    line-height: 1;
+    transition: opacity 0.15s ease;
+}
+
+.ws-row-delete:hover {
+    opacity: 1;
+    background: rgba(239, 68, 68, 0.1);
+}
+
+/* 반응형 */
+@media (max-width: 900px) {
+    .ws-split-container {
+        flex-direction: column;
+        flex: none;
+        height: auto;
+        min-height: 600px;
+    }
+
+    .ws-panel {
+        flex: none;
+        height: 50vh;
+        min-height: 280px;
+    }
+}

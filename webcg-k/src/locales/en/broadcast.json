@@ -1,0 +1,47 @@
+{
+	"pageTitle": "Broadcast",
+	"pageSubtitle": "Manage projects, broadcast, and view action logs",
+	"cuesheetEditor": "Cuesheet Editor",
+	"searchPlaceholder": "Search projects...",
+	"filter": {
+		"allStatus": "All Status",
+		"draft": "Draft",
+		"ready": "Ready",
+		"live": "Live",
+		"ended": "Ended",
+		"completed": "Completed"
+	},
+	"table": {
+		"projectName": "Project Name",
+		"status": "Status",
+		"createdAt": "Created",
+		"modified": "Modified",
+		"items": "Items",
+		"actions": "Actions"
+	},
+	"empty": {
+		"noProjects": "No projects created",
+		"noMatch": "No projects match the search criteria",
+		"createHint": " to create a project."
+	},
+	"renderUrl": {
+		"title": "OBS Browser Source URL (click to copy)"
+	},
+	"guide": {
+		"title": "📖 Controller Guide",
+		"basicFlow": "Basic Flow",
+		"step1": "Click project row →",
+		"step1Bold": "Copy Renderer URL",
+		"step2": "Paste URL into OBS browser source",
+		"step3Bold": "\"Broadcast\"",
+		"step3": "click → Open controller",
+		"step4": "Select graphic from timeline and broadcast",
+		"shortcuts": "⌨️ Keyboard Shortcuts",
+		"keyArrows": "Move block boundary",
+		"keyUp": "Return to last broadcast",
+		"keySpace": "PGM Broadcast",
+		"keyDel": "Delete block/gap",
+		"keyCtrlArrows": "Jump to start/end",
+		"keyCtrlWheel": "Zoom in/out"
+	}
+}

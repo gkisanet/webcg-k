@@ -1,0 +1,69 @@
+{
+	"pageTitle": "Dashboard",
+	"pageDescription": "WebCG-K Broadcast Graphics System",
+	"projectBroadcast": "Broadcast",
+	"quickStart": {
+		"uploadImages": "Upload Images",
+		"uploadImagesDesc": "Logos, backgrounds, icons, etc.",
+		"createGraphics": "Create Graphics",
+		"createGraphicsDesc": "Subtitles, banners, etc.",
+		"editCuesheets": "Edit Cuesheets",
+		"editCuesheetsDesc": "Edit broadcast order"
+	},
+	"liveProjects": "Live Projects",
+	"noLiveProjects": "No projects currently broadcasting",
+	"recentProjects": "Recent Projects",
+	"noProjects": "No projects created yet.",
+	"createFromCuesheet": "Cuesheet Editor",
+	"createProjectHint": " to create a project.",
+	"aiCuesheet": {
+		"title": "AI Cuesheet",
+		"description": "Input research data and the AI will structure scene-by-scene text content and generate HTML/CSS graphics.",
+		"placeholder": "Enter news scripts or broadcast text here...",
+		"generate": "Design Cuesheet",
+		"generating": "AI is designing the broadcast structure...",
+		"result": "Designed Cuesheet Result",
+		"noResult": "AI-designed cuesheet structure will appear here after you enter text and click generate.",
+		"copySuccess": "Copied to clipboard.",
+		"copy": "Copy",
+		"modes": {
+			"api": "AI Direct",
+			"manual": "Manual (Copy & Paste)"
+		},
+		"steps": {
+			"system": "System Prompt",
+			"source": "Source Input",
+			"review": "Content Review"
+		},
+		"step1": {
+			"title": "1. System Prompt",
+			"copyPrompt": "Copy Prompt",
+			"copied": "Copied",
+			"hint": "Copy the prompt below to your LLM and provide the resulting JSON in the next step."
+		},
+		"stepSource": {
+			"title": "1. Enter Source Material",
+			"hint": "Paste your script, transcript, or research notes here. The AI will analyze the content and generate scene-by-scene text slots.",
+			"placeholder": "Paste your script or transcript here...",
+			"generate": "Generate Cuesheet",
+			"generating": "Generating..."
+		},
+		"sessionList": {
+			"title": "Session",
+			"newSession": "New Session",
+			"backToList": "Back to List",
+			"empty": "No AI cuesheet sessions yet.",
+			"emptyHint": "Create a new session to automatically design broadcast graphic scenes from your script.",
+			"expert": "Expert",
+			"status": "Status",
+			"scenes": "Scenes",
+			"matched": "Generated",
+			"updated": "Updated",
+			"deleteConfirm": "Delete this session?"
+		}
+	},
+	"graphicTagging": {
+		"title": "Graphic Tagging",
+		"description": "Tag HTML elements in graphic templates with data-semantic attributes for automatic AI content injection."
+	}
+}

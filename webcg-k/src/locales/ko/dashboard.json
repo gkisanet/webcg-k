@@ -1,0 +1,69 @@
+{
+	"pageTitle": "대시보드",
+	"pageDescription": "WebCG-K 방송 그래픽 시스템",
+	"projectBroadcast": "프로젝트 송출",
+	"quickStart": {
+		"uploadImages": "이미지 업로드",
+		"uploadImagesDesc": "로고, 배경, 아이콘 등",
+		"createGraphics": "그래픽 만들기",
+		"createGraphicsDesc": "자막, 배너 등 제작",
+		"editCuesheets": "큐시트 편집",
+		"editCuesheetsDesc": "송출 순서 편집"
+	},
+	"liveProjects": "송출중인 프로젝트",
+	"noLiveProjects": "현재 송출중인 프로젝트가 없습니다",
+	"recentProjects": "최근 프로젝트",
+	"noProjects": "아직 생성한 프로젝트가 없습니다.",
+	"createFromCuesheet": "큐시트 편집기",
+	"createProjectHint": "에서 프로젝트를 생성하세요.",
+	"aiCuesheet": {
+		"title": "AI 큐시트",
+		"description": "자료조사 데이터를 입력하면 AI가 씬별 텍스트 콘텐츠를 구조화하고, HTML/CSS 그래픽을 생성합니다.",
+		"placeholder": "여기에 뉴스 원고나 방송 텍스트를 입력하세요...",
+		"generate": "큐시트 설계하기",
+		"generating": "AI가 방송 구조를 설계 중입니다...",
+		"result": "설계된 큐시트 결과",
+		"noResult": "원고를 입력하고 생성을 클릭하면 AI가 설계한 큐시트 구조가 여기에 표시됩니다.",
+		"copySuccess": "클립보드에 복사되었습니다.",
+		"copy": "복사",
+		"modes": {
+			"api": "AI 다이렉트",
+			"manual": "매뉴얼 (복사 & 붙여넣기)"
+		},
+		"steps": {
+			"system": "시스템 프롬프트",
+			"source": "자료 입력",
+			"review": "콘텐츠 검토"
+		},
+		"step1": {
+			"title": "1. 시스템 프롬프트",
+			"copyPrompt": "프롬프트 복사",
+			"copied": "복사됨",
+			"hint": "아래 프롬프트를 복사하여 외부 LLM에 입력하고, 결과 JSON을 다음 단계에 붙여넣으세요."
+		},
+		"stepSource": {
+			"title": "1. 소스 자료 입력",
+			"hint": "뉴스 대본, 인터뷰 녹취록, 또는 취재 노트를 입력하세요. AI가 내용을 분석하여 적절한 텍스트 슬롯이 포함된 장면을 생성합니다.",
+			"placeholder": "여기에 스크립트나 원고를 입력하세요...",
+			"generate": "큐시트 생성하기",
+			"generating": "생성 중..."
+		},
+		"sessionList": {
+			"title": "세션",
+			"newSession": "새 세션",
+			"backToList": "목록으로",
+			"empty": "아직 AI 큐시트 세션이 없습니다.",
+			"emptyHint": "새 세션을 생성하면 AI가 원고로부터 방송 그래픽 장면을 자동 설계합니다.",
+			"expert": "출연진",
+			"status": "상태",
+			"scenes": "장면",
+			"matched": "생성됨",
+			"updated": "수정일",
+			"deleteConfirm": "이 세션을 삭제하시겠습니까?"
+		}
+	},
+	"graphicTagging": {
+		"title": "그래픽 태깅",
+		"description": "그래픽 템플릿의 HTML 요소에 data-semantic 어트리뷰트를 태깅하여 AI 콘텐츠를 자동 주입합니다."
+	}
+}

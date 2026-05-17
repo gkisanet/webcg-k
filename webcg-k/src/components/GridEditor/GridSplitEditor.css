@@ -1,0 +1,546 @@
+/* Grid Split Editor Styles */
+
+.grid-split-editor {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    background-color: var(--app-bg);
+}
+
+.grid-split-info {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    padding: 0.75rem 1rem;
+    background-color: var(--app-bg-alt);
+    border-bottom: 1px solid var(--border-subtle);
+}
+
+/* 툴 모드 선택 버튼 그룹 */
+.tool-mode-buttons {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem; /* 버튼 간의 간격을 넓힘 */
+    background-color: var(--app-bg-muted);
+    padding: 0.375rem; /* 여백을 조금 늘림 */
+    border-radius: 6px;
+    flex-shrink: 0; /* 부모 flex 컨테이너에서 줄어들지 않도록 방지 */
+}
+
+.tool-mode-buttons .tool-btn {
+    height: 32px; /* 버튼의 높이를 강제 고정하여 짝짝이 방지 */
+    box-sizing: border-box;
+    padding: 0 0.75rem;
+    font-size: 0.75rem;
+    line-height: 1;
+    border: none;
+    border-radius: 4px;
+    background-color: transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    font-weight: 500;
+    white-space: nowrap; /* 텍스트 줄바꿈 방지 */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.375rem; /* 아이콘과 텍스트 사이 간격도 약간 넓힘 */
+    flex-shrink: 0; /* 버튼이 강제로 수축되는 것 방지 */
+}
+
+.tool-mode-buttons .tool-btn:hover {
+    background-color: var(--bg-hover);
+    color: var(--text-primary);
+}
+
+.tool-mode-buttons .tool-btn.active {
+    background-color: var(--accent-primary);
+    color: #fff;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.grid-split-info .info-item {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    font-family: 'JetBrains Mono', monospace;
+}
+
+.grid-split-info .info-item.highlight {
+    color: var(--accent-primary);
+    font-weight: 600;
+}
+
+.grid-split-info .info-item.warning {
+    color: var(--accent-danger);
+}
+
+.grid-split-canvas {
+    flex: 1;
+    position: relative;
+    margin: 2rem auto;
+    max-width: calc(100% - 4rem);
+    max-height: calc(100% - 4rem);
+    background-color: #1a1a1a;
+    outline: 2px solid var(--border-default);
+    border-radius: 0;
+    overflow: hidden;
+    user-select: none;
+}
+
+/* 배경 참고 이미지 레이어 */
+.grid-split-bg-image {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    pointer-events: none;
+    z-index: 0;
+    transition: opacity 0.2s ease;
+}
+
+/* 배경 이미지 컨트롤 바 */
+.bg-image-controls {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.5rem 0.75rem;
+    background-color: rgba(0, 0, 0, 0.3);
+    border-radius: 6px;
+    border: 1px solid var(--border-subtle);
+}
+
+.bg-image-controls label {
+    font-size: 0.6875rem;
+    color: var(--text-tertiary);
+    white-space: nowrap;
+}
+
+.bg-image-controls input[type="range"] {
+    width: 80px;
+    height: 4px;
+    appearance: none;
+    background: var(--border-default);
+    border-radius: 2px;
+    outline: none;
+    cursor: pointer;
+}
+
+.bg-image-controls input[type="range"]::-webkit-slider-thumb {
+    appearance: none;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--accent-primary);
+    border: 2px solid #fff;
+    cursor: pointer;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+}
+
+.bg-image-upload-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.375rem 0.625rem;
+    font-size: 0.6875rem;
+    background: transparent;
+    border: 1px solid var(--border-default);
+    border-radius: 4px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+}
+
+.bg-image-upload-btn:hover {
+    background-color: var(--bg-hover);
+    color: var(--text-primary);
+    border-color: var(--accent-primary);
+}
+
+/* 배경 보이기/숨기기 토글 버튼 */
+.bg-image-toggle-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    background: transparent;
+    border: 1px solid var(--border-default);
+    border-radius: 4px;
+    color: var(--text-tertiary);
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.bg-image-toggle-btn:hover {
+    background-color: var(--bg-hover);
+    color: var(--text-primary);
+}
+
+.bg-image-toggle-btn.active {
+    color: var(--accent-primary);
+    border-color: var(--accent-primary);
+    background-color: rgba(0, 212, 255, 0.1);
+}
+
+/* 투명도 슬라이더 비활성 상태 */
+.bg-image-controls input[type="range"]:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+}
+
+.bg-image-remove-btn {
+    display: flex;
+    align-items: center;
+    padding: 0.375rem;
+    font-size: 0.6875rem;
+    background: transparent;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    border-radius: 4px;
+    color: var(--accent-danger);
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.bg-image-remove-btn:hover {
+    background-color: rgba(239, 68, 68, 0.1);
+    border-color: var(--accent-danger);
+}
+
+.bg-opacity-value {
+    font-size: 0.6875rem;
+    color: var(--accent-primary);
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 600;
+    min-width: 2.5em;
+    text-align: right;
+}
+
+/* 영역 */
+.grid-zone {
+    position: absolute;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(0, 212, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-sizing: border-box;
+    transition: background-color 0.15s;
+}
+
+.grid-zone:hover {
+    background-color: rgba(0, 212, 255, 0.1);
+}
+
+.zone-label {
+    font-size: 2rem;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.2);
+    pointer-events: none;
+}
+
+/* 분할선 */
+.split-line {
+    position: absolute;
+    background-color: var(--accent-primary);
+    z-index: 10;
+}
+
+.split-line.vertical {
+    width: 1.5px;
+    cursor: ew-resize;
+    transform: translateX(-50%);
+}
+
+.split-line.horizontal {
+    height: 1.5px;
+    cursor: ns-resize;
+    transform: translateY(-50%);
+}
+
+.split-line:hover,
+.split-line.selected {
+    background-color: var(--accent-danger);
+    box-shadow: 0 0 10px rgba(255, 100, 100, 0.6);
+}
+
+/* 히트 영역 (클릭하기 쉽게 유지) */
+.split-line::after {
+    content: '';
+    position: absolute;
+}
+
+.split-line.vertical::after {
+    top: 0;
+    bottom: 0;
+    left: 50%;
+    width: 14px;
+    transform: translateX(-50%);
+    cursor: ew-resize;
+}
+
+.split-line.horizontal::after {
+    left: 0;
+    right: 0;
+    top: 50%;
+    height: 14px;
+    transform: translateY(-50%);
+    cursor: ns-resize;
+}
+
+/* Trim 삭제 버튼 */
+.trim-delete-btn {
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #ff4757;
+    border: 2px solid #fff;
+    border-radius: 50%;
+    color: #fff;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    z-index: 20;
+    transform: translate(-50%, -50%);
+    transition: all 0.15s;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+}
+
+.split-line.vertical .trim-delete-btn {
+    left: 50%;
+}
+
+.split-line.horizontal .trim-delete-btn {
+    top: 50%;
+}
+
+.trim-delete-btn:hover {
+    background-color: #ff6b81;
+    transform: translate(-50%, -50%) scale(1.2);
+}
+
+.split-handle {
+    position: absolute;
+    background-color: #fff;
+    border-radius: 4px;
+    opacity: 0;
+    transition: opacity 0.15s;
+}
+
+.split-line.vertical .split-handle {
+    top: 50%;
+    left: 50%;
+    width: 12px;
+    height: 24px;
+    transform: translate(-50%, -50%);
+}
+
+.split-line.horizontal .split-handle {
+    top: 50%;
+    left: 50%;
+    width: 24px;
+    height: 12px;
+    transform: translate(-50%, -50%);
+}
+
+.split-line:hover .split-handle {
+    opacity: 1;
+}
+
+/* 미리보기 선 */
+.preview-line {
+    position: absolute;
+    pointer-events: none;
+    z-index: 5;
+}
+
+.preview-line.vertical {
+    width: 1px;
+    background: linear-gradient(to bottom,
+            transparent 0%,
+            rgba(0, 212, 255, 0.6) 10%,
+            rgba(0, 212, 255, 0.6) 90%,
+            transparent 100%);
+    transform: translateX(-50%);
+}
+
+.preview-line.horizontal {
+    height: 1px;
+    background: linear-gradient(to right,
+            transparent 0%,
+            rgba(0, 212, 255, 0.6) 10%,
+            rgba(0, 212, 255, 0.6) 90%,
+            transparent 100%);
+    transform: translateY(-50%);
+}
+
+/* 사분선 가이드라인 (50% 위치 점선) */
+.guideline {
+    position: absolute;
+    pointer-events: none;
+    z-index: 1;
+}
+
+.guideline.vertical {
+    width: 0;
+    height: 100%;
+    top: 0;
+    border-left: 1px dashed rgba(255, 255, 255, 0.15);
+    transform: translateX(-50%);
+}
+
+.guideline.horizontal {
+    height: 0;
+    width: 100%;
+    left: 0;
+    border-top: 1px dashed rgba(255, 255, 255, 0.15);
+    transform: translateY(-50%);
+}
+
+/* 전체화면 편집기 레이아웃 */
+.grid-editor-fullscreen {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    background-color: var(--app-bg);
+    z-index: 100;
+}
+
+.grid-editor-fullscreen-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.75rem 1rem;
+    background-color: var(--app-bg-alt);
+    border-bottom: 1px solid var(--border-default);
+}
+
+.grid-editor-fullscreen-header .back-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    background: transparent;
+    border: 1px solid var(--border-default);
+    border-radius: 6px;
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.grid-editor-fullscreen-header .back-btn:hover {
+    background-color: var(--app-bg-muted);
+    color: var(--text-primary);
+}
+
+.grid-editor-fullscreen-header .template-name-input {
+    flex: 1;
+    padding: 0.5rem 0.75rem;
+    background-color: var(--app-bg-muted);
+    border: 1px solid var(--border-subtle);
+    border-radius: 6px;
+    color: var(--text-primary);
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.grid-editor-fullscreen-header .template-name-input:focus {
+    outline: none;
+    border-color: var(--accent-primary);
+}
+
+.grid-editor-fullscreen-header .save-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.grid-editor-content {
+    flex: 1;
+    overflow: hidden;
+}
+
+/* 선택된 Zone 스타일 */
+.grid-zone.selected {
+    background-color: rgba(0, 212, 255, 0.25);
+    border: 2px solid var(--accent-primary);
+    box-shadow: inset 0 0 20px rgba(0, 212, 255, 0.3);
+}
+
+.grid-zone.selected .zone-label {
+    color: var(--accent-primary);
+    font-weight: 800;
+}
+
+/* Zone 내 크기 오버레이 */
+.zone-size-overlay {
+    position: absolute;
+    bottom: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: rgba(0, 0, 0, 0.8);
+    padding: 4px 10px;
+    border-radius: 4px;
+    pointer-events: none;
+}
+
+.zone-size-text {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--accent-primary);
+    font-family: 'JetBrains Mono', monospace;
+    white-space: nowrap;
+}
+
+/* 하단 선택된 Zone 정보 바 */
+.grid-split-zone-info {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    background-color: var(--app-bg-muted);
+    border-top: 1px solid var(--border-subtle);
+}
+
+.zone-info-label {
+    font-size: 0.75rem;
+    color: var(--text-tertiary);
+}
+
+.zone-info-value {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    font-family: 'JetBrains Mono', monospace;
+}
+
+.zone-info-value.highlight {
+    color: var(--accent-primary);
+}
+
+.zone-info-separator {
+    color: var(--border-default);
+}
+
+.zone-deselect-btn {
+    margin-left: auto;
+    padding: 0.375rem 0.75rem;
+    font-size: 0.75rem;
+    background: transparent;
+    border: 1px solid var(--border-default);
+    border-radius: 4px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.zone-deselect-btn:hover {
+    background-color: var(--app-bg-alt);
+    color: var(--text-primary);
+}

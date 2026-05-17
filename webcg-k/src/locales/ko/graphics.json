@@ -1,0 +1,17 @@
+{
+	"pageTitle": "그래픽 관리",
+	"pageSubtitle": "방송 그래픽 에셋을 관리합니다",
+	"tabs": {
+		"gallery": "갤러리",
+		"templates": "템플릿"
+	},
+	"create": "그래픽 생성",
+	"editGraphic": "그래픽 편집",
+	"preview": "미리보기",
+	"noGraphics": "등록된 그래픽이 없습니다",
+	"searchPlaceholder": "그래픽 검색...",
+	"viewMode": {
+		"grid": "그리드",
+		"list": "리스트"
+	}
+}

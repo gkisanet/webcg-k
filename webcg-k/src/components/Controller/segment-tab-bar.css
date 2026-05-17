@@ -1,0 +1,243 @@
+/**
+ * SegmentTabBar 스타일 — 방송 콘솔 Dark Void 아이덴티티 유지
+ *
+ * ■ Design Philosophy
+ *   - 탭 바 높이를 최소화(52px)하여 타임라인 공간을 보존
+ *   - 활성 탭은 accent-primary 하단 보더로 구분 (기존 controller-tab과 일관)
+ *   - onair 탭은 빨간 펄스 애니메이션으로 방송 중 시각 알림
+ *   - 30개+ 뉴스 아이템 대응: overflow-x 스크롤 + 화살표 버튼
+ */
+
+/* ─── 탭 바 컨테이너 ─────────────────────────────────────────── */
+.segment-tab-bar {
+  display: flex;
+  align-items: stretch;
+  background: var(--app-bg-elevated, #151515);
+  border-bottom: 1px solid var(--border-default, rgba(255, 255, 255, 0.08));
+  min-height: 52px;
+  max-height: 52px;
+  user-select: none;
+}
+
+/* ─── 스크롤 화살표 ──────────────────────────────────────────── */
+.seg-scroll-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  color: var(--text-tertiary, #666);
+  cursor: pointer;
+  transition: color 0.15s;
+}
+
+.seg-scroll-btn:hover {
+  color: var(--text-primary, #e0e0e0);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+/* ─── 탭 스크롤 영역 ─────────────────────────────────────────── */
+.seg-tab-scroll {
+  display: flex;
+  gap: 2px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  flex: 1;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
+}
+
+.seg-tab-scroll::-webkit-scrollbar {
+  display: none; /* Chrome/Safari */
+}
+
+/* ─── 개별 탭 ────────────────────────────────────────────────── */
+.seg-tab {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  padding: 4px 12px;
+  min-width: 100px;
+  max-width: 180px;
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--text-secondary, #999);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-size: 0.6875rem;
+  text-align: left;
+  position: relative;
+}
+
+.seg-tab:hover {
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-primary, #e0e0e0);
+}
+
+/* 활성 탭 */
+.seg-tab.active {
+  border-bottom-color: var(--accent-primary, #00d4ff);
+  background: rgba(0, 212, 255, 0.06);
+  color: var(--text-primary, #e0e0e0);
+}
+
+/* 송출 중(On-Air) 탭 — 빨간 펄스 */
+.seg-tab.onair {
+  border-bottom-color: #ef4444;
+  animation: segPulse 2s ease-in-out infinite;
+}
+
+@keyframes segPulse {
+  0%, 100% { background: rgba(239, 68, 68, 0.06); }
+  50% { background: rgba(239, 68, 68, 0.12); }
+}
+
+/* 완료된 탭 */
+.seg-tab.done {
+  opacity: 0.5;
+}
+
+.seg-tab.done .seg-tab-label {
+  text-decoration: line-through;
+}
+
+/* ─── 행 1: 순번 + 제목 + CG 수 배지 ────────────────────────── */
+.seg-tab-row1 {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.seg-tab-order {
+  font-size: 0.75rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.seg-tab-label {
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.seg-cg-count {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+  padding: 0 5px;
+  font-size: 0.5625rem;
+  font-weight: 700;
+  min-width: 16px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.seg-tab.active .seg-cg-count {
+  background: var(--accent-primary, #00d4ff);
+  color: #000;
+}
+
+/* ─── 행 2: 기자명 + 진행 상태 도트 ──────────────────────────── */
+.seg-tab-row2 {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.5625rem;
+  color: var(--text-tertiary, #666);
+}
+
+.seg-tab-reporter {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 60px;
+}
+
+/* ─── 진행 상태 도트 ─────────────────────────────────────────── */
+.seg-tab-status {
+  display: flex;
+  gap: 2px;
+  align-items: center;
+  font-size: 0.5rem;
+}
+
+.seg-tab-status .dot {
+  font-size: 0.5rem;
+  line-height: 1;
+}
+
+.seg-tab-status .dot.done {
+  color: var(--accent-success, #10b981);
+}
+
+.seg-tab-status .dot.onair {
+  color: #ef4444;
+  animation: dotBlink 1s ease-in-out infinite;
+}
+
+.seg-tab-status .dot.idle {
+  color: var(--text-tertiary, #666);
+}
+
+@keyframes dotBlink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+/* ─── NextSegmentHint Soft-prompt 펄스 ────────────────────────
+   ■ Why 펄스?
+     Soft-prompt 모드에서 세그먼트 완료 시,
+     탭을 전환하지 않으면서 "다음으로 가세요"라는
+     시각적 신호를 보내기 위한 주의 환기 애니메이션.
+     너무 강하면 방송 집중을 방해하므로 opacity 0.7~1.0 범위의
+     부드러운 펄스를 사용.
+*/
+.next-segment-hint--pulse {
+  animation: nextSegPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes nextSegPulse {
+  0%, 100% { opacity: 0.7; }
+  50% { opacity: 1; }
+}
+
+/* ─── 드래그 앤 드롭 ─────────────────────────────────────────── */
+.seg-tab.dragging {
+  opacity: 0.4;
+  cursor: grabbing;
+}
+
+.seg-tab.drag-over-left {
+  border-left: 2px solid var(--accent-primary, #00d4ff);
+}
+
+.seg-tab.drag-over-right {
+  border-right: 2px solid var(--accent-primary, #00d4ff);
+}
+
+/* ─── 세그먼트 밴드 활성 상태 ─────────────────────────────────── */
+/* ■ Why 활성 밴드 강조?
+     Playhead 위치에 따라 자동 활성화되는 세그먼트 밴드를
+     시각적으로 구분하여 운영자의 공간 인지(Spatial Awareness)를 높인다. */
+.segment-band--active {
+  box-shadow: inset 0 0 12px rgba(0, 212, 255, 0.15);
+}
+
+/* ─── 비활성 세그먼트 딤 오버레이 ─────────────────────────────── */
+/* ■ Why 딤?
+     블록을 완전히 숨기면 전체 맥락을 잃는다.
+     반투명 어둡게 처리로 "이 영역은 현재 포커스가 아님"을 표현하면서도
+     운영자가 전체 타임라인 구조를 파악할 수 있게 한다. */
+.segment-dim-overlay {
+  animation: segDimFadeIn 0.3s ease-out;
+}
+
+@keyframes segDimFadeIn {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
+}

@@ -1,0 +1,10 @@
+{
+	"pageTitle": "이미지 관리",
+	"pageSubtitle": "방송 그래픽에 사용할 이미지 에셋을 관리합니다",
+	"upload": "이미지 업로드",
+	"noImages": "등록된 이미지가 없습니다",
+	"searchPlaceholder": "이미지 검색...",
+	"fileName": "파일명",
+	"dimensions": "크기",
+	"fileSize": "용량"
+}

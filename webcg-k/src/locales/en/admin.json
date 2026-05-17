@@ -1,0 +1,47 @@
+{
+	"pageTitle": "Admin Panel",
+	"pageSubtitle": "System settings and user management",
+	"tabs": {
+		"users": "Users",
+		"aiModels": "AI Models",
+		"apiKeys": "API Keys"
+	},
+	"users": {
+		"title": "User Management",
+		"email": "Email",
+		"role": "Role",
+		"lastLogin": "Last Login",
+		"actions": "Actions",
+		"admin": "Admin",
+		"user": "User",
+		"makeAdmin": "Make Admin",
+		"removeAdmin": "Remove Admin"
+	},
+	"ai": {
+		"title": "AI Model Management",
+		"modelName": "Model Name",
+		"provider": "Provider",
+		"config": "Configuration",
+		"status": "Status",
+		"enabled": "Enabled",
+		"disabled": "Disabled",
+		"addModel": "Add Model",
+		"temperature": "Temperature",
+		"maxTokens": "Max Tokens",
+		"topP": "Top P",
+		"topK": "Top K",
+		"saveConfig": "Save Config"
+	},
+	"apiKeys": {
+		"title": "API Key Management",
+		"name": "Name",
+		"provider": "Provider",
+		"key": "API Key",
+		"addKey": "Add Key",
+		"showKey": "Show Key",
+		"hideKey": "Hide Key",
+		"copyKey": "Copy Key",
+		"deleteKey": "Delete Key",
+		"threshold": "Threshold"
+	}
+}

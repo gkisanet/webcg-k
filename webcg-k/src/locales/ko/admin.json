@@ -1,0 +1,47 @@
+{
+	"pageTitle": "관리자 패널",
+	"pageSubtitle": "시스템 설정 및 사용자 관리",
+	"tabs": {
+		"users": "사용자 관리",
+		"aiModels": "AI 모델",
+		"apiKeys": "API 키"
+	},
+	"users": {
+		"title": "사용자 관리",
+		"email": "이메일",
+		"role": "역할",
+		"lastLogin": "최근 로그인",
+		"actions": "작업",
+		"admin": "관리자",
+		"user": "일반 사용자",
+		"makeAdmin": "관리자 지정",
+		"removeAdmin": "관리자 해제"
+	},
+	"ai": {
+		"title": "AI 모델 관리",
+		"modelName": "모델명",
+		"provider": "제공자",
+		"config": "설정",
+		"status": "상태",
+		"enabled": "활성",
+		"disabled": "비활성",
+		"addModel": "모델 추가",
+		"temperature": "Temperature",
+		"maxTokens": "최대 토큰",
+		"topP": "Top P",
+		"topK": "Top K",
+		"saveConfig": "설정 저장"
+	},
+	"apiKeys": {
+		"title": "API 키 관리",
+		"name": "이름",
+		"provider": "제공자",
+		"key": "API 키",
+		"addKey": "키 추가",
+		"showKey": "키 표시",
+		"hideKey": "키 숨기기",
+		"copyKey": "키 복사",
+		"deleteKey": "키 삭제",
+		"threshold": "임계값"
+	}
+}
