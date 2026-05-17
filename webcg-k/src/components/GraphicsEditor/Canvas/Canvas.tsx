@@ -324,59 +324,78 @@ export function Canvas({
                     newHeight = resizing.elStartHeight + dy;
                 }
 
-                // 리사이즈 스냅 — collectSnapLines로 타겟 수집, 핸들별 개별 스냅
-                const SNAP_THRESHOLD = 8;
-                const activeVerticalGuides: number[] = [];
-                const activeHorizontalGuides: number[] = [];
+                // 🆕 Shift 비례 리사이즈 연산 (원 비율 고정 및 기타 쉐이프 비율 유지)
+                if (e.shiftKey) {
+                    const ratio = element.type === "ellipse" ? 1 : resizing.elStartWidth / resizing.elStartHeight;
 
-                const snapLines = collectSnapLines(
-                    elements,
-                    resizing.id,
-                    zones.map((z: { x: number; y: number; width: number; height: number }) => ({
-                        x: Math.round((z.x / 100) * canvasWidth),
-                        y: Math.round((z.y / 100) * canvasHeight),
-                        width: Math.round((z.width / 100) * canvasWidth),
-                        height: Math.round((z.height / 100) * canvasHeight),
-                    })),
-                    canvasWidth,
-                    canvasHeight,
-                );
+                    // 가로 길이를 기준 크기로 설정하여 세로 길이 동기화
+                    newHeight = newWidth / ratio;
 
-                for (const v of snapLines.vertical) {
-                    if (isWest) {
-                        if (Math.abs(newX - v) < SNAP_THRESHOLD) {
-                            newWidth += newX - v;
-                            newX = v;
-                            activeVerticalGuides.push(v);
-                        }
-                    }
-                    if (isEast) {
-                        if (Math.abs(newX + newWidth - v) < SNAP_THRESHOLD) {
-                            newWidth = v - newX;
-                            activeVerticalGuides.push(v);
-                        }
-                    }
-                }
-                for (const hItem of snapLines.horizontal) {
+                    // 기준 축이 변경됨에 따라, 리사이즈 중인 핸들 방향별로 위치 좌표(X, Y) 보정
                     if (isNorth) {
-                        if (Math.abs(newY - hItem) < SNAP_THRESHOLD) {
-                            newHeight += newY - hItem;
-                            newY = hItem;
-                            activeHorizontalGuides.push(hItem);
-                        }
+                        newY = resizing.elStartY + (resizing.elStartHeight - newHeight);
                     }
-                    if (isSouth) {
-                        if (Math.abs(newY + newHeight - hItem) < SNAP_THRESHOLD) {
-                            newHeight = hItem - newY;
-                            activeHorizontalGuides.push(hItem);
-                        }
+                    if (isWest) {
+                        newX = resizing.elStartX + (resizing.elStartWidth - newWidth);
                     }
-                }
 
-                setSnapGuides({
-                    vertical: [...new Set(activeVerticalGuides)],
-                    horizontal: [...new Set(activeHorizontalGuides)],
-                });
+                    // Shift 리사이즈 동작 중에는 자석 스냅선 억제
+                    setSnapGuides({ vertical: [], horizontal: [] });
+                } else {
+                    // 리사이즈 스냅 — collectSnapLines로 타겟 수집, 핸들별 개별 스냅
+                    const SNAP_THRESHOLD = 8;
+                    const activeVerticalGuides: number[] = [];
+                    const activeHorizontalGuides: number[] = [];
+
+                    const snapLines = collectSnapLines(
+                        elements,
+                        resizing.id,
+                        zones.map((z: { x: number; y: number; width: number; height: number }) => ({
+                            x: Math.round((z.x / 100) * canvasWidth),
+                            y: Math.round((z.y / 100) * canvasHeight),
+                            width: Math.round((z.width / 100) * canvasWidth),
+                            height: Math.round((z.height / 100) * canvasHeight),
+                        })),
+                        canvasWidth,
+                        canvasHeight,
+                    );
+
+                    for (const v of snapLines.vertical) {
+                        if (isWest) {
+                            if (Math.abs(newX - v) < SNAP_THRESHOLD) {
+                                newWidth += newX - v;
+                                newX = v;
+                                activeVerticalGuides.push(v);
+                            }
+                        }
+                        if (isEast) {
+                            if (Math.abs(newX + newWidth - v) < SNAP_THRESHOLD) {
+                                newWidth = v - newX;
+                                activeVerticalGuides.push(v);
+                            }
+                        }
+                    }
+                    for (const hItem of snapLines.horizontal) {
+                        if (isNorth) {
+                            if (Math.abs(newY - hItem) < SNAP_THRESHOLD) {
+                                newHeight += newY - hItem;
+                                newY = hItem;
+                                activeHorizontalGuides.push(hItem);
+                            }
+                        }
+                        if (isSouth) {
+                            if (Math.abs(newY + newHeight - hItem) < SNAP_THRESHOLD) {
+                                newHeight = hItem - newY;
+                                activeHorizontalGuides.push(hItem);
+                            }
+                        }
+                    }
+
+                    setSnapGuides({
+                        vertical: [...new Set(activeVerticalGuides)],
+                        horizontal: [...new Set(activeHorizontalGuides)],
+                    });
+                }
 
                 // 최소 크기 보장
                 if (newWidth < 10) {
@@ -1298,8 +1317,7 @@ export function Canvas({
                 onClick={handleCanvasClick}
                 onMouseMove={handleMouseMove}
                 onMouseUp={handleMouseUp}
-                onMouseLeave={handleMouseUp}
-            >
+                onDragStart={(e) => e.preventDefault()}
                 {/* 배경 - 클릭 시 선택 해제 */}
                 <rect
                     x={0}

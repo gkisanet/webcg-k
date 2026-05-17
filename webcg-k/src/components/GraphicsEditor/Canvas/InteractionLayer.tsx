@@ -16,20 +16,9 @@
 import type { GraphicElement } from "@/routes/dashboard/studio/graphics/$graphicId";
 import type { RefObject } from "react";
 
-const HANDLE_SIZE = 8;
-
-// PowerPoint 스타일: 코너는 정사각형, 엣지는 얇은 직사각형
-const CORNER_HANDLE = {
-  width: HANDLE_SIZE,
-  height: HANDLE_SIZE,
-  borderRadius: 2,
-};
-
-const EDGE_HANDLE = {
-  width: 4,
-  height: HANDLE_SIZE,
-  borderRadius: 1,
-};
+const CORNER_SIZE = 14;
+const EDGE_WIDTH = 12;
+const EDGE_HEIGHT = 4;
 
 interface HandleDef {
   handle: string;
@@ -38,20 +27,69 @@ interface HandleDef {
   left: string | number;
   width: number;
   height: number;
-  borderRadius: number;
+  isCorner: boolean;
+  borderStyle?: React.CSSProperties;
 }
 
 const HANDLES: HandleDef[] = [
-  // 코너 — 정사각형 핸들
-  { handle: "nw-resize", cursor: "nw-resize", top: -CORNER_HANDLE.height / 2, left: -CORNER_HANDLE.width / 2, ...CORNER_HANDLE },
-  { handle: "ne-resize", cursor: "ne-resize", top: -CORNER_HANDLE.height / 2, left: `calc(100% - ${CORNER_HANDLE.width / 2}px)`, ...CORNER_HANDLE },
-  { handle: "se-resize", cursor: "se-resize", top: `calc(100% - ${CORNER_HANDLE.height / 2}px)`, left: `calc(100% - ${CORNER_HANDLE.width / 2}px)`, ...CORNER_HANDLE },
-  { handle: "sw-resize", cursor: "sw-resize", top: `calc(100% - ${CORNER_HANDLE.height / 2}px)`, left: -CORNER_HANDLE.width / 2, ...CORNER_HANDLE },
-  // 엣지 — 얇은 직사각형 핸들
-  { handle: "n-resize", cursor: "n-resize", top: -EDGE_HANDLE.height / 2, left: "50%", width: 20, height: EDGE_HANDLE.height, borderRadius: EDGE_HANDLE.borderRadius },
-  { handle: "s-resize", cursor: "s-resize", top: `calc(100% - ${EDGE_HANDLE.height / 2}px)`, left: "50%", width: 20, height: EDGE_HANDLE.height, borderRadius: EDGE_HANDLE.borderRadius },
-  { handle: "e-resize", cursor: "e-resize", top: "50%", left: `calc(100% - ${EDGE_HANDLE.width / 2}px)`, width: EDGE_HANDLE.width, height: 20, borderRadius: EDGE_HANDLE.borderRadius },
-  { handle: "w-resize", cursor: "w-resize", top: "50%", left: -EDGE_HANDLE.width / 2, width: EDGE_HANDLE.width, height: 20, borderRadius: EDGE_HANDLE.borderRadius },
+  // 1. 코너 - 세련된 Figma/방송 장비용 L자형 꺾쇠(Corner Brackets) 핸들
+  {
+    handle: "nw-resize",
+    cursor: "nw-resize",
+    top: 0,
+    left: 0,
+    width: CORNER_SIZE,
+    height: CORNER_SIZE,
+    isCorner: true,
+    borderStyle: {
+      borderTop: "2.5px solid #00d4ff",
+      borderLeft: "2.5px solid #00d4ff",
+    },
+  },
+  {
+    handle: "ne-resize",
+    cursor: "ne-resize",
+    top: 0,
+    left: "100%",
+    width: CORNER_SIZE,
+    height: CORNER_SIZE,
+    isCorner: true,
+    borderStyle: {
+      borderTop: "2.5px solid #00d4ff",
+      borderRight: "2.5px solid #00d4ff",
+    },
+  },
+  {
+    handle: "se-resize",
+    cursor: "se-resize",
+    top: "100%",
+    left: "100%",
+    width: CORNER_SIZE,
+    height: CORNER_SIZE,
+    isCorner: true,
+    borderStyle: {
+      borderBottom: "2.5px solid #00d4ff",
+      borderRight: "2.5px solid #00d4ff",
+    },
+  },
+  {
+    handle: "sw-resize",
+    cursor: "sw-resize",
+    top: "100%",
+    left: 0,
+    width: CORNER_SIZE,
+    height: CORNER_SIZE,
+    isCorner: true,
+    borderStyle: {
+      borderBottom: "2.5px solid #00d4ff",
+      borderLeft: "2.5px solid #00d4ff",
+    },
+  },
+  // 2. 엣지 - 가로/세로 방향에 맞춰 정교하게 설계된 미니 캡슐 슬릿 핸들
+  { handle: "n-resize", cursor: "n-resize", top: 0, left: "50%", width: EDGE_WIDTH, height: EDGE_HEIGHT, isCorner: false },
+  { handle: "s-resize", cursor: "s-resize", top: "100%", left: "50%", width: EDGE_WIDTH, height: EDGE_HEIGHT, isCorner: false },
+  { handle: "e-resize", cursor: "e-resize", top: "50%", left: "100%", width: EDGE_HEIGHT, height: EDGE_WIDTH, isCorner: false },
+  { handle: "w-resize", cursor: "w-resize", top: "50%", left: 0, width: EDGE_HEIGHT, height: EDGE_WIDTH, isCorner: false },
 ];
 
 export interface DragGhostData {
@@ -147,7 +185,7 @@ export function InteractionLayer({
             pointerEvents: "none",
           }}
         >
-          {HANDLES.map(({ handle, cursor, top, left, width, height, borderRadius }) => (
+          {HANDLES.map(({ handle, cursor, top, left, width, height, isCorner, borderStyle }) => (
             <div
               key={handle}
               onMouseDown={(e) => {
@@ -161,14 +199,23 @@ export function InteractionLayer({
                 left,
                 width,
                 height,
-                backgroundColor: "#fff",
-                border: "1.5px solid #00d4ff",
-                borderRadius,
                 cursor,
                 pointerEvents: "auto",
                 zIndex: 20,
                 transform: "translate(-50%, -50%)",
-                boxShadow: "0 0 0 1px rgba(0,0,0,0.3)",
+                // L자형 코너 꺾쇠와 변 알약 캡슐의 세련된 조건부 디자인
+                ...(isCorner
+                  ? {
+                      backgroundColor: "transparent",
+                      boxSizing: "border-box",
+                      ...borderStyle,
+                    }
+                  : {
+                      backgroundColor: "#fff",
+                      border: "1.5px solid #00d4ff",
+                      borderRadius: "3px",
+                      boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
+                    }),
               }}
             />
           ))}
