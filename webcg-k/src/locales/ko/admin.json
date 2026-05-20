@@ -129,7 +129,11 @@
 		"testResultSuccess": "성공",
 		"testResultFail": "실패",
 		"cancel": "취소",
-		"save": "저장"
+		"save": "저장",
+		"provider": "제공처",
+		"modelIdPlaceholder": "예: gpt-4o-mini",
+		"modelDisplayNamePlaceholder": "예: GPT-4o Mini",
+		"addModelFail": "모델 추가 실패"
 	},
 	"apiKeysTab": {
 		"title": "API 키 관리",
@@ -145,7 +149,8 @@
 		"service": "서비스",
 		"key": "API 키 *",
 		"keyPlaceholder": "API 키를 입력하세요",
-		"save": "저장"
+		"save": "저장",
+		"saveKeyFail": "API 키 저장 실패"
 	},
 	"roles": {
 		"system_admin": "시스템 관리자",

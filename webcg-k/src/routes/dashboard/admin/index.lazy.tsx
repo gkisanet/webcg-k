@@ -160,7 +160,7 @@ function AdminPage() {
 			queryClient.invalidateQueries({ queryKey: ["admin_ai_models"] });
 		} catch (err) {
 			console.error("[Admin] 모델 추가 실패:", err);
-			alert("모델 추가 실패");
+			alert(t("aiTab.addModelFail"));
 		}
 	}, [modelForm, queryClient]);
 
@@ -219,7 +219,7 @@ function AdminPage() {
 			queryClient.invalidateQueries({ queryKey: ["admin_api_keys"] });
 		} catch (err) {
 			console.error("[Admin] API 키 저장 실패:", err);
-			alert("API 키 저장 실패");
+			alert(t("apiKeysTab.saveKeyFail"));
 		}
 	}, [user, apiKeyForm, queryClient]);
 
@@ -371,12 +371,12 @@ function AdminPage() {
 						</div>
 						<div className="input-group">
 							<label>{t("aiTab.thModelName")} ID *</label>
-							<Input type="text" placeholder="예: gpt-4o-mini" value={modelForm.model_id}
+							<Input type="text" placeholder={t("aiTab.modelIdPlaceholder")} value={modelForm.model_id}
 								onChange={(e) => setModelForm((f) => ({ ...f, model_id: e.target.value }))} />
 						</div>
 						<div className="input-group">
 							<label>{t("apiKeysTab.name")}</label>
-							<Input type="text" placeholder="예: GPT-4o Mini" value={modelForm.display_name}
+							<Input type="text" placeholder={t("aiTab.modelDisplayNamePlaceholder")} value={modelForm.display_name}
 								onChange={(e) => setModelForm((f) => ({ ...f, display_name: e.target.value }))} />
 						</div>
 						<div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>

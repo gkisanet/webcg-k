@@ -129,7 +129,11 @@
 		"testResultSuccess": "Success",
 		"testResultFail": "Fail",
 		"cancel": "Cancel",
-		"save": "Save"
+		"save": "Save",
+		"provider": "Provider",
+		"modelIdPlaceholder": "e.g., gpt-4o-mini",
+		"modelDisplayNamePlaceholder": "e.g., GPT-4o Mini",
+		"addModelFail": "Failed to add model"
 	},
 	"apiKeysTab": {
 		"title": "API Key Management",
@@ -145,7 +149,8 @@
 		"service": "Service",
 		"key": "API Key *",
 		"keyPlaceholder": "Enter API Key",
-		"save": "Save"
+		"save": "Save",
+		"saveKeyFail": "Failed to save API key"
 	},
 	"roles": {
 		"system_admin": "System Administrator",

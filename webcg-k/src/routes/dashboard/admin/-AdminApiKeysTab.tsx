@@ -4,6 +4,7 @@
  */
 
 import { Key, Plus, Trash2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { ApiKey } from "./-adminTypes";
@@ -37,10 +38,12 @@ export function AdminApiKeysTab({
 	setApiKeyForm,
 	saveApiKey,
 }: AdminApiKeysTabProps) {
+	const { t, i18n } = useTranslation("admin");
+
 	return (
 		<>
 			<h3 className="admin-section-title" style={{ marginBottom: 16 }}>
-				<Key size={16} /> API 키 관리
+				<Key size={16} /> {t("apiKeysTab.title")}
 			</h3>
 
 			<div className="api-key-cards">
@@ -57,19 +60,21 @@ export function AdminApiKeysTab({
 						</div>
 						<div className="api-key-card-key">{maskKey(k.encrypted_key)}</div>
 						<div className="api-key-card-date">
-							등록: {new Date(k.created_at).toLocaleDateString("ko-KR")}
+							{t("apiKeysTab.registered")} {new Date(k.created_at).toLocaleDateString(i18n.language === "ko" ? "ko-KR" : "en-US")}
 						</div>
 						<div className="api-key-card-actions">
 							{deleteConfirm === k.id ? (
 								<>
 									<Button variant="destructive" size="sm" onClick={() => deleteApiKey(k.id)}>
-										삭제 확인
+										{t("apiKeysTab.deleteConfirm")}
 									</Button>
-									<Button variant="ghost" size="sm" onClick={() => setDeleteConfirm(null)}>취소</Button>
+									<Button variant="ghost" size="sm" onClick={() => setDeleteConfirm(null)}>
+										{t("apiKeysTab.cancel")}
+									</Button>
 								</>
 							) : (
 								<Button variant="destructive" size="sm" onClick={() => setDeleteConfirm(k.id)}>
-									<Trash2 size={12} /> 삭제
+									<Trash2 size={12} /> {t("apiKeysTab.delete")}
 								</Button>
 							)}
 						</div>
@@ -79,14 +84,14 @@ export function AdminApiKeysTab({
 				{/* 추가 카드 */}
 				<button className="api-key-add-card" onClick={() => setShowApiKeyModal(true)}>
 					<Plus size={24} />
-					API 키 추가
+					{t("apiKeysTab.addKeyCard")}
 				</button>
 			</div>
 
 			{apiKeys.length === 0 && (
 				<div className="admin-empty-state" style={{ marginTop: 20 }}>
 					<Key size={32} />
-					<p>등록된 API 키가 없습니다.</p>
+					<p>{t("apiKeysTab.noKeys")}</p>
 				</div>
 			)}
 
@@ -94,14 +99,14 @@ export function AdminApiKeysTab({
 			{showApiKeyModal && (
 				<div className="admin-modal-overlay" onClick={() => setShowApiKeyModal(false)}>
 					<div className="admin-modal" onClick={(e) => e.stopPropagation()}>
-						<h3><Key size={18} /> API 키 추가</h3>
+						<h3><Key size={18} /> {t("apiKeysTab.addKey")}</h3>
 						<div className="input-group">
-							<label>이름 *</label>
-							<Input type="text" placeholder="예: Gemini API Key" value={apiKeyForm.name}
+							<label>{t("apiKeysTab.name")}</label>
+							<Input type="text" placeholder={t("apiKeysTab.namePlaceholder")} value={apiKeyForm.name}
 								onChange={(e) => setApiKeyForm((f) => ({ ...f, name: e.target.value }))} />
 						</div>
 						<div className="input-group">
-							<label>서비스</label>
+							<label>{t("apiKeysTab.service")}</label>
 							<select value={apiKeyForm.service}
 								onChange={(e) => setApiKeyForm((f) => ({ ...f, service: e.target.value }))}>
 								{SERVICE_OPTIONS.map((s) => (
@@ -110,13 +115,17 @@ export function AdminApiKeysTab({
 							</select>
 						</div>
 						<div className="input-group">
-							<label>API 키 *</label>
-							<Input type="password" placeholder="API 키를 입력하세요" value={apiKeyForm.key}
+							<label>{t("apiKeysTab.key")}</label>
+							<Input type="password" placeholder={t("apiKeysTab.keyPlaceholder")} value={apiKeyForm.key}
 								onChange={(e) => setApiKeyForm((f) => ({ ...f, key: e.target.value }))} />
 						</div>
 						<div className="admin-modal-actions">
-							<Button variant="secondary" onClick={() => setShowApiKeyModal(false)}>취소</Button>
-							<Button onClick={saveApiKey} disabled={!apiKeyForm.name || !apiKeyForm.key}>저장</Button>
+							<Button variant="secondary" onClick={() => setShowApiKeyModal(false)}>
+								{t("apiKeysTab.cancel")}
+							</Button>
+							<Button onClick={saveApiKey} disabled={!apiKeyForm.name || !apiKeyForm.key}>
+								{t("apiKeysTab.save")}
+							</Button>
 						</div>
 					</div>
 				</div>
@@ -124,3 +133,4 @@ export function AdminApiKeysTab({
 		</>
 	);
 }
+
