@@ -938,14 +938,14 @@ ${buildRoleGraphicPromptFragment()}
 - explainer_caption: 시청자의 이해를 돕는 부연설명 자막입니다. 하단 또는 중앙에 안정적으로 배치하고, 텍스트 박스는 읽기 쉬운 1~3줄 설명문을 담도록 설계하세요.
 - stat_visual: 수치가 있는 경우에만 사용합니다. 외부 라이브러리 없이 SVG/HTML/CSS로 bar, donut, comparison, timeline, pictogram 중 하나를 직접 구성하세요. 3D 차트, 의미 없는 원형 장식, 과도한 그라데이션은 금지합니다.
 
-## 배경 투명도 (★ 필수 — OBS 오버레이 호환)
-**"fullscreen"이 아닌 모든 zone은 배경이 완전히 투명해야 합니다.**
-OBS에서 방송 그래픽(Broadcast Graphics)을 영상 위에 오버레이로 합성하기 위해 필수입니다.
+## 배경 투명도 (★ 절대 필수 — OBS 오버레이 호환)
+**"fullscreen"이 아닌 모든 zone은 배경이 반드시 완전히 투명해야 합니다. (body, #overlay { background: transparent !important; })**
+실제 방송 송출 및 OBS에서 방송 그래픽(Broadcast Graphics)을 실시간 영상 위에 오버레이로 합성하기 위한 핵심 사항입니다.
 - "bottom_bar", "top_bar", "center", "left_third":
-  - body 또는 #overlay에 \`background: transparent !important;\` 설정
-  - 개별 텍스트 컨테이너는 반투명 배경(예: \`rgba(0,0,0,0.7)\`)을 사용해 가독성 확보
-  - 그래픽 외부 영역이 영상을 가리면 안 됨
-- "fullscreen"만 예외: 전체 화면을 덮는 용도이므로 불투명 배경 허용
+  - body 또는 #overlay 요소를 불투명하게 만들지 마세요. 반드시 \`background: transparent !important;\`로 투명화해야 합니다.
+  - 개별 텍스트 컨테이너(예: 자막 박스, 라벨)는 반투명 배경(예: \`rgba(15, 23, 42, 0.85)\`, \`backdrop-filter: blur(8px)\`)을 사용하여 가독성을 확보하세요.
+  - 그래픽 외부 영역이 투명하지 않으면 실시간 영상이 가려지는 대형 방송 사고가 발생합니다.
+- "fullscreen"만 예외: 전체 화면을 덮는 연출이므로 불투명 배경을 허용합니다.
 
 ## Theme: CSS Custom Properties (★ 강제)
 **모든 색상과 타이포그래피는 반드시 CSS custom properties로 지정하세요.**
@@ -1305,6 +1305,16 @@ export function buildAiCuesheetOverlayArtifacts({
 }: BuildAiCuesheetOverlayArtifactsParams): AiCuesheetOverlayArtifacts {
   const replicantDefaults: Record<string, string> = {};
   const properties: Record<string, any> = {};
+
+  // 1. 비-풀스크린 방송 그래픽(Broadcast Graphics) 투명 배경 완벽성 강제 안전 장치
+  const isFullscreen = scene.text_slots.every((s) => s.zone_hint === "fullscreen");
+  let finalCss = css;
+  if (!isFullscreen) {
+    if (!css.includes("background: transparent !important")) {
+      finalCss = css + "\n\n/* [Safety Defense] 방송 그래픽 투명성 강제 안전 장치 */\nbody, #overlay { background: transparent !important; }\n";
+    }
+  }
+
   const bindingManifest: AiCuesheetBindingManifestEntry[] = scene.text_slots.map((slot, slotIdx) => {
     const slotId = slot.id || buildSceneSlotId(scene.order, slotIdx);
     const displayValue = slot.display_value ?? slot.value;
@@ -1343,7 +1353,7 @@ export function buildAiCuesheetOverlayArtifacts({
   return {
     sourceCode: {
       html,
-      css,
+      css: finalCss,
       js: buildSlotUpdaterJs(replicantDefaults),
     },
     dashboardSchema: { properties },

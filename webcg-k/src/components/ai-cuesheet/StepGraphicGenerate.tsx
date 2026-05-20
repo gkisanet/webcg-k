@@ -8,7 +8,7 @@
 import { useState, useCallback, useRef, useMemo, useEffect } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import {
-  ChevronLeft, Check, Wand2, Paintbrush, RefreshCw, XCircle, ExternalLink,
+  ChevronLeft, Check, Wand2, Paintbrush, RefreshCw, XCircle, ExternalLink, Info,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -48,6 +48,7 @@ export function StepGraphicGenerate({
 }: StepGraphicGenerateProps) {
   const navigate = useNavigate();
   const [activeSceneIdx, setActiveSceneIdx] = useState(0);
+  const [rightTab, setRightTab] = useState<"info" | "themes">("info");
   const [modifyPrompt, setModifyPrompt] = useState("");
   const [themeFeedback, setThemeFeedback] = useState<{ text: string; type: "error" | "success" } | null>(null);
   const iframeRef = useRef<HTMLIFrameElement>(null);
@@ -395,45 +396,156 @@ ${css}
           </div>
         </div>
 
-        {/* Right: Theme Panel */}
-        <div className="w-56 shrink-0 flex flex-col gap-2">
-          <div className="text-[11px] font-semibold text-[var(--text-secondary)] uppercase tracking-wide">
-            Themes
+        {/* Right: Info / Theme Panel */}
+        <div className="w-80 shrink-0 flex flex-col gap-3 bg-[var(--bg-secondary)] border border-[var(--border-primary)] rounded-xl p-3 min-h-0">
+          {/* Slick Segment Tabs */}
+          <div className="flex bg-[var(--app-bg)] p-1 rounded-lg border border-[var(--border-primary)] shrink-0">
+            <button
+              onClick={() => setRightTab("info")}
+              className={cn(
+                "flex-1 py-1.5 rounded-md text-xs font-medium transition-all flex items-center justify-center gap-1",
+                rightTab === "info"
+                  ? "bg-[var(--bg-primary)] text-[var(--text-primary)] shadow-sm"
+                  : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
+              )}
+            >
+              <Info size={11} />
+              <span>Scene Info</span>
+            </button>
+            <button
+              onClick={() => setRightTab("themes")}
+              className={cn(
+                "flex-1 py-1.5 rounded-md text-xs font-medium transition-all flex items-center justify-center gap-1",
+                rightTab === "themes"
+                  ? "bg-[var(--bg-primary)] text-[var(--text-primary)] shadow-sm"
+                  : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
+              )}
+            >
+              <Paintbrush size={11} />
+              <span>Themes</span>
+            </button>
           </div>
 
-          {Object.keys(extractedThemes).length === 0 ? (
-            <p className="text-[11px] text-[var(--text-muted)] leading-relaxed">
-              Generate a graphic first, then click "Extract Theme" to save its color palette.
-              <br /><br />
-              Apply saved themes to other scenes for visual consistency.
-            </p>
-          ) : (
-            <div className="space-y-2 overflow-y-auto">
-              {Object.entries(extractedThemes).map(([id, theme]) => (
-                <div
-                  key={id}
-                  className="p-2.5 rounded-lg bg-[var(--app-bg)] border border-[var(--border-primary)]"
-                >
-                  <div className="flex gap-1 mb-1.5">
-                    {[theme.colors.primary, theme.colors.accent, theme.colors.background, theme.colors.text.main].map((c, ci) => (
-                      <div key={ci} className="w-5 h-5 rounded ring-1 ring-white/10" style={{ backgroundColor: c }} />
+          <div className="flex-1 overflow-y-auto min-h-0">
+            {rightTab === "info" ? (
+              <div className="space-y-4 pr-1 text-left">
+                {/* Basic Meta */}
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center text-[11px] text-[var(--text-muted)] border-b border-[var(--border-primary)] pb-1.5">
+                    <span>Scene Order</span>
+                    <span className="font-semibold text-[var(--text-primary)]">#{activeScene.order}</span>
+                  </div>
+                  {activeScene.graphic_type && (
+                    <div className="flex justify-between items-center text-[11px] text-[var(--text-muted)] border-b border-[var(--border-primary)] pb-1.5">
+                      <span>Type</span>
+                      <span className="px-1.5 py-0.5 rounded-md text-[10px] bg-blue-500/10 text-blue-400 font-mono">
+                        {activeScene.graphic_type}
+                      </span>
+                    </div>
+                  )}
+                  <div className="flex justify-between items-center text-[11px] text-[var(--text-muted)] border-b border-[var(--border-primary)] pb-1.5">
+                    <span>Duration</span>
+                    <span className="font-mono text-[var(--text-secondary)]">{activeScene.duration}s</span>
+                  </div>
+                </div>
+
+                {/* Trigger */}
+                <div className="space-y-1">
+                  <div className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-wider">Trigger Timing</div>
+                  <div className="p-2 rounded-lg bg-[var(--app-bg)] border border-[var(--border-primary)] text-xs text-[var(--text-primary)] leading-relaxed">
+                    {activeScene.trigger}
+                  </div>
+                </div>
+
+                {/* Graphic Intent */}
+                <div className="space-y-1">
+                  <div className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-wider">Design Intent</div>
+                  <div className="p-2 rounded-lg bg-[var(--app-bg)] border border-[var(--border-primary)] text-xs text-[var(--text-secondary)] leading-relaxed">
+                    {activeScene.graphic_intent}
+                  </div>
+                </div>
+
+                {/* Text Slots */}
+                <div className="space-y-2">
+                  <div className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-wider">Text Slots ({activeScene.text_slots.length})</div>
+                  <div className="space-y-2">
+                    {activeScene.text_slots.map((slot, sIdx) => {
+                      const displayVal = slot.display_value ?? slot.value;
+                      return (
+                        <div key={sIdx} className="p-2 rounded-lg bg-[var(--app-bg)] border border-[var(--border-primary)] space-y-1.5 text-left">
+                          <div className="flex justify-between items-center flex-wrap gap-1">
+                            <span className="px-1.5 py-0.5 rounded text-[9px] bg-gray-500/10 text-gray-400 font-mono">
+                              {slot.semantic_role}
+                            </span>
+                            <div className="flex gap-1">
+                              <span className="px-1 py-0.2 rounded text-[8px] bg-blue-500/5 text-blue-400 font-mono">
+                                {slot.zone_hint}
+                              </span>
+                              <span className={cn(
+                                "px-1 py-0.2 rounded text-[8px] font-mono",
+                                slot.style_hint === "emphasis" ? "bg-amber-500/10 text-amber-400" :
+                                slot.style_hint === "muted" ? "bg-gray-500/5 text-gray-500" : "bg-gray-500/5 text-gray-400"
+                              )}>
+                                {slot.style_hint}
+                              </span>
+                              <span className="px-1 py-0.2 rounded text-[8px] bg-red-500/5 text-red-400 font-mono">
+                                imp:{slot.importance}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="text-[11px] text-[var(--text-primary)] font-medium leading-relaxed bg-[var(--bg-secondary)] p-1.5 rounded border border-[var(--border-primary)] break-all">
+                            {displayVal}
+                          </div>
+                          {slot.context && (
+                            <div className="text-[9px] text-[var(--text-muted)] leading-relaxed italic bg-black/10 p-1 rounded">
+                              💡 Context: {slot.context}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              // Themes
+              <div className="space-y-3">
+                {Object.keys(extractedThemes).length === 0 ? (
+                  <p className="text-[11px] text-[var(--text-muted)] leading-relaxed text-left">
+                    Generate a graphic first, then click "Extract Theme" to save its color palette.
+                    <br /><br />
+                    Apply saved themes to other scenes for visual consistency.
+                  </p>
+                ) : (
+                  <div className="space-y-2">
+                    {Object.entries(extractedThemes).map(([id, theme]) => (
+                      <div
+                        key={id}
+                        className="p-2.5 rounded-lg bg-[var(--app-bg)] border border-[var(--border-primary)] text-left"
+                      >
+                        <div className="flex gap-1 mb-1.5">
+                          {[theme.colors.primary, theme.colors.accent, theme.colors.background, theme.colors.text.main].map((c, ci) => (
+                            <div key={ci} className="w-5 h-5 rounded ring-1 ring-white/10" style={{ backgroundColor: c }} />
+                          ))}
+                        </div>
+                        <div className="text-[10px] text-[var(--text-muted)] mb-1.5">
+                          {theme.typography.fontFamily} · r={theme.layout.borderRadius}
+                        </div>
+                        <Button
+                          size="sm" variant="ghost"
+                          className="w-full text-[10px] h-6"
+                          onClick={() => handleGenerate(activeSceneIdx, id)}
+                          disabled={activeState?.status === "generating"}
+                        >
+                          Apply to Scene
+                        </Button>
+                      </div>
                     ))}
                   </div>
-                  <div className="text-[10px] text-[var(--text-muted)] mb-1.5">
-                    {theme.typography.fontFamily} · r={theme.layout.borderRadius}
-                  </div>
-                  <Button
-                    size="sm" variant="ghost"
-                    className="w-full text-[10px] h-6"
-                    onClick={() => handleGenerate(activeSceneIdx, id)}
-                    disabled={activeState?.status === "generating"}
-                  >
-                    Apply to Scene
-                  </Button>
-                </div>
-              ))}
-            </div>
-          )}
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
