@@ -27,9 +27,11 @@ export function StepSourceInput({
       </div>
 
       {parseError && (
-        <div className="flex items-start gap-2 p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-xs">
-          <XCircle size={14} className="shrink-0 mt-0.5" />
-          <span className="whitespace-pre-wrap">{parseError}</span>
+        <div className="flex flex-col gap-2 p-3.5 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-xs">
+          <div className="flex items-start gap-2">
+            <XCircle size={14} className="shrink-0 mt-0.5" />
+            <span className="whitespace-pre-wrap font-medium">{parseError}</span>
+          </div>
         </div>
       )}
 
@@ -40,7 +42,7 @@ export function StepSourceInput({
         className="flex-1 min-h-[200px] p-3 rounded-lg bg-[var(--app-bg)] border border-[var(--border-primary)] text-[var(--text-primary)] text-xs leading-relaxed resize-y placeholder:text-[var(--text-muted)]"
       />
 
-      <div className="flex justify-end shrink-0">
+      <div className="flex justify-end gap-2 shrink-0">
         <Button size="sm" onClick={onGenerate} disabled={!sourceMaterial.trim() || isGenerating}>
           {isGenerating ? (
             <><RefreshCw size={14} className="animate-spin mr-1.5" /> {t("aiCuesheet.stepSource.generating")}</>
@@ -52,3 +54,4 @@ export function StepSourceInput({
     </div>
   );
 }
+

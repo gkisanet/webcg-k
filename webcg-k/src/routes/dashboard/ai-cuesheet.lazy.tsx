@@ -226,6 +226,7 @@ function AiCuesheetWizardView() {
   }, []);
 
   // ─── Local snapshot restore (reload/back safety before DB session exists) ───
+  const [isSnapshotRestored, setIsSnapshotRestored] = useState(false);
 
   useEffect(() => {
     if (initialSessionId || isNew !== "1") return;
@@ -235,8 +236,40 @@ function AiCuesheetWizardView() {
     dispatch({ type: "RESTORE_SESSION", data: snapshot });
     setMode(snapshot.mode);
     setSaveStatus("saved");
-    showToast("이전 AI 큐시트 작업 스냅샷을 복원했습니다.", "success");
+
+    const dismissed = sessionStorage.getItem("webcgk:ai-cuesheet:restore-banner-dismissed");
+    if (dismissed !== "true") {
+      setIsSnapshotRestored(true);
+    }
+
+    const toastShown = sessionStorage.getItem("webcgk:ai-cuesheet:restore-toast-shown");
+    if (toastShown !== "true") {
+      showToast("이전 AI 큐시트 작업 스냅샷을 복원했습니다.", "success");
+      sessionStorage.setItem("webcgk:ai-cuesheet:restore-toast-shown", "true");
+    }
   }, [initialSessionId, isNew, showToast]);
+
+  const handleDismissBanner = useCallback(() => {
+    setIsSnapshotRestored(false);
+    sessionStorage.setItem("webcgk:ai-cuesheet:restore-banner-dismissed", "true");
+  }, []);
+
+  const handleResetSnapshot = useCallback(() => {
+    if (!window.confirm("이전 세션 스냅샷을 완전히 삭제하고, 처음부터 다시 새로 작성하시겠습니까?")) return;
+
+    clearLocalWizardSnapshot();
+    setIsSnapshotRestored(false);
+    sessionStorage.setItem("webcgk:ai-cuesheet:restore-banner-dismissed", "true");
+    sessionStorage.removeItem("webcgk:ai-cuesheet:restore-toast-shown");
+
+    // 초기화 상태로 복원
+    dispatch({
+      type: "RESTORE_SESSION",
+      data: createInitialState(mode, buildSystemPrompt())
+    });
+    setSaveStatus("idle");
+    showToast("이전 스냅샷이 성공적으로 초기화되었습니다.", "success");
+  }, [mode, showToast]);
 
   // ─── Session resume ────────────────────────────────────────
 
@@ -568,6 +601,42 @@ function AiCuesheetWizardView() {
         )}>
           <XCircle size={13} className="shrink-0" />
           {toastMessage.text}
+        </div>
+      )}
+
+      {/* Snapshot Restoration Alert Banner */}
+      {isSnapshotRestored && (
+        <div className="shrink-0 mb-4 p-4 rounded-xl border border-blue-500/30 bg-blue-950/20 backdrop-blur-md flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+          <div className="flex items-start gap-2.5">
+            <Sparkles size={16} className="text-blue-400 shrink-0 mt-0.5" />
+            <div>
+              <p className="font-semibold text-blue-300">
+                임시 저장된 이전 작업 스냅샷이 복원되었습니다.
+              </p>
+              <p className="text-[var(--text-secondary)] mt-0.5 leading-relaxed">
+                브라우저 로컬 저장소(localStorage)에 남아있던 데이터입니다. 다른 PC와의 동기화 문제가 있거나, 
+                현재 PC에서 <strong>&quot;scenes 배열을 추출할 수 없습니다&quot;</strong> 등의 오류가 발생한다면, 
+                이전의 오염된 임시 스냅샷 데이터를 비우고 처음부터 새로 시작하시는 것을 권장합니다.
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={handleDismissBanner}
+              className="text-xs h-8 px-3 text-[var(--text-secondary)] hover:text-[var(--text-primary)] border-[var(--border-primary)]"
+            >
+              닫기
+            </Button>
+            <Button
+              size="sm"
+              onClick={handleResetSnapshot}
+              className="text-xs h-8 px-3 bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-400 hover:text-red-300 transition-all font-medium"
+            >
+              스냅샷 초기화 및 새로 시작
+            </Button>
+          </div>
         </div>
       )}
 
