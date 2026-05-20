@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef } from "react";
 import { supabase } from "../lib/supabase";
 import { createLogger } from "../lib/logger";
+import { sendRealtimeBroadcast } from "../lib/realtimeBroadcast";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 
 const log = createLogger("[Realtime]");
@@ -61,10 +62,8 @@ export function useRealtimeChannel(
 				log.warn("채널이 아직 준비되지 않았습니다:", channelName);
 				return;
 			}
-			await channelRef.current.send({
-				type: "broadcast",
-				event,
-				payload,
+			await sendRealtimeBroadcast(channelRef.current, event, payload, {
+				restFallback: true,
 			});
 		},
 		[channelName],

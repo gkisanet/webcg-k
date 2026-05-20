@@ -59,7 +59,7 @@ export interface TimelineBlockData {
 	trackId: number;
 	startPosition: number;
 	width: number;
-	source_type: "image" | "graphic" | "template";
+	source_type: "image" | "graphic" | "template" | "overlay" | "whiteboard";
 	source_id: string;
 	data: any;
 	// ─── 역추적 필드 (핫 수정 / NRCS 변경 알림용) ───
@@ -97,7 +97,7 @@ export interface BroadcastItemPayload {
 	trackId?: number;
 	color?: string;
 	transitionIn?: "cut" | "fade";
-	sourceType?: "image" | "graphic" | "template" | "overlay";
+	sourceType?: "image" | "graphic" | "template" | "overlay" | "whiteboard";
 	sourceData?: {
 		elements?: any[];
 		canvasWidth?: number;
@@ -111,6 +111,18 @@ export interface BroadcastItemPayload {
 		/** AI Cuesheet overlay — HTML+CSS for direct iframe rendering */
 		html?: string;
 		css?: string;
+		js?: string;
+		payload?: {
+			html?: string;
+			css?: string;
+			js?: string;
+		};
+		source_code?: {
+			html?: string;
+			css?: string;
+			js?: string;
+		};
+		whiteboardId?: string;
 	};
 }
 

@@ -6,9 +6,10 @@
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Star, Trash2, Loader2, Layers, Bot } from "lucide-react";
-import { fetchMyGallery, toggleGalleryFavorite, removeFromGallery } from "../../services/overlayApiService";
+import { fetchMyGallery, toggleGalleryFavorite, removeFromGallery, updateOverlayTemplateVisibility } from "../../services/overlayApiService";
 import { GraphicPreviewRenderer } from "../GraphicPreviewRenderer";
 import type { OverlayGalleryItem } from "../../lib/overlayTypes";
+import { VisibilityToggle } from "../Common/VisibilityToggle";
 
 interface OverlayGalleryProps {
     onSelectForSession?: (templateId: string) => void;
@@ -28,6 +29,17 @@ export function OverlayGallery({ onSelectForSession }: OverlayGalleryProps) {
         if (filter === "favorites") return item.is_favorite;
         return true;
     });
+
+    // 가시성 토글
+    async function handleVisibilityToggle(templateId: string, nextVis: string) {
+        try {
+            await updateOverlayTemplateVisibility(templateId, nextVis as "private" | "workspace" | "public");
+            queryClient.invalidateQueries({ queryKey: ["overlayGallery"] });
+            queryClient.invalidateQueries({ queryKey: ["overlay_templates"] });
+        } catch (e) {
+            console.error("Failed to update visibility", e);
+        }
+    }
 
     // 즐겨찾기 토글
     async function handleToggleFavorite(item: OverlayGalleryItem) {
@@ -151,18 +163,27 @@ export function OverlayGallery({ onSelectForSession }: OverlayGalleryProps) {
                             </div>
 
                             {/* 액션 */}
-                            <div className="gallery-card-actions">
-                                {onSelectForSession && !isSemantic && (
-                                    <button onClick={() => onSelectForSession(item.template_id)}>
-                                        ▶️ 세션에 추가
+                            <div className="gallery-card-actions" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                                <div style={{ display: "flex", gap: "8px" }}>
+                                    {onSelectForSession && !isSemantic && (
+                                        <button onClick={() => onSelectForSession(item.template_id)}>
+                                            ▶️ 세션에 추가
+                                        </button>
+                                    )}
+                                    <button onClick={() => handleToggleFavorite(item)}>
+                                        <Star size={12} fill={item.is_favorite ? "#fbbf24" : "none"} color={item.is_favorite ? "#fbbf24" : "currentColor"} />
                                     </button>
+                                    <button onClick={() => handleDelete(item)} style={{ color: "#f87171" }}>
+                                        <Trash2 size={12} />
+                                    </button>
+                                </div>
+                                {tpl && (
+                                    <VisibilityToggle
+                                        visibility={tpl.visibility || "workspace"}
+                                        onToggle={(nextVis) => handleVisibilityToggle(tpl.id, nextVis)}
+                                        size={14}
+                                    />
                                 )}
-                                <button onClick={() => handleToggleFavorite(item)}>
-                                    <Star size={12} fill={item.is_favorite ? "#fbbf24" : "none"} color={item.is_favorite ? "#fbbf24" : "currentColor"} />
-                                </button>
-                                <button onClick={() => handleDelete(item)} style={{ color: "#f87171" }}>
-                                    <Trash2 size={12} />
-                                </button>
                             </div>
                         </div>
                     );

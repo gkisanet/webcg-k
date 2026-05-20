@@ -43,7 +43,6 @@ export function SceneReviewList({ scenes, className }: SceneReviewListProps) {
 // ─── Scene Card ─────────────────────────────────────────────────────
 
 function SceneReviewCard({ scene, index }: { scene: SceneContent; index: number }) {
-  const { t } = useTranslation("dashboard");
   const [expanded, setExpanded] = useState(false);
 
   const slots = scene.text_slots ?? [];

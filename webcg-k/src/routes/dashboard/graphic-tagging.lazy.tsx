@@ -12,7 +12,8 @@ import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { ArrowLeft, Check, Eye, EyeOff, Tag, X, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import type { SceneContent, TextSlot, SemanticRole } from "@/lib/aiCuesheetTypes";
+import { SEMANTIC_ROLE_DEFS } from "@/lib/semanticRoleDefs";
+import type { SceneContent, SemanticRole } from "@/lib/aiCuesheetTypes";
 
 export const Route = createLazyFileRoute("/dashboard/graphic-tagging")({
   component: GraphicTaggingPage,
@@ -47,15 +48,7 @@ function saveSceneData(data: TaggingSceneData): void {
 
 // ─── Semantic Role definitions ───────────────────────────────────
 
-const SEMANTIC_ROLES: { role: SemanticRole; label: string; color: string }[] = [
-  { role: "name", label: "이름", color: "bg-cyan-500/20 text-cyan-400 border-cyan-500/40" },
-  { role: "subtitle", label: "부제목", color: "bg-blue-500/20 text-blue-400 border-blue-500/40" },
-  { role: "affiliation", label: "소속", color: "bg-indigo-500/20 text-indigo-400 border-indigo-500/40" },
-  { role: "title", label: "제목", color: "bg-purple-500/20 text-purple-400 border-purple-500/40" },
-  { role: "stat", label: "통계", color: "bg-amber-500/20 text-amber-400 border-amber-500/40" },
-  { role: "quote", label: "인용", color: "bg-green-500/20 text-green-400 border-green-500/40" },
-  { role: "label", label: "태그", color: "bg-pink-500/20 text-pink-400 border-pink-500/40" },
-];
+const SEMANTIC_ROLES = SEMANTIC_ROLE_DEFS;
 
 // ─── Page ───────────────────────────────────────────────────────
 

@@ -1,88 +1,90 @@
-# Renderer Resolution & Scaling Guide
+# 렌더러 해상도 처리 가이드
 
-> **Audience**: Broadcast operators and developers looking to understand the playout resolution pathways within OBS and vMix browser sources.
-
----
-
-## 1. Architectural Overview
-
-```
-OBS Browser Source (1920×1080 or 3840×2160)
-  └─ Web View: /render?sessionId=xxx&resolution=1080p
-       └─ render.tsx (100vw × 100vh full screen — CSS scale removed)
-            ├─ GraphicPreviewRenderer (Native SVG viewBox scaling)
-            │    └─ viewBox + geometricPrecision ➔ Pixel-perfect rendering
-            └─ AnimatedGraphicRenderer (DOM + ResizeObserver self-scaling)
-                 └─ Detect viewport dimensions ➔ apply CSS scale only on internal wrappers
-```
+> **대상 독자**: 본 프로젝트의 렌더러가 OBS/vMix 브라우저 소스에서 어떻게 해상도를 처리하는지 이해하고자 하는 운용자/개발자
 
 ---
 
-## 2. Scaling Pipelines
+## 1. 아키텍처 개요
 
-### 2.1 Native SVG Scaling (GraphicPreviewRenderer Path)
+```
+OBS 브라우저 소스 (1920×1080 또는 3840×2160)
+  └─ 웹 페이지 로드: /render?sessionId=xxx&resolution=1080p
+       └─ render.tsx (100vw × 100vh 풀스크린 — CSS scale 없음)
+            ├─ GraphicPreviewRenderer (SVG viewBox 네이티브 스케일링)
+            │    └─ viewBox + geometricPrecision → 픽셀 퍼펙트 렌더링
+            └─ AnimatedGraphicRenderer (DOM + ResizeObserver 자체 스케일링)
+                 └─ 부모 크기 감지 → 내부 좌표계 래퍼에서 scale 적용
+```
+
+---
+
+## 2. 스케일링 파이프라인
+
+### 2.1 단일 SVG 네이티브 스케일링 (GraphicPreviewRenderer 경로)
 
 > [!IMPORTANT]
-> **Double-scaling patterns that combine SVG viewBox mapping and global CSS scaling have been deleted.**
-> CSS scaling multiplies sub-pixel rounding errors defined at base layouts. This rounding discrepancy causes visible font shifting (jitter) on larger playout screens.
+> **이전 아키텍처의 "CSS transform: scale() + SVG viewBox 이중 스케일링"은 제거되었습니다.**
+> CSS scale은 1배율 레이아웃의 sub-pixel 반올림 오차를 배수만큼 증폭시켜
+> 텍스트 시프트(jitter)를 유발하는 안티패턴이었습니다.
 
 ```
 ┌──────────────────────────────────────┐
-│  render.tsx Container: 100vw × 100vh │ ➔ Viewport dimension provided by OBS = Output target resolution
+│  render.tsx 컨테이너: 100vw × 100vh  │  ← OBS가 제공하는 뷰포트 = 최종 출력 해상도
 │  ┌──────────────────────────────┐    │
-│  │      SVG viewBox             │    │ ➔ Virtual canvas bounds: 0,0 to 1920,1080
-│  │      width="100%"            │    │ ➔ Maps directly to active viewports (zero CSS scale)
+│  │      SVG viewBox             │    │  ← 가상 좌표계: 0,0 ~ 1920,1080
+│  │      width="100%"            │    │  ← 뷰포트에 네이티브 매핑 (CSS scale 없음)
 │  │      height="100%"           │    │
-│  │      geometricPrecision ✅   │    │ ➔ Disables pixel-snapping font hinting
+│  │      geometricPrecision ✅   │    │  ← 폰트 힌팅 비활성화
 │  └──────────────────────────────┘    │
 └──────────────────────────────────────┘
 ```
 
-**Underlying Mechanics:**
-- The root DOM element of `render.tsx` spans `100vw × 100vh` to fill the available browser viewport.
-- The `viewBox="0 0 1920 1080"` and `preserveAspectRatio="xMidYMid meet"` properties map the virtual vector space **directly to the output resolution viewport** without intermediate CSS transforms.
-- Vector paths are rasterized by the browser engine to fit the actual pixel count, ensuring crisp rendering at any resolution.
+**동작 원리:**
+- `render.tsx`의 루트 컨테이너는 `100vw × 100vh`로 뷰포트 전체를 차지
+- SVG `viewBox="0 0 1920 1080"` + `preserveAspectRatio="xMidYMid meet"`가
+  가상 좌표계를 **출력 해상도에 직접 매핑** (중간 CSS 변환 없음)
+- 브라우저의 SVG 엔진이 최종 픽셀 수에 맞춰 벡터를 래스터라이즈 → **항상 선명**
 
-### 2.2 DOM-Self Scaling (AnimatedGraphicRenderer Path)
+### 2.2 DOM 자체 스케일링 (AnimatedGraphicRenderer 경로)
 
-Animated HTML templates that rely on standard `div` elements and CSS keyframe motions cannot use native SVG viewBox mappings. 
-Instead, **the component uses a `ResizeObserver` to evaluate active viewport heights and widths**, calculating an internal CSS scale factor:
+AnimatedGraphicRenderer는 HTML div + CSS animation 기반이므로 SVG viewBox의 혜택이 없습니다.
+대신 **컴포넌트 내부에서 ResizeObserver로 부모 크기를 감지**하여 자체 scale을 계산합니다.
 
 ```typescript
-// Inside AnimatedGraphicRenderer.tsx
+// AnimatedGraphicRenderer.tsx 내부
 const containerRef = useRef<HTMLDivElement>(null);
 const [selfScale, setSelfScale] = useState(1);
 
 useEffect(() => {
     const observer = new ResizeObserver((entries) => {
         const { width: parentW, height: parentH } = entries[0].contentRect;
-        const sx = parentW / canvasWidth;   // Viewport width ÷ base layout width
-        const sy = parentH / canvasHeight;  // Viewport height ÷ base layout height
-        setSelfScale(Math.min(sx, sy));     // Calculates scales using standard aspect ratio constraints
+        const sx = parentW / canvasWidth;   // 뷰포트 너비 ÷ 캔버스 너비
+        const sy = parentH / canvasHeight;  // 뷰포트 높이 ÷ 캔버스 높이
+        setSelfScale(Math.min(sx, sy));     // contain 모드
     });
     observer.observe(containerRef.current!);
     return () => observer.disconnect();
 }, [canvasWidth, canvasHeight]);
 ```
 
-**Underlying Structure:**
+**구조:**
 ```
-render.tsx (100vw × 100vh viewport)
+render.tsx (100vw × 100vh)
   └─ AnimatedGraphicRenderer (width: 100%, height: 100%)
-       └─ Inner Coordinates Wrapper (canvasWidth × canvasHeight px)
-            ├─ transform: scale(selfScale)   ➔ Calculated dynamically by ResizeObserver
-            ├─ translate(-50%, -50%)          ➔ Centers the graphics canvas
-            └─ Children elements (absolute positioning with absolute px offsets)
+       └─ 내부 좌표계 래퍼 (canvasWidth × canvasHeight px)
+            ├─ transform: scale(selfScale)  ← ResizeObserver가 계산
+            ├─ translate(-50%, -50%)         ← 중앙 정렬
+            └─ 자식 요소들 (position: absolute, left/top px)
 ```
 
-### 2.3 Scaling Flowchart
+### 2.3 스케일링 흐름도
 
 ```mermaid
 graph LR
-    A["OBS Viewport<br/>3840×2160"] --> B{"Renderer Engine?"}
-    B -->|"SVG (Static)"| C["Native SVG viewBox<br/>Scaling with<br/>geometricPrecision"]
-    B -->|"DOM (Animated)"| D["ResizeObserver<br/>Calculates Internal<br/>CSS scale"]
-    C --> E["Target Playout Output<br/>3840×2160 ✅"]
+    A["OBS 뷰포트<br/>3840×2160"] --> B{"렌더러 타입?"}
+    B -->|"SVG (정적)"| C["SVG viewBox<br/>네이티브 스케일링<br/>geometricPrecision"]
+    B -->|"DOM (애니메이션)"| D["ResizeObserver<br/>자체 scale 계산"]
+    C --> E["최종 픽셀 출력<br/>3840×2160 ✅"]
     D --> E
 
     style A fill:#1e3a5f,stroke:#4a9eff,color:#fff
@@ -91,55 +93,56 @@ graph LR
 
 ---
 
-## 3. Sub-pixel Font Alignment (Eliminating Jitter)
+## 3. 텍스트 정밀도 보장 (Sub-pixel Jitter 방지)
 
-### 3.1 The Jitter Pitfalls of Global CSS Scaling
+### 3.1 문제: CSS Scale의 텍스트 시프트
 
-Chromium processes elements through the following execution pipeline:
-1. **Base Resolution Layout**: Renders typography with standard font-hinting behaviors, clamping lines and spacing to pixel grids.
-2. **CSS Transforms Scale**: Magnifies the finalized baseline coordinates by the scaling multiplier.
+크로미움 렌더링 엔진은 다음 순서로 동작합니다:
+1. **1배율 레이아웃 계산**: 폰트 힌팅(픽셀 격자 스냅) 적용, 자간/베이스라인 확정
+2. **CSS transform 적용**: 확정된 좌표를 배수만큼 확대
 
-At scale, sub-pixel rounding errors (often `0.3px` to `0.5px`) are multiplied by the scale factor. A 48px header magnified by `2.0` can shift up to `1.0px`, causing visible layout misalignment.
+이때 1단계에서 발생한 **소수점 반올림 오차(0.3~0.5px)**가 2단계에서 배수만큼 증폭됩니다.
+→ 48px 텍스트가 2배 확대 시 최대 1px 시프트 → **방송 자막 위치 틀어짐**
 
-### 3.2 The Solution: `geometricPrecision` and Scale Deletions
+### 3.2 해결: geometricPrecision + CSS Scale 제거
 
 ```tsx
-// Inside GraphicPreviewRenderer.tsx (SVG Root Element)
+// GraphicPreviewRenderer.tsx — SVG 루트
 <svg
     viewBox={`0 0 ${canvasWidth} ${canvasHeight}`}
     style={{
-        textRendering: "geometricPrecision",   // ➔ Disables pixel-snapping font hinting
-        shapeRendering: "geometricPrecision",  // ➔ Prioritizes mathematical curve precision
+        textRendering: "geometricPrecision",   // ← 폰트 힌팅 비활성화
+        shapeRendering: "geometricPrecision",  // ← 도형 정밀도 우선
     }}
     preserveAspectRatio="xMidYMid meet"
 >
 ```
 
-| Attribute | `auto` (Default) | `geometricPrecision` |
+| 속성 | `auto` (기본값) | `geometricPrecision` |
 |---|---|---|
-| **Font Hinting** | ✅ Active (Optimized for readability on low-DPI monitors) | ❌ Disabled |
-| **Letter-spacing Precision** | ⚠️ Snap points introduce rounding errors | ✅ Maintains mathematical sub-pixel placements |
-| **Scale Stability** | ⚠️ Rounding errors multiply at high resolutions | ✅ Maintains proportions perfectly at all scales |
-| **Target Environment** | Legacy 72-DPI monitors | **1080p+ Premium Broadcast Overlays** ✅ |
+| 폰트 힌팅 | ✅ 활성 (저해상도에서 선명) | ❌ 비활성 |
+| 자간 정확도 | ⚠️ 픽셀 스냅으로 오차 발생 | ✅ 수학적 정확도 보장 |
+| 스케일링 안정성 | ⚠️ 오차 증폭 | ✅ 어떤 배율에서도 동일 |
+| 적합한 환경 | 72dpi 모니터 | **1080p+ 방송 그래픽** ✅ |
 
 ---
 
-## 4. Raster Assets Multi-Resolution System
+## 4. 래스터 이미지 다중 해상도 시스템
 
-### 4-1. Image Model Schemas in `GraphicElement`
+### 4.1 GraphicElement 이미지 필드
 
 ```typescript
 export interface GraphicElement {
-  // Asset references supporting multiple resolution endpoints
-  imageId?: string;   // Reference ID in "images" database table
-  src?: string;       // Legacy and fallback image URL
-  src_2k?: string;    // High-definition 2K assets saved in Storage
-  src_4k?: string;    // Ultra-high-definition 4K assets saved in Storage
-  objectFit?: "contain" | "cover" | "fill";
+    // 이미지 속성 (다중 해상도 지원)
+    imageId?: string;   // DB 이미지 ID (images 테이블 참조)
+    src?: string;       // 기본 이미지 URL (하위 호환성 / 레거시)
+    src_2k?: string;    // 2K 해상도 이미지 URL (Supabase Storage)
+    src_4k?: string;    // 4K 해상도 이미지 URL (Supabase Storage)
+    objectFit?: "contain" | "cover" | "fill";
 }
 ```
 
-### 4-2. Selecting Images by Resolution
+### 4.2 해상도별 이미지 선택 로직
 
 ```typescript
 const getImageUrl = (element: GraphicElement): string => {
@@ -150,65 +153,66 @@ const getImageUrl = (element: GraphicElement): string => {
 };
 ```
 
-### 4-3. Image Fallback Sequence
+### 4.3 Fallback 체인
 
 ```
-resolution=4k   ➔ src_4k ➔ src_2k ➔ src ➔ "" (empty string)
-resolution=1080p ➔ src_2k ➔ src ➔ ""
+resolution=4k   → src_4k → src_2k → src → ""
+resolution=1080p → src_2k → src → ""
 ```
 
 > [!IMPORTANT]
-> The query parameter `resolution` only determines which image URL to load. 
-> It has no effect on vector rendering layers (`rect`, `text`, `ellipse`), which are calculated mathematically by the browser.
+> `resolution` 쿼리 파라미터의 **유일한 실질적 기능**이 이 이미지 URL 분기입니다.
+> 벡터 요소(rect, text, ellipse)에는 아무런 영향을 주지 않습니다.
 
 ---
 
-## 5. Broadcast Scenario Matrices
+## 5. OBS 브라우저 소스 시나리오별 동작 분석
 
-### 5-1. Resolution Scenarios
+### 5.1 시나리오 매트릭스
 
-| Scenario | OBS Output Frame | `resolution` Parameter | Scaling Method | Loaded Image Source | Playout Output |
+| # | OBS 해상도 | `resolution` param | 스케일링 방식 | 이미지 소스 | 결과 |
 |---|---|---|---|---|---|
-| **1** | 1920×1080 (FHD) | `1080p` | SVG viewBox 1:1 scale | `src_2k` | ✅ **Optimal** — Native 1:1 pixel alignments. |
-| **2** | 3840×2160 (UHD) | `1080p` | SVG viewBox 2x scaling | `src_2k` | ⚠️ Vectors remain crisp; **raster graphics may pixelate**. |
-| **3** | 3840×2160 (UHD) | `4k` | SVG viewBox 2x scaling | `src_4k` | ✅ **Optimal** — Crisp high-resolution assets. |
+| ① | 1920×1080 | `1080p` | SVG viewBox 1:1 | `src_2k` | ✅ **최적** — 네이티브 해상도 |
+| ② | 3840×2160 | `1080p` | SVG viewBox 2× 확대 | `src_2k` | ⚠️ 벡터 선명, **이미지만 열화** |
+| ③ | 3840×2160 | `4k` | SVG viewBox 2× 확대 | `src_4k` | ✅ **최적** — 4K 이미지 |
 
-### 5-2. Why Scenario 2 is a Viable Fallback
+### 5.2 시나리오 ②가 "거의 괜찮은" 이유
 
-- **Vector Entities & Text**: SVG viewBox scales mathematical coordinates to UHD pixels, rendering them perfectly sharp.
-- **Images**: 2K bitmaps scaled to 4K may look slightly soft, depending on the asset content.
+- **텍스트·도형**: SVG viewBox가 4K 해상도로 직접 래스터라이즈 → ✅ 선명
+- **이미지**: 2K 비트맵이 4K로 확대 → ⚠️ 약간 흐림 (콘텐츠에 따라 다름)
 
-### 5-3. Recommended Configurations
+### 5.3 권장 설정
 
-| Target Output standard | OBS Browser Resolution | URL Endpoint Parameter |
+| 방송 출력 해상도 | OBS 브라우저 소스 | URL |
 |---|---|---|
-| FHD Broadcast (1920×1080) | 1920×1080 | `/render?sessionId=xxx&resolution=1080p` |
-| UHD Broadcast (3840×2160) | 3840×2160 | `/render?sessionId=xxx&resolution=4k` |
+| FHD (1920×1080) | 1920×1080 | `/render?sessionId=xxx&resolution=1080p` |
+| UHD (3840×2160) | 3840×2160 | `/render?sessionId=xxx&resolution=4k` |
 
 > [!TIP]
-> If a template is **purely vector-based** (using only shapes and text), the `resolution` parameter can be omitted. The output will automatically match the OBS browser source viewport dimensions.
+> 그래픽에 **이미지 요소가 전혀 없다면** (텍스트+도형만), OBS 해상도만 설정하면 됩니다.
+> `resolution` param을 아예 생략해도 동일한 결과입니다.
 
 ---
 
-## 6. Layout Scaling Summary
+## 6. 요약 다이어그램
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                    OBS Browser Viewport                     │
-│               Dimension: W × H (e.g. 3840×2160)             │
+│                    OBS 브라우저 소스                          │
+│              뷰포트: W × H (예: 3840×2160)                   │
 │  ┌───────────────────────────────────────────────────────┐  │
-│  │              render.tsx root viewport                 │  │
-│  │              100vw × 100vh (No global CSS scaling)    │  │
+│  │              render.tsx 컨테이너                        │  │
+│  │                100vw × 100vh (CSS scale 없음)          │  │
 │  │  ┌─────────────────────────────────────────────────┐  │  │
-│  │  │    Playout Render Engine                        │  │  │
-│  │  │    Scales via viewBox or ResizeObserver         │  │  │
-│  │  │    Applies geometricPrecision text styles       │  │  │
+│  │  │    SVG / DOM 렌더러                              │  │  │
+│  │  │    viewBox 또는 ResizeObserver로 자체 스케일링     │  │  │
+│  │  │    geometricPrecision 적용                       │  │  │
 │  │  │                                                 │  │  │
-│  │  │  ┌─────────┐  ┌──────────┐  ┌─────────┐         │  │  │
-│  │  │  │  <rect>  │  │  <text>  │  │ <image> │         │  │  │
-│  │  │  │  Vector  │  │  Vector  │  │ Raster  │         │  │  │
-│  │  │  │  ✅ Sharp│  │  ✅ Sharp│  │ ⚠️ Cond. │         │  │  │
-│  │  │  └─────────┘  └──────────┘  └─────────┘         │  │  │
+│  │  │  ┌─────────┐  ┌──────────┐  ┌─────────┐       │  │  │
+│  │  │  │  <rect>  │  │  <text>  │  │ <image> │       │  │  │
+│  │  │  │  벡터    │  │  벡터    │  │ 래스터  │       │  │  │
+│  │  │  │  ✅ 선명 │  │  ✅ 선명 │  │ ⚠️ 조건부│       │  │  │
+│  │  │  └─────────┘  └──────────┘  └─────────┘       │  │  │
 │  │  └─────────────────────────────────────────────────┘  │  │
 │  └───────────────────────────────────────────────────────┘  │
 └─────────────────────────────────────────────────────────────┘
@@ -216,18 +220,26 @@ resolution=1080p ➔ src_2k ➔ src ➔ ""
 
 ---
 
-## 7. Revision Logs
+## 7. 아키텍처 변경 이력
 
-### 2026-04-22: Global Scaling Refactor
+### 2026-04-22: CSS Scale 제거 리팩토링
 
-* **Legacy Mode**: Scaled the container `div` via CSS properties (`transform: scale(S)`), leading to rendering artifacts.
-* **Modern Mode**: Replaced global CSS scales with native SVG viewBox mappings and local `ResizeObserver` checks.
+**변경 전 (이중 스케일링):**
+```
+render.tsx: div(1920×1080, transform: scale(S)) → SVG viewBox
+```
 
-**Key Drivers for the Refactor:**
-1. Global CSS scaling introduced noticeable text jitter on high-resolution displays.
-2. SVG viewBox handles scaling natively, making global CSS scales redundant.
-3. Added `textRendering: "geometricPrecision"` to disable font hinting, eliminating rounding errors at the renderer level.
+**변경 후 (네이티브 스케일링):**
+```
+render.tsx: div(100vw×100vh) → SVG viewBox (직접 매핑)
+                              → DOM + ResizeObserver (자체 scale)
+```
+
+**변경 이유:**
+1. CSS `transform: scale()`이 텍스트 sub-pixel jitter를 유발 (대표님 QC 지적)
+2. SVG viewBox가 이미 네이티브 스케일링을 제공하므로 CSS scale은 설계 중복
+3. `textRendering: geometricPrecision` 추가로 폰트 힌팅 오차 원천 차단
 
 ---
 
-*Last Updated: 2026-04-22*
+*최종 업데이트: 2026-04-22*

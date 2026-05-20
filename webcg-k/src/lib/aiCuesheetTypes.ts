@@ -8,8 +8,6 @@
  * v2: template 기반 (is_new / fields / input_contract 매칭)
  */
 
-import type { ThemeTokens } from "./types/semanticTypes";
-
 // ─── 세션 상태 ─────────────────────────────────────────────────────
 
 export type SessionStatus = "draft" | "in_progress" | "completed";
@@ -37,6 +35,7 @@ export interface AiCuesheetSessionScene {
   scene_data: SceneContent;
   generated_html: string | null;
   generated_css: string | null;
+  overlay_template_id: string | null;
   created_at: string;
 }
 
@@ -78,10 +77,18 @@ export type StyleHint = "emphasis" | "normal" | "muted";
  * AI가 생성하고 사람이 Graphic Tagging에서 오버레이 요소에 매핑.
  */
 export interface TextSlot {
+  /** 장면 내부에서 텍스트를 추적하는 안정 ID. HTML data-slot-id와 연결된다. */
+  id: string;
   /** 정보의 성격 — data-semantic 어트리뷰트로 HTML 요소에 태깅 */
   semantic_role: SemanticRole;
-  /** 실제 표시될 텍스트 값 (AI가 생성, 사람이 수정 가능) */
+  /** 실제 표시될 텍스트 값 (AI가 생성, 사람이 수정 가능). v4.1에서는 display_value와 동기화되는 호환 필드. */
   value: string;
+  /** 원본 자료에서 추출한 변경 전 값. 원문 검증과 provenance 추적에 사용. */
+  source_value?: string;
+  /** 방송 그래픽(Broadcast Graphics)에 실제 표시할 값. 축약/문장 다듬기 가능. */
+  display_value?: string;
+  /** source_value를 뒷받침하는 원문 짧은 인용/앵커. */
+  evidence_anchor?: string;
   /** (선택) 부연설명 — PD 검토용. "왜 이 값이 중요한지" 인간 친화적 설명. CG 화면에 표시되지 않음 */
   context?: string;
   /** 시각적 중요도 1~5 (5: 가장 두드러짐, 1: 작게) */
@@ -98,6 +105,8 @@ export interface TextSlot {
  */
 export interface SceneContent {
   order: number;
+  /** AI 큐시트가 만들 방송 그래픽(Broadcast Graphics)의 제작 유형. */
+  graphic_type?: "summary_info" | "explainer_caption" | "stat_visual";
   /** 방송 트리거 (예: "전문가 첫 등장", "주요 통계 제시") */
   trigger: string;
   /** 이 장면에 그래픽이 필요한 이유 */
@@ -114,6 +123,8 @@ export interface SceneContent {
 
 /** v4: AI가 생성하는 큐시트 — SceneContent[] 기반 */
 export interface AiCuesheet {
+  /** AI 큐시트 JSON 계약 버전. v4.1부터 provenance 필드(source/display/evidence)를 포함. */
+  schema_version?: string;
   /** AI의 디자인 연출 의도 (Chain of Thought). 씬 생성 전 디자인 논리를 먼저 서술 */
   _design_rationale?: string;
   program_title: string;
@@ -182,7 +193,9 @@ export type CuesheetWizardStep =
   | "system-prompt"    // Step 1 (manual): 시스템 프롬프트 복사
   | "source-input"     // Step 1 (api): 자료조사 데이터 입력
   | "content-review"   // Step 2: JSON ↔ GUI 토글 뷰
-  | "graphic-generate"; // Step 3: 씬별 AI 그래픽 생성
+  | "graphic-generate" // Step 3: 씬별 AI 그래픽 생성
+  | "rundown-edit"     // Step 4: 런다운 생성/편집 handoff
+  | "render-verify";   // Step 5: PVW/PGM/render 송출 검증
 
 /** 위자드 전체 상태 스냅샷 — autoSaveWizardState() 입출력 */
 export interface CuesheetWizardState {

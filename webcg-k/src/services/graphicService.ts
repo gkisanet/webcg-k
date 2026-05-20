@@ -109,11 +109,22 @@ export async function fetchGraphics(): Promise<Graphic[]> {
 
 export async function updateGraphic(
   id: string,
-  updates: { description?: string; is_public?: boolean },
+  updates: { description?: string; is_public?: boolean; visibility?: "private" | "workspace" | "public"; workspace_id?: string | null },
 ): Promise<void> {
   const { error } = await supabase
     .from("graphics")
     .update({ ...updates, updated_at: new Date().toISOString() })
+    .eq("id", id);
+  if (error) throw error;
+}
+
+export async function updateGraphicVisibility(
+  id: string,
+  visibility: "private" | "workspace" | "public",
+): Promise<void> {
+  const { error } = await supabase
+    .from("graphics")
+    .update({ visibility, updated_at: new Date().toISOString() })
     .eq("id", id);
   if (error) throw error;
 }

@@ -92,16 +92,6 @@ const HANDLES: HandleDef[] = [
   { handle: "w-resize", cursor: "w-resize", top: "50%", left: 0, width: EDGE_HEIGHT, height: EDGE_WIDTH, isCorner: false },
 ];
 
-export interface DragGhostData {
-  id: string;
-  x: number; y: number;
-  width: number; height: number;
-  rotation: number;
-  fill?: string;
-  borderRadius?: number;
-  type: GraphicElement["type"];
-}
-
 interface InteractionLayerProps {
   elements: GraphicElement[];
   selectedIds: string[];
@@ -109,8 +99,6 @@ interface InteractionLayerProps {
   canvasWidth: number;
   canvasHeight: number;
   onResizeStart: (e: React.MouseEvent, id: string, handle: string) => void;
-  dragGhost: DragGhostData | null;
-  ghostRef: RefObject<HTMLDivElement | null>;
   snapVLinesRef: RefObject<HTMLDivElement | null>;
   snapHLinesRef: RefObject<HTMLDivElement | null>;
 }
@@ -122,8 +110,6 @@ export function InteractionLayer({
   canvasWidth,
   canvasHeight,
   onResizeStart,
-  dragGhost,
-  ghostRef,
   snapVLinesRef,
   snapHLinesRef,
 }: InteractionLayerProps) {
@@ -145,28 +131,7 @@ export function InteractionLayer({
       <div ref={snapVLinesRef} style={{ pointerEvents: "none" }} />
       <div ref={snapHLinesRef} style={{ pointerEvents: "none" }} />
 
-      {/* Drag Ghost — left/top=0으로 초기화, translate로만 위치 제어 (이중 계산 방지) */}
-      {dragGhost && (
-        <div
-          ref={ghostRef}
-          style={{
-            position: "absolute",
-            left: 0,
-            top: 0,
-            width: dragGhost.width * zoom,
-            height: dragGhost.height * zoom,
-            backgroundColor: dragGhost.fill || "rgba(59, 130, 246, 0.3)",
-            border: "2px solid rgba(59, 130, 246, 0.6)",
-            borderRadius: (dragGhost.borderRadius || 0) * zoom,
-            transform: `translate(${dragGhost.x * zoom}px, ${dragGhost.y * zoom}px) rotate(${dragGhost.rotation}deg)`,
-            transformOrigin: "center center",
-            pointerEvents: "none",
-            zIndex: 100,
-            opacity: 0.7,
-            willChange: "transform",
-          }}
-        />
-      )}
+
 
       {/* 선택된 요소: 바운딩 박스 + 리사이즈 핸들 (PowerPoint 스타일) */}
       {selectedElems.map((el) => (

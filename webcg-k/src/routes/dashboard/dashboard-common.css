@@ -43,6 +43,168 @@
     gap: 8px;
 }
 
+/* ─── 공통 Surface / Filter ─────────────────────────────────── */
+
+.dash-surface {
+    display: flex;
+    flex-direction: column;
+    background:
+        linear-gradient(180deg, rgba(22, 27, 35, 0.9) 0%, rgba(15, 19, 27, 0.76) 100%);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: none;
+    border-radius: 18px;
+    box-shadow:
+        0 20px 48px rgba(0, 0, 0, 0.28),
+        inset 0 1px 0 rgba(255, 255, 255, 0.03);
+    overflow: hidden;
+}
+
+.dash-surface-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 10px 14px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.dash-surface-header-title {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-secondary);
+}
+
+.dash-surface-scroll {
+    flex: 1;
+    overflow-y: auto;
+    min-height: 0;
+}
+
+.dash-surface-content {
+    padding: 14px;
+}
+
+.dash-surface-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    text-align: center;
+    color: var(--text-tertiary);
+}
+
+.dash-filter-panel {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    padding: 0.875rem 1rem;
+    margin-bottom: 1rem;
+    background:
+        linear-gradient(180deg, rgba(22, 27, 35, 0.84) 0%, rgba(16, 21, 29, 0.74) 100%);
+    border: none;
+    border-radius: 18px;
+    box-shadow:
+        0 18px 42px rgba(0, 0, 0, 0.22),
+        inset 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+
+.dash-filter-search {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex: 1;
+    min-width: 200px;
+    max-width: 320px;
+    padding: 0.45rem 0.75rem;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 999px;
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+}
+
+.dash-filter-icon {
+    color: var(--text-tertiary);
+    flex-shrink: 0;
+}
+
+.dash-filter-input {
+    width: 100%;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--text-primary);
+    font-size: 0.8125rem;
+}
+
+.dash-filter-input::placeholder {
+    color: var(--text-tertiary);
+}
+
+.dash-filter-clear {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    padding: 0;
+    background: transparent;
+    border: none;
+    color: var(--text-tertiary);
+    cursor: pointer;
+    border-radius: 999px;
+    transition: background 0.15s, color 0.15s;
+}
+
+.dash-filter-clear:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--text-primary);
+}
+
+.dash-filter-select,
+.dash-filter-date {
+    padding: 0.4rem 0.7rem;
+    font-size: 0.75rem;
+    color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.05);
+    border: none;
+    border-radius: 999px;
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+}
+
+.dash-filter-select {
+    cursor: pointer;
+}
+
+.dash-filter-select:focus,
+.dash-filter-date:focus {
+    outline: none;
+    box-shadow:
+        inset 0 0 0 1px rgba(96, 165, 250, 0.45),
+        0 0 0 3px rgba(96, 165, 250, 0.12);
+}
+
+.dash-filter-date-range {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    flex-wrap: wrap;
+}
+
+.dash-filter-separator,
+.dash-filter-meta {
+    color: var(--text-tertiary);
+    font-size: 0.75rem;
+}
+
+.dash-filter-meta {
+    margin-left: auto;
+}
+
 /* ─── 공통 버튼 ───────────────────────────────────────────────── */
 
 .dash-btn {

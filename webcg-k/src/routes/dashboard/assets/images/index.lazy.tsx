@@ -8,6 +8,7 @@ import { createLazyFileRoute } from "@tanstack/react-router";
 import { FolderOpen, Image, Trash2, Upload, Loader2, X, Edit2, Clock, Sparkles, Code, Grid3x3 } from "lucide-react";
 import { useState, useRef, useCallback } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { supabase } from "../../../../lib/supabase";
 import { useAuth } from "../../../../lib/auth";
@@ -54,6 +55,7 @@ interface UploadModalState {
 }
 
 function ImagesPage() {
+	const { t } = useTranslation("images");
 	const { user } = useAuth();
 	const queryClient = useQueryClient();
 
@@ -73,7 +75,7 @@ function ImagesPage() {
 		isOpen: false,
 		name: "",
 		description: "",
-		category: "기타",
+		category: selectedCategory || "기타",
 		file2k: null,
 		file4k: null,
 	})
@@ -148,7 +150,7 @@ function ImagesPage() {
 
 		if (svgModal.sizeMode === "grid") {
 			if (!svgCombinedBounds) {
-				setSvgModal((prev) => ({ ...prev, error: "그리드에서 영역을 선택해주세요." }));
+				setSvgModal((prev) => ({ ...prev, error: t("aiSvgModal.errors.selectZone") }));
 				return
 			}
 			finalWidth = svgCombinedBounds.width;
@@ -174,7 +176,7 @@ function ImagesPage() {
 			setSvgModal((prev) => ({
 				...prev,
 				generating: false,
-				error: err.message || "SVG 생성 실패",
+				error: err.message || t("aiSvgModal.errors.generateFailed"),
 			}))
 		}
 	}
@@ -206,7 +208,7 @@ function ImagesPage() {
 			setSvgModal((prev) => ({
 				...prev,
 				saving: false,
-				error: err.message || "SVG 저장 실패",
+				error: err.message || t("aiSvgModal.errors.saveFailed"),
 			}))
 		}
 	}
@@ -241,17 +243,17 @@ function ImagesPage() {
 	// 이미지 업로드 (모달에서)
 	const handleModalUpload = async () => {
 		if (!user) {
-			alert("로그인이 필요합니다.");
+			alert(t("alerts.loginRequired"));
 			return
 		}
 
 		if (!uploadModal.name.trim()) {
-			alert("이미지 이름을 입력해주세요.");
+			alert(t("alerts.enterName"));
 			return
 		}
 
 		if (!uploadModal.file2k) {
-			alert("2K 이미지는 필수입니다.");
+			alert(t("alerts.2kRequired"));
 			return
 		}
 
@@ -274,7 +276,7 @@ function ImagesPage() {
 				})
 
 			if (upload2kError) {
-				alert(`2K 이미지 업로드 실패: ${upload2kError.message}`);
+				alert(t("alerts.upload2kFailed", { message: upload2kError.message }));
 				setUploading(false);
 				return
 			}
@@ -312,7 +314,7 @@ function ImagesPage() {
 			})
 
 			if (dbError) {
-				alert(`DB 저장 실패: ${dbError.message}`);
+				alert(`${t("alerts.uploadError")} (DB): ${dbError.message}`);
 				// Storage 정리
 				await supabase.storage.from("images").remove([storagePath2k]);
 				if (storagePath4k) {
@@ -327,7 +329,7 @@ function ImagesPage() {
 			queryClient.invalidateQueries({ queryKey: ["images"] });
 		} catch (err) {
 			console.error("Upload error:", err);
-			alert("업로드 중 오류가 발생했습니다.");
+			alert(t("alerts.uploadError"));
 		} finally {
 			setUploading(false);
 		}
@@ -357,7 +359,7 @@ function ImagesPage() {
 			queryClient.invalidateQueries({ queryKey: ["images"] });
 		} catch (err) {
 			console.error("Delete error:", err);
-			alert("삭제 중 오류가 발생했습니다.");
+			alert(t("alerts.deleteError"));
 		}
 	}
 
@@ -414,7 +416,7 @@ function ImagesPage() {
 				.eq("id", editingImage.id);
 
 			if (error) {
-				alert(`수정 실패: ${error.message}`);
+				alert(`${t("alerts.editFailed")}: ${error.message}`);
 				return
 			}
 
@@ -422,7 +424,7 @@ function ImagesPage() {
 			queryClient.invalidateQueries({ queryKey: ["images"] });
 		} catch (err) {
 			console.error("Edit error:", err);
-			alert("수정 중 오류가 발생했습니다.");
+			alert(t("alerts.editError"));
 		} finally {
 			setUploading(false);
 		}
@@ -437,18 +439,18 @@ function ImagesPage() {
 						<div className="dash-page-title-icon">
 							<Image size={18} />
 						</div>
-						이미지
+						{t("pageTitle")}
 					</div>
 					<div className="dash-page-subtitle">
-						2K/4K 다중 해상도 이미지를 관리합니다
+						{t("pageSubtitle")}
 					</div>
 				</div>
 				<div className="dash-page-actions" style={{ display: "flex", gap: 8 }}>
 					<button className="dash-btn accent" onClick={() => setSvgModal({ ...svgModal, isOpen: true })}>
-						<Sparkles size={16} /> AI SVG 생성
+						<Sparkles size={16} /> {t("aiSvgButton")}
 					</button>
 					<button className="dash-btn primary" onClick={openUploadModal} disabled={uploading}>
-						<Upload size={16} /> 이미지 업로드
+						<Upload size={16} /> {t("upload")}
 					</button>
 				</div>
 			</div>
@@ -458,17 +460,25 @@ function ImagesPage() {
 					className={`dash-filter-btn ${selectedCategory === null ? "active" : ""}`}
 					onClick={() => setSelectedCategory(null)}
 				>
-					전체
+					{t("all")}
 				</button>
-				{categories.map((cat) => (
-					<button
-						key={cat}
-						className={`dash-filter-btn ${selectedCategory === cat ? "active" : ""}`}
-						onClick={() => setSelectedCategory(cat)}
-					>
-						{cat}
-					</button>
-				))}
+				{categories.map((cat) => {
+					const categoriesMap: Record<string, string> = {
+						"로고": "logo",
+						"배경": "background",
+						"아이콘": "icon",
+						"기타": "other"
+					};
+					return (
+						<button
+							key={cat}
+							className={`dash-filter-btn ${selectedCategory === cat ? "active" : ""}`}
+							onClick={() => setSelectedCategory(cat)}
+						>
+							{t(`categories.${categoriesMap[cat] || "other"}`)}
+						</button>
+					);
+				})}
 			</div>
             {/* 로딩/빈 상태 */}
             {loading ? (
@@ -480,12 +490,12 @@ function ImagesPage() {
 					<div className="dash-empty-icon">
 						<FolderOpen size={48} />
 					</div>
-					<div className="dash-empty-title">이미지가 없습니다</div>
+					<div className="dash-empty-title">{t("noImages")}</div>
 					<div className="dash-empty-desc">
-						첫 번째 이미지를 업로드하여 방송 그래픽에 활용해보세요
+						{t("noImagesDesc")}
 					</div>
 					<button className="dash-btn primary" onClick={openUploadModal}>
-						<Upload size={16} /> 처음 이미지 업로드
+						<Upload size={16} /> {t("firstUploadBtn")}
 					</button>
 				</div>
 			) : (
@@ -509,11 +519,11 @@ function ImagesPage() {
 									<div style={{ position: "absolute", top: 8, left: 8, display: "flex", gap: 4, zIndex: 2 }}>
 										<span className={`dash-card-badge left ${resStatus.has2k ? "success" : ""}`}
 											style={{ opacity: resStatus.has2k ? 1 : 0.4 }}
-											title={resStatus.has2k ? "2K 있음" : "2K 없음"}
+											title={resStatus.has2k ? t("has2k") : t("no2k")}
 										>2K</span>
 										<span className={`dash-card-badge left ${resStatus.has4k ? "info" : ""}`}
 											style={{ opacity: resStatus.has4k ? 1 : 0.4 }}
-											title={resStatus.has4k ? "4K 있음" : "4K 없음"}
+											title={resStatus.has4k ? t("has4k") : t("no4k")}
 										>4K</span>
 									</div>
 								</div>
@@ -528,7 +538,7 @@ function ImagesPage() {
 									)}
 									<div className="dash-card-tags">
 										<span className="dash-card-tag neutral">
-											{image.category || "기타"}
+											{t(`categories.${{ "로고": "logo", "배경": "background", "아이콘": "icon", "기타": "other" }[image.category || "기타"] || "other"}`)}
 										</span>
 										<span className="dash-card-tag" style={{ background: "var(--accent-primary)", color: "white" }}>
 											{image.mime_type?.split("/")[1]?.toUpperCase() || "IMG"}
@@ -550,7 +560,7 @@ function ImagesPage() {
 											<button
 												className="dash-card-action-btn"
 												onClick={() => openEditModal(image)}
-												title="편집"
+												title={t("edit")}
 											>
 												<Edit2 size={12} />
 											</button>
@@ -558,7 +568,7 @@ function ImagesPage() {
 										<button
 											className="dash-card-action-btn delete"
 											onClick={() => setDeleteConfirm(image.id)}
-											title="삭제"
+											title={t("delete")}
 										>
 											<Trash2 size={12} />
 										</button>
@@ -568,19 +578,19 @@ function ImagesPage() {
 								{/* 삭제 확인 오버레이 */}
 								{deleteConfirm === image.id && (
 									<div className="dash-card-delete-confirm">
-										<p>"{image.name}" 삭제?</p>
+										<p>{t("deleteConfirm", { name: image.name })}</p>
 										<div className="confirm-btns">
 											<button
 												className="dash-delete-cancel"
 												onClick={() => setDeleteConfirm(null)}
 											>
-												취소
+												{t("cancel")}
 											</button>
 											<button
 												className="dash-delete-confirm"
 												onClick={() => handleDelete(image)}
 											>
-												삭제
+												{t("delete")}
 											</button>
 										</div>
 									</div>
@@ -624,7 +634,7 @@ function ImagesPage() {
 								borderBottom: "1px solid var(--border-primary)",
 							}}
 						>
-							<h2 style={{ margin: 0, fontSize: "1.125rem" }}>이미지 업로드</h2>
+							<h2 style={{ margin: 0, fontSize: "1.125rem" }}>{t("uploadModal.title")}</h2>
 							<button
 								type="button"
 								onClick={closeUploadModal}
@@ -645,12 +655,12 @@ function ImagesPage() {
 							{/* 이름 */}
 							<div>
 								<label style={{ display: "block", marginBottom: "0.25rem", fontSize: "0.875rem", fontWeight: 500 }}>
-									이름 <span style={{ color: "#ef4444" }}>*</span>
+									{t("uploadModal.nameLabel")}
 								</label>
 								<input
 									type="text"
 									className="form-input"
-									placeholder="이미지 이름"
+									placeholder={t("uploadModal.namePlaceholder")}
 									value={uploadModal.name}
 									onChange={(e) => setUploadModal({ ...uploadModal, name: e.target.value })}
 									style={{ width: "100%" }}
@@ -660,12 +670,12 @@ function ImagesPage() {
 							{/* 설명 */}
 							<div>
 								<label style={{ display: "block", marginBottom: "0.25rem", fontSize: "0.875rem", fontWeight: 500 }}>
-									설명
+									{t("uploadModal.descLabel")}
 								</label>
 								<input
 									type="text"
 									className="form-input"
-									placeholder="이미지 설명 (선택)"
+									placeholder={t("uploadModal.descPlaceholder")}
 									value={uploadModal.description}
 									onChange={(e) => setUploadModal({ ...uploadModal, description: e.target.value })}
 									style={{ width: "100%" }}
@@ -675,7 +685,7 @@ function ImagesPage() {
 							{/* 카테고리 */}
 							<div>
 								<label style={{ display: "block", marginBottom: "0.25rem", fontSize: "0.875rem", fontWeight: 500 }}>
-									카테고리
+									{t("uploadModal.categoryLabel")}
 								</label>
 								<select
 									className="form-input"
@@ -683,9 +693,19 @@ function ImagesPage() {
 									onChange={(e) => setUploadModal({ ...uploadModal, category: e.target.value })}
 									style={{ width: "100%" }}
 								>
-									{categories.map((cat) => (
-										<option key={cat} value={cat}>{cat}</option>
-									))}
+									{categories.map((cat) => {
+										const categoriesMap: Record<string, string> = {
+											"로고": "logo",
+											"배경": "background",
+											"아이콘": "icon",
+											"기타": "other"
+										};
+										return (
+											<option key={cat} value={cat}>
+												{t(`categories.${categoriesMap[cat] || "other"}`)}
+											</option>
+										);
+									})}
 								</select>
 							</div>
 
@@ -724,7 +744,7 @@ function ImagesPage() {
 												color: "white",
 											}}
 										>
-											2K (필수)
+											{t("uploadModal.required2k")}
 										</span>
 									</div>
 									<div style={{ fontSize: "0.75rem", color: "var(--text-secondary)" }}>
@@ -736,7 +756,7 @@ function ImagesPage() {
 										) : (
 											<>
 												<Upload size={24} style={{ marginBottom: "4px", color: "var(--text-tertiary)" }} />
-												<div>클릭하여 선택</div>
+												<div>{t("uploadModal.clickToSelect")}</div>
 											</>
 										)}
 									</div>
@@ -775,7 +795,7 @@ function ImagesPage() {
 												color: "white",
 											}}
 										>
-											4K (선택)
+											{t("uploadModal.optional4k")}
 										</span>
 									</div>
 									<div style={{ fontSize: "0.75rem", color: "var(--text-secondary)" }}>
@@ -787,7 +807,7 @@ function ImagesPage() {
 										) : (
 											<>
 												<Upload size={24} style={{ marginBottom: "4px", color: "var(--text-tertiary)" }} />
-												<div>클릭하여 선택</div>
+												<div>{t("uploadModal.clickToSelect")}</div>
 											</>
 										)}
 									</div>
@@ -806,7 +826,7 @@ function ImagesPage() {
 										color: "#eab308",
 									}}
 								>
-									⚠️ 4K 이미지가 없으면 4K 렌더러에서 이미지 열화가 발생할 수 있습니다.
+									{t("uploadModal.warning4k")}
 								</div>
 							)}
 						</div>
@@ -826,7 +846,7 @@ function ImagesPage() {
 								onClick={closeUploadModal}
 								disabled={uploading}
 							>
-								취소
+								{t("cancel")}
 							</Button>
 							<Button
 								onClick={handleModalUpload}
@@ -835,12 +855,12 @@ function ImagesPage() {
 								{uploading ? (
 									<>
 										<Loader2 size={16} className="animate-spin" />
-										업로드 중...
+										{t("uploadModal.uploading")}
 									</>
 								) : (
 									<>
 										<Upload size={16} />
-										업로드
+										{t("uploadModal.upload")}
 									</>
 								)}
 							</Button>
@@ -878,7 +898,7 @@ function ImagesPage() {
 						<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "1rem", borderBottom: "1px solid var(--border-primary)" }}>
 							<h2 style={{ margin: 0, fontSize: "1.125rem", display: "flex", alignItems: "center", gap: 8 }}>
 								<Sparkles size={20} style={{ color: "var(--accent-primary)" }} />
-								AI SVG 생성
+								{t("aiSvgModal.title")}
 							</h2>
 							<button type="button" onClick={() => setSvgModal({ ...svgModal, isOpen: false })} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-tertiary)", padding: 4 }}>
 								<X size={20} />
@@ -891,12 +911,12 @@ function ImagesPage() {
 							<div style={{ display: "grid", gridTemplateColumns: "3fr 1fr", gap: "1rem" }}>
 								<div>
 									<label style={{ display: "block", marginBottom: 4, fontSize: "0.875rem", fontWeight: 500 }}>
-										프롬프트 <span style={{ color: "#ef4444" }}>*</span>
+										{t("aiSvgModal.promptLabel")}
 									</label>
 									<textarea
 										className="form-input"
 										rows={3}
-										placeholder="예: 뉴스 속보 하단자막 배경을 만들어줘. 블루/골드 컬러로."
+										placeholder={t("aiSvgModal.promptPlaceholder")}
 										value={svgModal.prompt}
 										onChange={(e) => setSvgModal({ ...svgModal, prompt: e.target.value })}
 										style={{ width: "100%", resize: "vertical", backgroundColor: "rgba(255, 255, 255, 0.05)", border: "1px solid var(--border-primary)" }}
@@ -904,7 +924,7 @@ function ImagesPage() {
 								</div>
 								<div>
 									<label style={{ display: "block", marginBottom: 4, fontSize: "0.875rem", fontWeight: 500 }}>
-										저장 카테고리
+										{t("aiSvgModal.categoryLabel")}
 									</label>
 									<select
 										className="form-input"
@@ -912,17 +932,24 @@ function ImagesPage() {
 										onChange={(e) => setSvgModal({ ...svgModal, category: e.target.value })}
 										style={{ width: "100%", backgroundColor: "rgba(255, 255, 255, 0.05)", border: "1px solid var(--border-primary)" }}
 									>
-										{categories.map((cat) => (
-											<option key={cat} value={cat}>{cat}</option>
-										))}
+										{categories.map((cat) => {
+											const categoriesMap: Record<string, string> = {
+												"로고": "logo",
+												"배경": "background",
+												"아이콘": "icon",
+												"기타": "other"
+											};
+											return (
+												<option key={cat} value={cat}>
+													{t(`categories.${categoriesMap[cat] || "other"}`)}
+												</option>
+											);
+										})}
 									</select>
 								</div>
 							</div>
 
 						{/* ── 💡 프롬프트 작성 가이드 (접이식) ── */}
-						{/* ■ Why details/summary?
-						     JS 상태 없이 브라우저 네이티브로 접었다 펼 수 있어 복잡도 0.
-						     사용자가 프롬프트 입력 중 바로 옆에서 참고 가능. */}
 						<details style={{
 							border: "1px solid rgba(139, 92, 246, 0.2)",
 							borderRadius: 8,
@@ -940,7 +967,7 @@ function ImagesPage() {
 								gap: 6,
 								userSelect: "none",
 							}}>
-								💡 프롬프트 작성 가이드 — AI가 잘 그리게 만드는 5가지 규칙
+								{t("aiSvgModal.guide.summary")}
 							</summary>
 							<div style={{
 								padding: "0.625rem 0.75rem",
@@ -954,31 +981,30 @@ function ImagesPage() {
 							}}>
 								{/* 가이드 1 */}
 								<div>
-									<strong style={{ color: "#22c55e" }}>✅ 기본 도형으로 조립</strong>
+									<strong style={{ color: "#22c55e" }}>{t("aiSvgModal.guide.rule1Title")}</strong>
 									<div style={{ marginTop: 2, paddingLeft: 12 }}>
-										"<code>&lt;path&gt;</code> 사용 금지, <code>&lt;rect&gt;</code>, <code>&lt;circle&gt;</code>, <code>&lt;ellipse&gt;</code> 등
-										기본 도형만 조합해서 형태를 조립해" 같은 제약을 추가하세요.
+										{t("aiSvgModal.guide.rule1Desc")}
 									</div>
 								</div>
 								{/* 가이드 2 */}
 								<div>
-									<strong style={{ color: "#3b82f6" }}>📐 대칭 및 좌표 지정</strong>
+									<strong style={{ color: "#3b82f6" }}>{t("aiSvgModal.guide.rule2Title")}</strong>
 									<div style={{ marginTop: 2, paddingLeft: 12 }}>
-										"정중앙(cx=960, cy=540) 기준으로 대칭 배치" 처럼 수학적 좌표를 명시하면 형태 왜곡이 줄어듭니다.
+										{t("aiSvgModal.guide.rule2Desc")}
 									</div>
 								</div>
 								{/* 가이드 3 */}
 								<div>
-									<strong style={{ color: "#f59e0b" }}>🏷️ 부위별 그룹화</strong>
+									<strong style={{ color: "#f59e0b" }}>{t("aiSvgModal.guide.rule3Title")}</strong>
 									<div style={{ marginTop: 2, paddingLeft: 12 }}>
-										"배경, 프레임, 아이콘 등 각 구성 요소를 <code>&lt;g&gt;</code> 태그로 묶고 한글 주석을 달아줘"
+										{t("aiSvgModal.guide.rule3Desc")}
 									</div>
 								</div>
 								{/* 가이드 4 */}
 								<div>
-									<strong style={{ color: "#ec4899" }}>🎨 색상 제한</strong>
+									<strong style={{ color: "#ec4899" }}>{t("aiSvgModal.guide.rule4Title")}</strong>
 									<div style={{ marginTop: 2, paddingLeft: 12 }}>
-										"메인(#003366), 강조(#FFD700), 배경(#0A0E1A) 등 3~4가지 솔리드 컬러만 사용" 으로 팔레트를 직접 지정하세요.
+										{t("aiSvgModal.guide.rule4Desc")}
 									</div>
 								</div>
 								{/* 좋은 예 vs 나쁜 예 */}
@@ -987,12 +1013,12 @@ function ImagesPage() {
 									padding: "6px 0", borderTop: "1px solid rgba(139, 92, 246, 0.1)",
 								}}>
 									<div>
-										<div style={{ color: "#ef4444", fontWeight: 600, marginBottom: 2 }}>❌ 나쁜 예</div>
-										<div style={{ fontStyle: "italic", opacity: 0.7 }}>"예쁜 뉴스 배경 그려줘"</div>
+										<div style={{ color: "#ef4444", fontWeight: 600, marginBottom: 2 }}>{t("aiSvgModal.guide.badExample")}</div>
+										<div style={{ fontStyle: "italic", opacity: 0.7 }}>{t("aiSvgModal.guide.badDesc")}</div>
 									</div>
 									<div>
-										<div style={{ color: "#22c55e", fontWeight: 600, marginBottom: 2 }}>✅ 좋은 예</div>
-										<div style={{ fontStyle: "italic", opacity: 0.7 }}>"하단자막용 직사각형 바. 좌측 블루→골드 그라데이션. rect+circle 도형만 사용. 4색 이하."</div>
+										<div style={{ color: "#22c55e", fontWeight: 600, marginBottom: 2 }}>{t("aiSvgModal.guide.goodExample")}</div>
+										<div style={{ fontStyle: "italic", opacity: 0.7 }}>{t("aiSvgModal.guide.goodDesc")}</div>
 									</div>
 								</div>
 							</div>
@@ -1016,7 +1042,7 @@ function ImagesPage() {
 										}}
 										onClick={() => setSvgModal({ ...svgModal, sizeMode: "grid" })}
 									>
-										<Grid3x3 size={14} /> 그리드 가이드
+										<Grid3x3 size={14} /> {t("aiSvgModal.sizeModeGrid")}
 									</button>
 									<button
 										type="button"
@@ -1030,7 +1056,7 @@ function ImagesPage() {
 										}}
 										onClick={() => setSvgModal({ ...svgModal, sizeMode: "manual" })}
 									>
-										✏️ 수동 입력
+										✏️ {t("aiSvgModal.sizeModeManual")}
 									</button>
 								</div>
 
@@ -1041,7 +1067,7 @@ function ImagesPage() {
 										<div>
 											<div style={{ fontSize: "0.8125rem", fontWeight: 600, color: "var(--text-secondary)", marginBottom: 8, display: "flex", alignItems: "center", gap: 6 }}>
 												<span style={{ background: "var(--accent-primary)", color: "#fff", borderRadius: "50%", width: 20, height: 20, display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: "0.7rem", fontWeight: 700 }}>1</span>
-												그리드 템플릿 선택
+												{t("aiSvgModal.step1")}
 											</div>
 											<div style={{ maxHeight: 180, overflowY: "auto", borderRadius: 8, border: "1px solid var(--border-primary)", padding: 8 }}>
 												<GridSelector
@@ -1056,7 +1082,7 @@ function ImagesPage() {
 											<div>
 												<div style={{ fontSize: "0.8125rem", fontWeight: 600, color: "var(--text-secondary)", marginBottom: 8, display: "flex", alignItems: "center", gap: 6 }}>
 													<span style={{ background: "var(--accent-primary)", color: "#fff", borderRadius: "50%", width: 20, height: 20, display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: "0.7rem", fontWeight: 700 }}>2</span>
-													SVG를 배치할 영역 선택
+													{t("aiSvgModal.step2")}
 												</div>
 												<div style={{ borderRadius: 8, border: "1px solid var(--border-primary)", padding: 8 }}>
 													<ZoneSelector
@@ -1079,7 +1105,7 @@ function ImagesPage() {
 												color: "var(--text-primary)",
 												display: "flex", alignItems: "center", gap: 8,
 											}}>
-												✅ 생성 크기: <strong>{svgCombinedBounds.width} × {svgCombinedBounds.height}px</strong>
+												{t("aiSvgModal.generatedSize")} <strong>{svgCombinedBounds.width} × {svgCombinedBounds.height}px</strong>
 												<span style={{ color: "var(--text-tertiary)", fontSize: "0.75rem" }}>
 													(비율 {(svgCombinedBounds.width / svgCombinedBounds.height).toFixed(2)}:1)
 												</span>
@@ -1092,13 +1118,13 @@ function ImagesPage() {
 								{svgModal.sizeMode === "manual" && (
 									<div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem" }}>
 										<div>
-											<label style={{ display: "block", marginBottom: 4, fontSize: "0.8125rem" }}>너비 (px)</label>
+											<label style={{ display: "block", marginBottom: 4, fontSize: "0.8125rem" }}>{t("aiSvgModal.width")}</label>
 											<input type="number" className="form-input" value={svgModal.width}
 												onChange={(e) => setSvgModal({ ...svgModal, width: Number(e.target.value) })}
 												style={{ width: "100%" }} />
 										</div>
 										<div>
-											<label style={{ display: "block", marginBottom: 4, fontSize: "0.8125rem" }}>높이 (px)</label>
+											<label style={{ display: "block", marginBottom: 4, fontSize: "0.8125rem" }}>{t("aiSvgModal.height")}</label>
 											<input type="number" className="form-input" value={svgModal.height}
 												onChange={(e) => setSvgModal({ ...svgModal, height: Number(e.target.value) })}
 												style={{ width: "100%" }} />
@@ -1109,13 +1135,13 @@ function ImagesPage() {
 
 							{/* 스타일 프리셋 (공통) */}
 							<div>
-								<label style={{ display: "block", marginBottom: 4, fontSize: "0.8125rem" }}>스타일</label>
+								<label style={{ display: "block", marginBottom: 4, fontSize: "0.8125rem" }}>{t("aiSvgModal.style")}</label>
 								<select className="form-input" value={svgModal.style}
 									onChange={(e) => setSvgModal({ ...svgModal, style: e.target.value as SvgStylePreset })}
 									style={{ width: "100%" }}>
-									<option value="">자유 스타일</option>
+									<option value="">{t("aiSvgModal.styleFree")}</option>
 									{SVG_STYLE_PRESETS.map((p) => (
-										<option key={p.id} value={p.id}>{p.label}</option>
+										<option key={p.id} value={p.id}>{t(`aiSvgModal.stylePresets.${p.id}`, p.label)}</option>
 									))}
 								</select>
 							</div>
@@ -1124,7 +1150,7 @@ function ImagesPage() {
 							{svgModal.previewUrl && (
 								<div style={{ border: "1px solid var(--border-subtle)", borderRadius: 8, padding: 12, background: "var(--app-bg-muted)" }}>
 									<div style={{ fontSize: "0.75rem", color: "var(--text-tertiary)", marginBottom: 8, display: "flex", alignItems: "center", gap: 6 }}>
-										<Code size={12} /> SVG 프리뷰
+										<Code size={12} /> {t("aiSvgModal.preview")}
 									</div>
 									<div style={{ display: "flex", justifyContent: "center", background: "#1a1a2e", borderRadius: 6, padding: 16 }}>
 										<img src={svgModal.previewUrl} alt="SVG Preview"
@@ -1137,7 +1163,7 @@ function ImagesPage() {
 							{svgModal.svgCode && (
 								<details>
 									<summary style={{ fontSize: "0.8125rem", color: "var(--text-secondary)", cursor: "pointer" }}>
-										SVG 코드 보기/편집
+										{t("aiSvgModal.viewCode")}
 									</summary>
 									<textarea
 										className="form-input"
@@ -1157,8 +1183,8 @@ function ImagesPage() {
 							{/* 이름 (저장 시) */}
 							{svgModal.svgCode && (
 								<div>
-									<label style={{ display: "block", marginBottom: 4, fontSize: "0.8125rem", fontWeight: 500 }}>저장 이름</label>
-									<input type="text" className="form-input" placeholder="예: 뉴스9 하단바"
+									<label style={{ display: "block", marginBottom: 4, fontSize: "0.8125rem", fontWeight: 500 }}>{t("aiSvgModal.saveName")}</label>
+									<input type="text" className="form-input" placeholder={t("aiSvgModal.saveNamePlaceholder")}
 										value={svgModal.name}
 										onChange={(e) => setSvgModal({ ...svgModal, name: e.target.value })}
 										style={{ width: "100%" }} />
@@ -1175,7 +1201,7 @@ function ImagesPage() {
 
 						{/* 모달 푸터 */}
 						<div style={{ display: "flex", justifyContent: "flex-end", gap: 8, padding: "1rem", borderTop: "1px solid var(--border-primary)" }}>
-							<Button variant="secondary" onClick={() => setSvgModal({ ...svgModal, isOpen: false })}>취소</Button>
+							<Button variant="secondary" onClick={() => setSvgModal({ ...svgModal, isOpen: false })}>{t("cancel")}</Button>
 
 							{/* 생성 / 재생성 */}
 							<Button
@@ -1188,11 +1214,11 @@ function ImagesPage() {
 								variant="secondary"
 							>
 								{svgModal.generating ? (
-									<><Loader2 size={16} className="animate-spin" /> 생성 중...</>
+									<><Loader2 size={16} className="animate-spin" /> {t("aiSvgModal.generating")}</>
 								) : svgModal.svgCode ? (
-									<><Sparkles size={16} /> 재생성</>
+									<><Sparkles size={16} /> {t("aiSvgModal.regenerate")}</>
 								) : (
-									<><Sparkles size={16} /> 생성</>
+									<><Sparkles size={16} /> {t("aiSvgModal.generate")}</>
 								)}
 							</Button>
 
@@ -1203,9 +1229,9 @@ function ImagesPage() {
 									disabled={svgModal.saving || !svgModal.name.trim()}
 								>
 									{svgModal.saving ? (
-										<><Loader2 size={16} className="animate-spin" /> 저장 중...</>
+										<><Loader2 size={16} className="animate-spin" /> {t("aiSvgModal.saving")}</>
 									) : (
-										<><Upload size={16} /> 갤러리에 저장</>
+										<><Upload size={16} /> {t("aiSvgModal.saveToGallery")}</>
 									)}
 								</Button>
 							)}
@@ -1228,6 +1254,7 @@ function EditImageModal({ editingImage: _editingImage, editForm, setEditForm, cl
 	uploading: boolean;
 	categories: string[];
 }) {
+	const { t } = useTranslation("images");
 	return (
 		<div style={{ position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.7)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}
 			onClick={closeEditModal}>
@@ -1236,7 +1263,7 @@ function EditImageModal({ editingImage: _editingImage, editForm, setEditForm, cl
 				<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "1rem", borderBottom: "1px solid var(--border-primary)" }}>
 					<h3 style={{ margin: 0, fontSize: "1rem" }}>
 						<Edit2 size={18} style={{ marginRight: 8, verticalAlign: "middle" }} />
-						이미지 편집
+						{t("editModal.title")}
 					</h3>
 					<button type="button" onClick={closeEditModal} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-tertiary)" }}>
 						<X size={20} />
@@ -1244,32 +1271,44 @@ function EditImageModal({ editingImage: _editingImage, editForm, setEditForm, cl
 				</div>
 				<div style={{ padding: "1rem", display: "flex", flexDirection: "column", gap: "1rem" }}>
 					<div>
-						<label style={{ display: "block", marginBottom: 4, fontSize: "0.8125rem", color: "var(--text-secondary)" }}>이름 *</label>
+						<label style={{ display: "block", marginBottom: 4, fontSize: "0.8125rem", color: "var(--text-secondary)" }}>{t("editModal.name")}</label>
 						<input type="text" className="form-input" value={editForm.name}
-							onChange={(e) => setEditForm((prev) => ({ ...prev, name: e.target.value }))} placeholder="이미지 이름" />
+							onChange={(e) => setEditForm((prev) => ({ ...prev, name: e.target.value }))} placeholder={t("uploadModal.namePlaceholder")} />
 					</div>
 					<div>
-						<label style={{ display: "block", marginBottom: 4, fontSize: "0.8125rem", color: "var(--text-secondary)" }}>설명</label>
+						<label style={{ display: "block", marginBottom: 4, fontSize: "0.8125rem", color: "var(--text-secondary)" }}>{t("editModal.description")}</label>
 						<textarea className="form-input" value={editForm.description}
-							onChange={(e) => setEditForm((prev) => ({ ...prev, description: e.target.value }))} placeholder="이미지 설명" rows={2} />
+							onChange={(e) => setEditForm((prev) => ({ ...prev, description: e.target.value }))} placeholder={t("uploadModal.descPlaceholder")} rows={2} />
 					</div>
 					<div>
-						<label style={{ display: "block", marginBottom: 4, fontSize: "0.8125rem", color: "var(--text-secondary)" }}>카테고리</label>
+						<label style={{ display: "block", marginBottom: 4, fontSize: "0.8125rem", color: "var(--text-secondary)" }}>{t("editModal.category")}</label>
 						<select className="form-input" value={editForm.category}
 							onChange={(e) => setEditForm((prev) => ({ ...prev, category: e.target.value }))}>
-							{categories.map((cat) => <option key={cat} value={cat}>{cat}</option>)}
+							{categories.map((cat) => {
+								const categoriesMap: Record<string, string> = {
+									"로고": "logo",
+									"배경": "background",
+									"아이콘": "icon",
+									"기타": "other"
+								};
+								return (
+									<option key={cat} value={cat}>
+										{t(`categories.${categoriesMap[cat] || "other"}`)}
+									</option>
+								);
+							})}
 						</select>
 					</div>
 					<div style={{ display: "flex", alignItems: "center", gap: 8 }}>
 						<input type="checkbox" id="is_public" checked={editForm.is_public}
 							onChange={(e) => setEditForm((prev) => ({ ...prev, is_public: e.target.checked }))} />
-						<label htmlFor="is_public" style={{ fontSize: "0.8125rem", color: "var(--text-secondary)" }}>다른 사용자에게 공개</label>
+						<label htmlFor="is_public" style={{ fontSize: "0.8125rem", color: "var(--text-secondary)" }}>{t("editModal.isPublic")}</label>
 					</div>
 				</div>
 				<div style={{ display: "flex", justifyContent: "flex-end", gap: 8, padding: "1rem", borderTop: "1px solid var(--border-primary)" }}>
-					<Button variant="secondary" onClick={closeEditModal} disabled={uploading}>취소</Button>
+					<Button variant="secondary" onClick={closeEditModal} disabled={uploading}>{t("cancel")}</Button>
 					<Button onClick={handleEditSave} disabled={uploading || !editForm.name.trim()}>
-						{uploading ? (<><Loader2 size={16} className="animate-spin" /> 저장 중...</>) : "저장"}
+						{uploading ? (<><Loader2 size={16} className="animate-spin" /> {t("editModal.saving")}</>) : t("editModal.save")}
 					</Button>
 				</div>
 			</div>

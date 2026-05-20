@@ -44,7 +44,7 @@ export interface GraphicBlock {
 	transitionOut: TransitionType;
 	textPosition?: TextPosition;
 	// 그래픽 소스 정보 (세션 데이터에서 로드)
-	sourceType?: "image" | "graphic" | "template" | "overlay";
+	sourceType?: "image" | "graphic" | "template" | "overlay" | "whiteboard";
 	sourceId?: string;
 	sourceData?: any;
 	// ─── 역추적 필드 (핫 수정 / NRCS 변경 알림용) ───

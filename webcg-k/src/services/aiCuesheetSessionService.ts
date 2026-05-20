@@ -11,6 +11,7 @@ import type {
   AiCuesheetSession,
   AiCuesheetSessionScene,
   SceneContent,
+  SceneGraphicState,
   SessionListRow,
   CuesheetWizardState,
 } from "../lib/aiCuesheetTypes";
@@ -108,6 +109,7 @@ export async function saveSessionScenes(
   scenes: SceneContent[],
   generatedHtml?: Record<number, string>,
   generatedCss?: Record<number, string>,
+  overlayTemplateIds?: Record<number, string>,
 ): Promise<void> {
   const newRows = scenes.map((scene) => ({
     session_id: sessionId,
@@ -116,6 +118,7 @@ export async function saveSessionScenes(
     scene_data: scene as unknown as Record<string, unknown>,
     generated_html: generatedHtml?.[scene.order] ?? null,
     generated_css: generatedCss?.[scene.order] ?? null,
+    overlay_template_id: overlayTemplateIds?.[scene.order] ?? null,
   }));
 
   if (newRows.length === 0) return;
@@ -157,7 +160,32 @@ export async function deleteSession(id: string): Promise<void> {
   if (error) throw error;
 }
 
-// ─── 7. 위자드 상태 자동 저장 ─────────────────────────────────────
+// ─── 7. 생성된 그래픽 저장 맵 구성 ────────────────────────────────
+
+export function buildGeneratedSceneAssetMaps(
+  scenes: SceneContent[],
+  graphicStates: SceneGraphicState[],
+): {
+  htmlMap: Record<number, string>;
+  cssMap: Record<number, string>;
+  overlayTemplateIdMap: Record<number, string>;
+} {
+  const htmlMap: Record<number, string> = {};
+  const cssMap: Record<number, string> = {};
+  const overlayTemplateIdMap: Record<number, string> = {};
+
+  for (const gs of graphicStates) {
+    const scene = scenes[gs.sceneIndex];
+    if (!scene) continue;
+    if (gs.generatedHtml) htmlMap[scene.order] = gs.generatedHtml;
+    if (gs.generatedCss) cssMap[scene.order] = gs.generatedCss;
+    if (gs.overlayTemplateId) overlayTemplateIdMap[scene.order] = gs.overlayTemplateId;
+  }
+
+  return { htmlMap, cssMap, overlayTemplateIdMap };
+}
+
+// ─── 8. 위자드 상태 자동 저장 ─────────────────────────────────────
 
 export async function autoSaveWizardState(
   sessionId: string | null,
@@ -187,18 +215,17 @@ export async function autoSaveWizardState(
   });
 
   if (state.parseResult?.cuesheet) {
-    const htmlMap: Record<number, string> = {};
-    const cssMap: Record<number, string> = {};
-    for (const gs of state.graphicStates) {
-      if (gs.generatedHtml) htmlMap[gs.sceneIndex] = gs.generatedHtml;
-      if (gs.generatedCss) cssMap[gs.sceneIndex] = gs.generatedCss;
-    }
+    const { htmlMap, cssMap, overlayTemplateIdMap } = buildGeneratedSceneAssetMaps(
+      state.parseResult.cuesheet.scenes,
+      state.graphicStates,
+    );
 
     await saveSessionScenes(
       sessionId,
       state.parseResult.cuesheet.scenes,
       htmlMap,
       cssMap,
+      overlayTemplateIdMap,
     );
   }
 

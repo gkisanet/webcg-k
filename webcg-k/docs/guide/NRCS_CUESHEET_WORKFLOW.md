@@ -1,49 +1,50 @@
-# 📋 NRCS Cuesheet — Complete Guide
+# 📋 NRCS 큐시트 — 완벽 가이드
 
-> **NRCS** = Newsroom Computer System
-> A specialized network system in broadcast newsrooms to manage articles, write scripts, and edit, verify, and program on-screen character generator (CG) overlays.
-
----
-
-## 1. What is a Cuesheet?
-
-### Concept: Analogous to Concert Setlists
-
-Just as a live concert utilizes a **setlist** (song schedules), a news broadcast relies on a **cuesheet** (CG overlay schedules):
-
-```
-🎵 Concert Setlist                       📋 News Cuesheet
-─────────────────────────               ─────────────────────────
-Song 1. Bohemian Rhapsody               1. Budget Bill Passed [Super: Gildong Hong / Ministry of Finance]
-Song 2. We Will Rock You                2. Weather Alert    [Band: Seoul Heavy Rain Warning]
-Song 3. Don't Stop Me Now               3. Sports News      [Headline: World Cup Finals]
-```
-
-Just as you would plan "Add MC comments after Song 2" on a concert setlist, you manage "Inject weather crawls under Article 2" inside a news cuesheet.
-
-### Definition
-
-> **Cuesheet = The core programming worksheet compiling and mapping CG graphics for a specific news program session (e.g., "KBS News 9").**
-
-- **Who uses it?** ➔ CG Operators, Control Room Assistant Directors (ADs), and News Producers.
-- **When is it used?** ➔ Pre-production planning through real-time updates during live broadcasts.
-- **What does it manage?** ➔ Which graphics models map to specific stories, how many tags to display, and the precise text variables.
+> **NRCS** = Newsroom Computer System (뉴스룸 컴퓨터 시스템)
+> 방송국에서 뉴스 기사를 관리하고, 각 기사에 붙을 **CG(Computer Graphics) 자막**을 편집·검증·송출하는 시스템.
 
 ---
 
-## 2. Playout Pipeline (Big Picture)
+## 1. 큐시트란 무엇인가?
 
-WebCG-K systems handle broadcast playout through an **8-stage pipeline**:
+### 비유: 콘서트 세트리스트
+
+콘서트에 **세트리스트**(곡 순서표)가 있듯이, 뉴스 방송에는 **큐시트**(CG 순서표)가 있습니다.
+
+```
+🎵 콘서트 세트리스트        📋 뉴스 큐시트
+─────────────────        ─────────────────
+1곡. Bohemian Rhapsody    1. 추경안 통과 [슈퍼: 홍길동/기재부]
+2곡. We Will Rock You     2. 날씨 속보  [밴드: 서울 폭우 주의]
+3곡. Don't Stop Me Now    3. 스포츠     [헤드라인: 월드컵 결승]
+```
+
+세트리스트에서 "2번곡 다음에 MC 멘트 넣자" 하듯이,
+큐시트에서 "2번 기사에 속보 크롤 추가하자"를 관리합니다.
+
+### 정의
+
+> **큐시트 = 한 뉴스 프로그램(예: "KBS 뉴스 9")의 CG 자막 편집 워크시트**
+
+- **누가** 사용하나? → CG 오퍼레이터, 부조정실 AD, 뉴스 편집 PD
+- **언제** 사용하나? → 방송 전 준비 단계 ~ 방송 중 실시간 수정
+- **무엇을** 관리하나? → 기사별로 어떤 CG를 몇 개 내보낼지, 내용은 무엇인지
+
+---
+
+## 2. 전체 파이프라인 (Big Picture)
+
+WebCG-K 시스템에서 CG가 화면에 나가기까지의 **8단계 파이프라인**입니다.
 
 ```mermaid
 flowchart LR
-    A["🎨 Graphics Editor<br/>(Design Canvas)"] --> B["📦 Bundle Editor<br/>(Grouping Slots)"]
-    B --> C["📋 Cuesheet Creation<br/>(Articles List)"]
-    C --> C2["🔗 Data Source Bindings<br/>(NRCS/CSV Feeds)"]
-    C2 --> D["✏️ Edit Cuesheet Data<br/>(Inject Variables)"]
-    D --> D2["🔍 Content Validation<br/>(Spells/Blocked Lists)"]
-    D2 --> E["🛡️ Preflight Diagnostics<br/>(Structural Checks)"]
-    E --> F["📡 Transmit to Rundown<br/>(Live Playout)"]
+    A["🎨 그래픽 편집기<br/>(디자인)"] --> B["📦 번들 편집기<br/>(그룹핑)"]
+    B --> C["📋 큐시트 생성<br/>(기사 목록)"]
+    C --> C2["🔗 데이터 소스 바인딩<br/>(NRCS/CSV)"]
+    C2 --> D["✏️ 큐시트 상세<br/>(CG 텍스트 입력)"]
+    D --> D2["🔍 내용 검증<br/>(맞춤법/금칙어)"]
+    D2 --> E["🛡️ 프리플라이트<br/>(구조 검증)"]
+    E --> F["📡 런다운 전송<br/>(송출)"]
 
     style A fill:#7c3aed,color:#fff
     style B fill:#f59e0b,color:#000
@@ -55,194 +56,194 @@ flowchart LR
     style F fill:#06b6d4,color:#fff
 ```
 
-| Stage | View Path | Core Action | Output Object |
+| 단계 | 페이지 | 핵심 행위 | 결과물 |
 |:---:|--------|----------|--------|
-| **1** | `/dashboard/graphics` | Design CG layouts (geometry, color, fonts) | `graphic` record |
-| **2** | `/dashboard/bundles/:id` | Group layouts into functional categories | `bundle.slots[]` |
-| **3** | `/dashboard/cuesheets` | Configure cuesheets by matching program name, date, and bundle | `nrcs_cuesheet` |
-| **3.5**| Cuesheet Sub-View | Integrate NRCS and CSV feeds, sync stories | `cuesheet_data_sources` |
-| **4** | `/dashboard/cuesheets/:id` | Inject/Edit CG variables per story slug | `cg_data[]` |
-| **4.5**| Inline Inspector Button | Check contents (spellcheck, banned vocabulary, job roles, temporal logic) | `ContentValidationResult[]` |
-| **5** | Inline Diagnostics Panel | Preflight check (missing vectors, text overflow boundaries) | `PreflightReport` |
-| **6** | Active Action Button | Transmit to playout rundown (governed by Smart Lock policies) | `linked_rundown_id` |
+| **1** | `/dashboard/graphics` | CG 템플릿 **디자인** (도형, 색상, 폰트) | `graphic` 레코드 |
+| **2** | `/dashboard/bundles/:id` | 그래픽을 CG 유형별로 **묶음** | `bundle.slots[]` |
+| **3** | `/dashboard/cuesheets` | 프로그램+날짜+번들 → 큐시트 **생성** | `nrcs_cuesheet` |
+| **3.5** | 큐시트 상세 내부 | NRCS/CSV **데이터 소스 바인딩** 및 동기화 | `cuesheet_data_sources` |
+| **4** | `/dashboard/cuesheets/:id` | 기사별 CG 텍스트 **입력/편집** | `cg_data[]` |
+| **4.5** | 상세 페이지 내 버튼 | **내용 검증** (맞춤법/금칙어/직함/시제) | `ContentValidationResult[]` |
+| **5** | 상세 페이지 내 패널 | 누락/오버플로 등 **구조 검증** | `PreflightReport` |
+| **6** | 상세 페이지 내 버튼 | 런다운 시스템으로 **전송** (Smart Lock 적용) | `linked_rundown_id` |
 
 ---
 
-## 3. Deep-dive Phase Breakdown
+## 3. 각 단계 심층 설명
 
-### 3-1. Vector Graphics Editor (Design)
+### 3-1. 그래픽 편집기 (Design)
 
-> **Role:** Design the **visual skins and layouts** for CG overlays.
+> **역할:** CG 자막의 **시각적 디자인**을 만드는 단계
 
 ```
 ┌──────────────────────────────────────────────┐
-│  [Super Tag Design Canvas]                    │
+│  [슈퍼 자막 디자인]                             │
 │                                              │
 │  ┌────────────────────────────────────┐       │
-│  │  Name: ████████████                │ ← Text bounding box
-│  │  Role: ████████████                │       │
+│  │  이름: ████████████                │ ← 텍스트 영역  │
+│  │  직함: ████████████                │       │
 │  └────────────────────────────────────┘       │
-│  Background: Translucent dark bar            │
-│  Font: Pretendard Bold 36px                  │
-│  Color: #FFFFFF                              │
+│  배경: 반투명 검정 바                          │
+│  폰트: Pretendard Bold 36px                  │
+│  색상: #FFFFFF                               │
 └──────────────────────────────────────────────┘
 ```
 
-- Operators drag shapes (`rect`), text labels (`text`), and logos on a design canvas.
-- Output configurations persist within `template_data` JSON parameters.
-- Text boxes act as binding containers that receive **live story data** later.
+- 도형(rect), 텍스트(text), 이미지 등의 **요소**를 캔버스에 배치
+- `template_data` JSON에 모든 디자인 정보가 저장됨
+- Binding Container → 텍스트 프레임에 나중에 **실제 내용**이 들어감
 
-### 3-2. Graphics Bundler (Grouping)
+### 3-2. 번들 편집기 (Grouping)
 
-> **Role:** Pack multiple designs into a named package mapped by **CG Type (Super, Band, Headline, etc.)**.
+> **역할:** 여러 그래픽을 **CG 유형(슈퍼, 밴드, 헤드라인 등)별로 묶는** 단계
 
 ```
-📦 "KBS News 9 Bundle"
-├── 🏷️ super       ➔ Super_Tag_Graphic.svg
-├── 🏷️ band        ➔ News_Band_Graphic.svg
-├── 🏷️ headline    ➔ News_Headline_Graphic.svg
-├── 🏷️ source      ➔ Media_Source_Graphic.svg
-└── 🏷️ crawl       ➔ Ticker_Crawl_Graphic.svg
+📦 "KBS 뉴스9 번들"
+├── 🏷️ 슈퍼(super)     → 슈퍼 자막 그래픽.svg
+├── 🏷️ 밴드(band)      → 뉴스 밴드 그래픽.svg
+├── 🏷️ 헤드라인(headline) → 헤드라인 그래픽.svg
+├── 🏷️ 출처(source)    → 출처 표시 그래픽.svg
+└── 🏷️ 크롤(crawl)     → 속보 띠 그래픽.svg
 ```
 
-**Why utilize bundles?**
+**Why 번들이 필요한가?**
 
-Every program session utilizes distinct layouts.
-- "KBS News 9" Super tag designs differ from "KBS News 12" Super tag layouts.
-- Bundles map designs cleanly. Selecting a bundle automatically applies the **correct styling tokens** to active cuesheets.
+뉴스 프로그램마다 디자인이 다릅니다.
+- "KBS 뉴스 9"의 슈퍼 자막 디자인 ≠ "KBS 뉴스 12"의 슈퍼 자막 디자인
+- 번들로 묶어두면, 큐시트 생성 시 **"이 프로그램은 이 번들의 디자인을 쓴다"** 고 지정 가능
 
-### 3-3. Cuesheet Configuration (Create)
+### 3-3. 큐시트 생성 (Create)
 
-> **Role:** Define which program name, broadcast date, and bundle configuration apply to a new program run.
+> **역할:** "어떤 프로그램의 어떤 날짜 방송에 어떤 번들을 쓸지" 지정
 
 ```
 ┌─────────────────────────────┐
-│  📋 New Cuesheet            │
+│  📋 새 큐시트                │
 │                             │
-│  Program Name: KBS News 9   │
-│  Air Date:     2026-04-03   │
-│  Target Bundle: K9_Default ▾│
+│  프로그램명: KBS 뉴스 9       │
+│  방송일:    2026-04-03       │
+│  매핑 번들:  KBS 뉴스9 번들 ▾  │
 │                             │
-│        [Cancel]  [Create]   │
+│        [취소]  [생성]         │
 └─────────────────────────────┘
 ```
 
-Two creation paths:
-1. **Manual Entry**: Configure name, target dates, and select desired graphic theme bundles.
-2. **CSV Import**: Import news rundown logs from an exported CSV roster.
+생성하는 방법 2가지:
+1. **수동 생성**: 프로그램명 + 날짜 + 번들 선택
+2. **CSV 임포트**: 기존 뉴스 기사 목록을 CSV로 가져오기
 
-### 3-4. Variable Editing (Edit)
+### 3-4. 큐시트 상세 — CG 텍스트 편집 (Edit)
 
-> **Role:** Inject the **actual variables and titles** to render on screen.
+> **역할:** 각 뉴스 기사마다 **CG에 들어갈 실제 내용**을 입력
 
-This interface serves as the **operational hub of cuesheet workflows**:
+이 페이지가 **큐시트 워크플로의 핵심**입니다.
 
 ```
 ┌────────────────────────────┬──────────────────────────┐
-│  📰 Story Segments (Left)   │  ✏️ CG Variables (Right)  │
+│  📰 기사 목록 (왼쪽)        │  ✏️ CG 편집 (오른쪽)       │
 │                            │                          │
-│  1. [PKG-Budget] (Active)  │  🏷️ super                  │
-│     "Budget Bill Passed"   │  Name: [Gildong Hong    ]  │
-│     1 Super tag            │  Role: [Vice Minister   ]  │
+│  1. [PKG-추경안] ← 선택됨   │  🏷️ 슈퍼                  │
+│     "추경안 국회 통과"       │  이름: [홍길동          ]  │
+│     슈퍼 1건               │  직함: [기획재정부 차관  ]  │
 │                            │                          │
-│  2. [STR-Weather]          │  🏷️ band                  │
-│     "Seoul Heavy Rain"     │  Text: [55 Trillion     ]  │
-│     1 Band, 1 Super        │                          │
-│                            │  [💾 Save Changes]       │
-│  3. [INT-Interview]        │                          │
-│     "Economics Professor"  │                          │
+│  2. [STR-날씨]             │  🏷️ 밴드                  │
+│     "서울 폭우 주의보"       │  내용: [정부, 추경 55조  ] │
+│     밴드 1건, 슈퍼 1건      │                          │
+│                            │  [💾 저장]                │
+│  3. [INT-인터뷰]           │                          │
+│     "경제학 교수 인터뷰"     │                          │
 └────────────────────────────┴──────────────────────────┘
 ```
 
-**Operational Steps**:
-1. Operators select a **Story Slug** in the left column.
-2. The right column mounts the **variable editors** matching that segment's slots.
-3. Users type target strings (e.g., names, roles, or headlines).
-4. Clicking **Save** updates the `cg_data` records in the DB.
-5. Operators can style specific words (e.g., red highlights) using TipTap inline options.
+**워크플로:**
+1. 왼쪽에서 **기사를 클릭**
+2. 오른쪽에 해당 기사의 **CG 텍스트 편집기**가 나타남
+3. 각 CG 유형(슈퍼, 밴드 등)별로 **텍스트 내용 입력**
+4. **저장** → DB에 `cg_data` 업데이트
+5. 리치 텍스트 에디터(TipTap)로 **부분 스타일링** 가능 (색상, 크기)
 
-### 3-5. Preflight Verification (Verify)
+### 3-5. 프리플라이트 검증 (Verify)
 
-> **Role:** Automate structural and variable checks before live production.
+> **역할:** 방송 전에 **누락이나 실수를 미리 잡아내는** 안전장치
 
 ```
-🛡️ Preflight Diagnostics
+🛡️ 프리플라이트 결과
 ─────────────────────────────────
-✅ Vector Assets Check      3/3 OK
-🟡 Variable Fields Coverage 2/3 (66%)  ← "1 story has unmapped fields"
-❌ Text Bounds Overflow    1 error      ← "Name text exceeds boundary"
+✅ 그래픽 존재 확인       3/3 OK
+🟡 매핑 완성도           2/3 (66%)  ← "1건이 아직 CG 미입력"
+❌ 텍스트 오버플로        1건 발견   ← "이름이 너무 길어서 잘림"
 ```
 
-Core Verification Tests:
-- **Vector Assets Check**: Validates that all graphics linked to active slots exist in the database.
-- **Variable Fields Coverage**: Ensures no active stories contain empty text properties.
-- **Text Bounds Overflow**: Triggers an alert if typed strings exceed visual bounding boxes on screen.
+검증 항목:
+- **그래픽 존재**: 번들에 연결된 그래픽이 실제로 DB에 있는지
+- **매핑 완성도**: 모든 기사에 CG가 입력되었는지 (빈칸 없는지)
+- **텍스트 오버플로**: 입력한 텍스트가 그래픽의 텍스트 영역을 넘치는지
 
-### 3-6. Live Rundown Propagation (Transmit)
+### 3-6. 런다운 전송 (Transmit)
 
-> **Role:** Transmit completed cuesheets to the **Live Playout Controller**.
+> **역할:** 완성된 큐시트를 **실제 방송 송출 시스템(런다운)**으로 전달
 
 ```
-Cuesheet Editor
-└── Click [📡 Transmit to Rundown]
-    ├── Select Target Playout Session (Dropdown)
-    └── Success ➔ Set linked_rundown_id on cuesheet
+큐시트 상세 페이지
+└── [📡 런다운으로 전송] 버튼 클릭
+    ├── 런다운 선택 (드롭다운)
+    └── 전송 완료 → linked_rundown_id 설정
 ```
 
-Rundowns represent the **time-sequenced playout grids** of live control rooms. Transmitting cuesheets registers CG blocks into active playout grids for operators to trigger live.
+런다운 = **시간 기반 방송 진행표**. 큐시트의 CG 데이터가 런다운의 각 블록에 매핑되어 실시간 송출됩니다.
 
 ---
 
-## 4. 13 Standard CG Playout Formats
+## 4. CG 타입 13종 상세
 
-Broadcast lower-thirds, subtitles, and labels are categorized into 13 standard types:
+뉴스에 등장하는 **모든 종류의 CG 자막**을 13가지로 분류합니다.
 
-### Core Formats (5 Standard Types)
+### 자주 사용 (핵심 5종)
 
-| CG Type | Korean Term | Visual Playout Example | Usage Frequency |
-|---------|-------------|------------------------|-----------------|
-| `super` | 슈퍼 | `Gildong Hong / Director of Planning` | ⭐⭐⭐⭐⭐ |
-| `band` | 밴드 | `GOVERNMENT SECURES 55T BUDGET` (Lower horiz. bar) | ⭐⭐⭐⭐⭐ |
-| `headline` | 헤드라인 | `BREAKING NEWS` (Top header bar) | ⭐⭐⭐⭐ |
-| `source` | 출처 | `Footage: AP Wire Service` | ⭐⭐⭐⭐ |
-| `locator` | 지역/장소 | `Yeouido, Seoul` | ⭐⭐⭐ |
+| CG 타입 | 한국어 | 실제 화면 예시 | 사용 빈도 |
+|---------|--------|-------------|----------|
+| `super` | **슈퍼** | `홍길동 / 서울시 관계자` | ⭐⭐⭐⭐⭐ |
+| `band` | **밴드** | `정부, 추경안 국회 제출` (하단 가로바) | ⭐⭐⭐⭐⭐ |
+| `headline` | **헤드라인** | `긴급 뉴스` (대형 제목) | ⭐⭐⭐⭐ |
+| `source` | **출처** | `KBS 취재` `AP 통신 제공` | ⭐⭐⭐⭐ |
+| `locator` | **지역/장소** | `서울 여의도` (장소 표시) | ⭐⭐⭐ |
 
-### Secondary Formats (4 Standard Types)
+### 중간 사용 (4종)
 
-| CG Type | Korean Term | Visual Playout Example |
-|---------|-------------|------------------------|
-| `subheadline` | 서브 헤드라인 | Secondary descriptors displayed underneath Headlines |
-| `lowthird` | 하단 자막 | Full lower-third grids containing combined name/role tags |
-| `soundbite` | 사운드바이트 | Inline transcription of interview audio feeds |
-| `reporter` | 기자 리포트 | `Hwang Hyeon-gyu / Seoul High Court` |
+| CG 타입 | 한국어 | 실제 화면 예시 |
+|---------|--------|-------------|
+| `subheadline` | 서브 헤드라인 | 헤드라인 아래 부제목 |
+| `lowthird` | 하단 자막 | 하단 1/3 영역 이름+직함 조합 |
+| `soundbite` | 사운드바이트 | 인터뷰이 발언 자막 |
+| `reporter` | 기자 리포트 | `이 시각 서울중앙지방법원 / 황현규` |
 
-### Special Formats (4 Standard Types)
+### 특수 상황 (4종)
 
-| CG Type | Korean Term | Purpose |
-|---------|-------------|---------|
-| `crawl` | 속보 크롤 | Dynamic horizontal tickers scrolling from right to left |
-| `fullcg` | 풀CG | Symmetrical full-screen charts, maps, and diagrams |
-| `credit` | 크레딧 | Scroll summaries listing production personnel |
-| `flash` | 속보 헤드라인 | Double-height urgent breaking news tickers |
+| CG 타입 | 한국어 | 설명 |
+|---------|--------|------|
+| `crawl` | 속보 크롤 | 화면 하단을 좌→우 스크롤하는 속보 띠 |
+| `fullcg` | 풀CG | 화면 전체를 차지하는 인포그래픽 |
+| `credit` | 크레딧 | `촬영기자 이상원 / 영상편집 이상미` |
+| `flash` | 속보 헤드라인 | 긴급 대형 뉴스 속보 제목 |
 
 ---
 
-## 5. System Schema Map (Data Flow)
+## 5. 데이터 흐름 (Data Flow)
 
-The diagram below details the relational model mapping assets, cuesheets, and playout runs:
+데이터가 어떻게 연결되는지 기술적으로 정리합니다.
 
 ```mermaid
 erDiagram
-    GRAPHIC ||--o{ BUNDLE_SLOT : "1:N Mapping"
+    GRAPHIC ||--o{ BUNDLE_SLOT : "1:N 매핑"
     BUNDLE ||--|{ BUNDLE_SLOT : "slots"
-    BUNDLE ||--o{ CUESHEET : "Bundle Link"
+    BUNDLE ||--o{ CUESHEET : "번들 연결"
     CUESHEET ||--|{ CUESHEET_ITEM : "items"
-    CUESHEET }o--|| RUNDOWN : "Rundown Link"
+    CUESHEET }o--|| RUNDOWN : "런다운 전송"
 
     GRAPHIC {
         string id
         string name
-        json template_data "Design skins specs"
+        json template_data "디자인 정보"
     }
     BUNDLE {
         string id
@@ -251,22 +252,22 @@ erDiagram
     }
     BUNDLE_SLOT {
         string id
-        string cg_type "super, band, headline..."
-        string graphic_id "FK ➔ GRAPHIC"
+        string cg_type "super, band..."
+        string graphic_id "FK → GRAPHIC"
     }
     CUESHEET {
         string id
         string program_name
         string program_date
-        string bundle_id "FK ➔ BUNDLE"
-        string status "draft ➔ ready ➔ onair ➔ done"
+        string bundle_id "FK → BUNDLE"
+        string status "draft → ready → onair → done"
     }
     CUESHEET_ITEM {
         string id
-        string slug "PKG-Budget"
-        string title "Budget Bill Passed"
-        json cg_data "Variable strings map"
-        string status "pending ➔ mapped ➔ approved ➔ aired"
+        string slug "PKG-추경안"
+        string title "추경안 국회 통과"
+        json cg_data "CG 텍스트 내용"
+        string status "pending → mapped → approved → aired"
     }
     RUNDOWN {
         string id
@@ -274,9 +275,9 @@ erDiagram
     }
 ```
 
-### `cg_data` Structure Example
+### cg_data 구조 예시
 
-Cuesheet items can carry multiple graphic templates inside a single story segment:
+큐시트 아이템 1건에 여러 CG가 들어갈 수 있습니다:
 
 ```json
 [
@@ -285,8 +286,8 @@ Cuesheet items can carry multiple graphic templates inside a single story segmen
     "type": "super",
     "order": 1,
     "fields": {
-      "name": "Gildong Hong",
-      "title": "Vice Minister of Finance"
+      "name": "홍길동",
+      "title": "기획재정부 차관"
     }
   },
   {
@@ -294,223 +295,223 @@ Cuesheet items can carry multiple graphic templates inside a single story segmen
     "type": "band",
     "order": 2,
     "fields": {
-      "text": "Government passes 55T budget package."
+      "text": "정부, 추경 55조 원안 확정"
     }
   }
 ]
 ```
 
-At playout, properties inside the `fields` object substitute into matching bounding boxes inside target SVGs, producing finished transparent broadcast elements.
+이 `cg_data`의 `fields`가 → 번들의 해당 `cg_type` 슬롯의 그래픽 → 텍스트 영역에 대입되어 → 최종 CG 화면이 생성됩니다.
 
 ---
 
-## 6. Lifecycle States (Status Flow)
+## 6. 상태 관리 (Status Flow)
 
-### Cuesheet Session Lifecycles
+### 큐시트 상태
 
 ```mermaid
 stateDiagram-v2
-    [*] --> draft : Create
-    draft --> ready : Variables Filled
-    ready --> onair : Playout Start
-    onair --> done : Broadcast Complete
+    [*] --> draft : 생성
+    draft --> ready : 모든 CG 입력 완료
+    ready --> onair : 방송 시작
+    onair --> done : 방송 종료
     
-    draft --> draft : Editing Content
-    ready --> draft : Changes Required
+    draft --> draft : CG 편집 중
+    ready --> draft : 수정 필요
 ```
 
-| State | Purpose | UI Color Code |
+| 상태 | 의미 | UI 표시 |
 |------|------|---------|
-| `draft` | Content being assembled and edited | 🔘 Gray "Draft" |
-| `ready` | Formatted, validated, and ready to propagate | 🔵 Blue "Ready" |
-| `onair` | Active inside the Studio Controller | 🔴 Red "ON AIR" + flashing indicators |
-| `done` | Playout session completed | 🟢 Green "Done" |
+| `draft` | 편집 중 (CG 미완성) | 🔘 회색 "초안" |
+| `ready` | 방송 준비 완료 | 🔵 파랑 "준비" |
+| `onair` | 현재 방송 중 | 🔴 빨강 "온에어" + LIVE 표시 |
+| `done` | 방송 완료 | 🟢 초록 "완료" |
 
-### Cuesheet Item Lifecycles
+### 아이템 상태
 
-| State | Purpose |
+| 상태 | 의미 |
 |------|------|
-| `pending` | Story slug declared, but CG variables remain empty |
-| `mapped` | Text parameters filled and saved |
-| `approved` | Certified correct by senior AD or Producer |
-| `aired` | Successfully triggered live on air |
+| `pending` | CG 미입력 (기사만 존재) |
+| `mapped` | CG 텍스트 입력 완료 |
+| `approved` | PD/AD 승인 |
+| `aired` | 실제 방송 송출됨 |
 
 ---
 
-## 7. Production Playout Scenario
+## 7. 실제 사용 시나리오
 
-### Timeline: Preparing and Running "KBS News 9"
+### 시나리오: "KBS 뉴스 9" 방송 준비
 
 ```
-14:00  [Journalists] Complete story drafts and file reports.
+14:00  [기자들] 기사 원고 작성 완료
        ↓
-15:00  [CG Director] Initialize cuesheet inside WebCG-K:
-       - Program: "KBS News 9"
-       - Bundle: Select "News 9 Default Bundle"
+15:00  [CG 담당자] WebCG-K에서 큐시트 생성
+       - 프로그램: "KBS 뉴스 9"
+       - 번들: "뉴스9 기본 번들" 선택
        ↓
-15:30  [CG Director] Synchronize stories list via CSV upload:
-       - 15 segment lines registered automatically.
+15:30  [CG 담당자] 기사 목록 확인 (CSV 임포트 or 수동 입력)
+       - 기사 15건 등록
        ↓
-16:00  [CG Director] Input graphic variables per segment:
-       - "PKG-Budget" ➔ Super: Gildong Hong, Band: 55T Bill Passed
-       - "STR-Weather"➔ Band: Heatwave Warning in Seoul Area
+16:00  [CG 담당자] 각 기사별 CG 텍스트 입력
+       - "추경안" → 슈퍼: 홍길동/기재부, 밴드: 추경 55조 확정
+       - "날씨"   → 밴드: 서울 30°C 폭염주의보
        - ...
        ↓
-17:00  [CG Director] Run Preflight Diagnostics:
-       - ✅ 15/15 segments verified.
-       - ⚠️ 2 text bounding-box overflows detected ➔ Adjusted margins.
+17:00  [CG 담당자] 프리플라이트 실행
+       - ✅ 15건 모두 매핑 완료
+       - ⚠️ 2건 텍스트 오버플로 → 수정
        ↓
-18:00  [Producer] Run final validation checks ➔ Set status to "ready".
+18:00  [AD] 큐시트 최종 확인 → 상태를 "ready"로 변경
        ↓
-18:30  [CG Director] Transmit variables to Live Playout Controller.
+18:30  [CG 담당자] 런다운으로 전송
        ↓
-21:00  [Live Broadcast] Transition cuesheet to "onair":
-       - Operators trigger overlays sequentially down the track list.
+21:00  [방송 시작] 상태 → "onair"
+       - 기사 순서대로 CG 자동 송출
        ↓
-21:50  [Air Complete] Transition cuesheet to "done".
+21:50  [방송 종료] 상태 → "done"
 ```
 
 ---
 
-## 8. Cuesheet Codebase Index
+## 8. 관련 파일 맵
 
-| File path | Functional Role |
+| 파일 | 역할 |
 |------|------|
-| `src/routes/dashboard/cuesheets/index.lazy.tsx` | Main cuesheets dashboard index & wizard dialings |
-| `src/routes/dashboard/cuesheets/$cuesheetId.tsx` | Story editor panel displaying inline variables forms |
-| `src/services/cuesheetService.ts` | Cuesheet CRUD, transitions, and lock validation checks |
-| `src/services/cuesheetDataSourceService.ts` | Third-party feeds syncer (NRCS/CSV 3-way diff merges) |
-| `src/services/preflightService.ts` | Diagnostic runner executing margin & asset checks |
-| `src/services/contentValidation/index.ts` | Semantic content inspector engine |
-| `src/services/contentValidation/profanityFilter.ts` | Multi-tiered vulgarity check (`prohibited`, `caution`, `sensitive`) |
-| `src/services/contentValidation/spellCheckService.ts` | Custom Spellchecker using regional dictionaries |
-| `src/services/contentValidation/titleValidator.ts` | Job title typo scanners and standards parser |
-| `src/services/contentValidation/temporalValidator.ts` | Time, tense, and date checker |
-| `src/services/nrcsMappingService.ts` | Algorithm transforming plain news feeds into CG models |
-| `src/services/nrcsRealtimeService.ts` | Real-time channel synchronizer |
-| `src/services/aiSvgService.ts` | Gemini 3.1 Pro integration creating vector graphics |
-| `src/lib/nrcsTypes.ts` | Standard definitions for 13 formats and news types |
-| `src/components/CsvImportWizard.tsx` | Step-by-step CSV parsing interface |
-| `src/components/ui/RichTextEditor.tsx` | Custom inline rich editor with brand style guidelines |
+| `src/routes/dashboard/cuesheets/index.lazy.tsx` | 큐시트 목록 + 생성 모달 |
+| `src/routes/dashboard/cuesheets/$cuesheetId.tsx` | 큐시트 상세 (기사 목록 + CG 편집) |
+| `src/services/cuesheetService.ts` | 큐시트 CRUD + Smart Lock 전파 |
+| `src/services/cuesheetDataSourceService.ts` | 데이터 소스(NRCS/CSV) 바인딩 + 3-way diff 동기화 |
+| `src/services/preflightService.ts` | 프리플라이트 구조 검증 엔진 |
+| `src/services/contentValidation/index.ts` | 내용 검증 엔진 (맞춤법/금칙어/직함/시제) |
+| `src/services/contentValidation/profanityFilter.ts` | 금칙어 3단계 필터 (prohibited/caution/sensitive) |
+| `src/services/contentValidation/spellCheckService.ts` | 로컬 사전 기반 맞춤법 검사 |
+| `src/services/contentValidation/titleValidator.ts` | CG 타입별 직함·표기 검증 |
+| `src/services/contentValidation/temporalValidator.ts` | 시제·날짜 일관성 검증 |
+| `src/services/nrcsMappingService.ts` | 기사 → CG 자동 매핑 |
+| `src/services/nrcsRealtimeService.ts` | Supabase 실시간 동기화 |
+| `src/services/aiSvgService.ts` | Gemini 3.1 Pro AI SVG 생성 |
+| `src/lib/nrcsTypes.ts` | CG 타입 13종 + 기사 유형 정의 |
+| `src/components/CsvImportWizard.tsx` | CSV → 큐시트 변환 마법사 |
+| `src/components/ui/RichTextEditor.tsx` | CG 텍스트 리치 편집기 (브랜드 제한 적용) |
 
 ---
 
-## 9. Glossary of Key Terms
+## 9. 핵심 용어 사전
 
-| Term | Concept |
-|------|---------|
-| **Cuesheet** | Playout ledger containing CG data for one single news program session. |
-| **Slug** | Short, standard identifier string representing a story (e.g. `PKG-Budget`). |
-| **Super** | Broadcaster term for text boxes superimposed on active video feeds (e.g. lower-third names). |
-| **Band** | Horizon bar graphics spanning the lower third of screens to show tickers or news flashes. |
-| **Crawl** | Horizontal scrolling news ticker sliding from right to left at the bottom edge. |
-| **Rundown** | Sequential chronological list of blocks programmed inside active playout sessions. |
-| **Preflight** | Pre-broadcast diagnostic check searching for missing assets, blank lines, or overflows. |
-| **Bundle** | Configured asset container grouping distinct layouts mapped to standard CG slots. |
-| **CG Type** | Standard classification mapping graphic blocks to 13 broadcast formats. |
-| **Mapping** | The technical binding matching story segments to variable graphics slots. |
-| **Smart Lock** | Fail-safe routine preventing edits to active playout grids while session status is ON AIR. |
-| **Prohibited Word** | Restricted vocabulary banned by regulatory guidelines (discrimination, slur, suicide rules). |
-| **Data Source** | Connected external database or text feed (NRCS API, CSV uploads) synchronizing scripts. |
+| 용어 | 영문 | 설명 |
+|------|------|------|
+| **큐시트** | Cuesheet | 뉴스 프로그램 1회분의 CG 편집 시트 |
+| **슬러그** | Slug | 기사의 짧은 식별 이름 (예: `PKG-추경안`) |
+| **슈퍼** | Super(impose) | 화면 위에 겹쳐 표시하는 자막 |
+| **밴드** | Band | 화면 하단 가로 막대형 자막 |
+| **크롤** | Crawl | 화면 하단을 수평 이동하는 속보 텍스트 |
+| **런다운** | Rundown | 시간 기반 방송 진행표 (큐시트의 CG가 여기로 전달됨) |
+| **프리플라이트** | Preflight | 방송 전 사전 검증 (인쇄 전 검수에서 유래한 용어) |
+| **번들** | Bundle | CG 유형별로 그룹핑된 그래픽 묶음 |
+| **CG 타입** | CG Type | CG 자막의 종류 (super, band, headline 등 13종) |
+| **매핑** | Mapping | 기사와 CG 텍스트를 연결하는 작업 |
+| **Smart Lock** | Smart Lock | 송출 중(onair) 런다운 전파 자동 차단 안전 장치 |
+| **금칙어** | Prohibited Word | 방송 사용 금지 단어 (차별표현, 자살보도 등) |
+| **데이터 소스** | Data Source | 큐시트와 연결된 외부 데이터 (NRCS/CSV) |
 
 ---
 
-## 10. Automated Content Validation Pipeline
+## 10. 내용 검증 파이프라인 (Content Validation)
 
-> **Concept: Proofreading and Editing Checks**  
-> Just as editorial scripts undergo spellchecking and editing before publication, active CG variables undergo a **4-stage automated validation process** prior to on-air release.
+> **비유:** 원고를 출판하기 전에 맞춤법 검사기 + 교열자를 거치듯,
+> CG 자막도 화면에 나가기 전에 **4단계 자동 검증**을 거칩니다.
 
-### 4-Stage Content Engine
+### 4단계 검증 엔진
 
 ```mermaid
 flowchart LR
-    T["📝 Raw Variable Text"] --> S["✏️ Spellchecker<br/>Local Dict"]
-    T --> P["🚫 Blocked Words<br/>Compliance Dict"]
-    T --> N["👤 Job Roles<br/>Pattern Matcher"]
-    T --> D["📅 Temporal Checks<br/>Date Compare"]
+    T["📝 CG 텍스트"] --> S["✏️ 맞춤법<br/>로컬 사전"]
+    T --> P["🚫 금칙어<br/>방송 사전"]
+    T --> N["👤 직함 표기<br/>패턴 매칭"]
+    T --> D["📅 시제 일관성<br/>날짜 비교"]
     S --> R["📊 ContentValidationResult"]
     P --> R
     N --> R
     D --> R
 ```
 
-| Verification | Alert Level | Example Encounter |
-|--------------|-------------|-------------------|
-| **Spellcheck** | ⚠️ warning | Flagging typographical errors or spelling bugs |
-| **Blocked Words (Prohibited)** | 🔴 error | Regulatory violations ➔ Blocked completely |
-| **Blocked Words (Caution)** | ⚠️ warning | Vocabulary requiring careful context review |
-| **Job Roles Checker** | ⚠️ warning | Standardizes abbreviations and professional ranks |
-| **Temporal Inspector** | ⚠️ warning | Identifies mismatched dates or confusing past/present tenses |
+| 검증 | 심각도 | 예시 |
+|------|--------|------|
+| **맞춤법** | ⚠️ warning | "됬다" → "됐다" |
+| **금칙어 (prohibited)** | 🔴 error | "자살" → "극단적 선택" |
+| **금칙어 (caution)** | ⚠️ warning | "사망" → "숨지다" |
+| **직함 오타** | ⚠️ warning | "센타장" → "센터장" |
+| **시제 혼용** | ⚠️ warning | 과거형+현재형 혼재 |
 
-### Pipeline Triggers
-- Clicking the **Save Changes** button.
-- Clicking the **Spellcheck** action button (runs batch scans).
-- Triggered automatically as part of **Preflight Diagnostics**.
+### 실행 시점
+- **저장 버튼** 클릭 시
+- **맞춤법 검사** 전용 버튼 클릭 시 (일괄 체크)
+- **프리플라이트** 실행 시 자동 포함
 
 ---
 
-## 11. Smart Lock — Live Playout Safety Guard
+## 11. Smart Lock — 방송 안전 장치
 
-> **Core Constraint:** Playout variables can be edited anytime, but live **Rundown updates (Propagation)** are strictly locked during active broadcasts.
+> **핵심 원칙:** 큐시트 편집은 항상 가능, 런다운 **전파(Propagation)만** 차단.
 
 ```mermaid
 stateDiagram-v2
     [*] --> draft
-    draft --> ready: AD Approves
-    ready --> onair: Playout Commences
-    onair --> done: Playout Terminated
+    draft --> ready: AD 승인
+    ready --> onair: 방송 시작
+    onair --> done: 방송 종료
 
-    onair --> onair: 🔒 Propagation Blocked\n(Editors open, Sync delayed)
-    done --> ready: Rebroadcast prep
+    onair --> onair: 🔒 전파 차단\n(편집은 가능)
+    done --> ready: 재방송 준비
 ```
 
-- When session status is `onair`, calling `propagateToRundown()` is **blocked automatically** and returns a propagation error.
-- Updates queue locally. Operators sync updates manually by clicking the **Force Sync** action once the live run concludes.
-- The Studio Controller displays a warning banner reading **"Unpropagated changes queued"** to notify operators.
+- `onair` 상태에서 `propagateToRundown()` 호출 시 → **자동 차단**, 에러 메시지 반환
+- 방송 종료 후 사용자가 **수동 동기화** 클릭하면 변경사항 전파
+- 컨트롤러 페이지에 **"대기 중인 변경사항"** 배너로 알림
 
 ---
 
-## 12. 🆕 Segment Tabs Integration (Nested Sequence Tab)
+## 12. 🆕 세그먼트 탭 연동 (Nested Sequence Tab)
 
-> **Added**: 2026-04-16  
-> Outlines how cuesheet items transform into interactive **Segment Tabs** within the Studio Playout Controller.
+> **추가일**: 2026-04-16
+> 큐시트 아이템이 타임라인 컨트롤러에서 어떻게 **세그먼트 탭**으로 표현되는지 설명합니다.
 
-### Story Segment Mapping
+### 큐시트 아이템 → 세그먼트 자동 생성
 
 ```mermaid
 flowchart LR
-    CI["📋 Cuesheet Item<br/>(nrcs_cuesheet_items)"] --> SEG["📑 Broadcast Segment<br/>(broadcast_segments)"]
-    SEG --> TAB["🔖 Segment Tab Bar<br/>(SegmentTabBar.tsx)"]
-    TAB --> FILTER["🔍 Block Filtering<br/>(Only render active story CG)"]
+    CI["📋 큐시트 아이템<br/>(nrcs_cuesheet_items)"] --> SEG["📑 세그먼트<br/>(broadcast_segments)"]
+    SEG --> TAB["🔖 세그먼트 탭 바<br/>(SegmentTabBar.tsx)"]
+    TAB --> FILTER["🔍 블록 필터링<br/>(해당 아이템의 CG만 표시)"]
 
     style CI fill:#3b82f6
     style SEG fill:#f59e0b
     style TAB fill:#10b981
 ```
 
-Creating a playout session from an NRCS-connected cuesheet triggers the following flow:
-1. Every **Cuesheet Item** automatically initializes a corresponding **Broadcast Segment** (1:1 relationship).
-2. Segment variables inherit `slug`, `reporter`, and `item_order` properties.
-3. Playout timeline blocks obtain a `segment_id` representing their story group.
-4. The Studio Controller dynamically activates the **Segment Tab Bar** if segments are detected.
+NRCS 큐시트와 연동된 방송 세션을 생성하면:
+1. 각 **큐시트 아이템** → **세그먼트** 1:1 자동 생성
+2. 세그먼트에 아이템의 `slug`, `reporter`, `item_order` 매핑
+3. 타임라인 블록에 `segment_id` 할당 → 세그먼트 소속 표시
+4. 컨트롤러 페이지에서 **세그먼트 탭 바**가 자동 활성화
 
-### Segment Tab Actions
+### 세그먼트 탭의 역할
 
-| Segment Tab | Operational Behavior |
-|-------------|----------------------|
-| **"All" Tab** | Renders all timeline tracks, using custom segment colors to visually group blocks. |
-| **Story Tab** (❶, ❷, ❸...) | Isolates the tracks, showing only the graphics belonging to that story segment + triggers Zoom-to-Fit. |
+| 탭 | 동작 |
+|------|------|
+| **"전체" 탭** | 모든 세그먼트의 CG를 세그먼트 배경색으로 구분하여 표시 |
+| **세그먼트 탭** (❶❷❸...) | 해당 뉴스 아이템의 CG만 표시 + Zoom-to-Fit |
 
-### Handling Order Changes in NRCS
+### NRCS 순서 변경 시
 
-When news producers reorder stories inside the NRCS terminal:
-- Updates update `nrcs_cuesheet_items.item_order`.
-- Triggers cascading database writes updating `broadcast_segments.segment_order`.
-- **The Controller instantly reorders the Segment Tab Bar tabs in real-time** to match the new line-up.
+NRCS에서 뉴스 아이템 순서를 변경하면:
+- `nrcs_cuesheet_items.item_order` 갱신
+- `broadcast_segments.segment_order` 연동 갱신
+- **세그먼트 탭 바의 탭 순서가 자동 재배치**
 
-> For step-by-step operation, refer to **[USAGE.md](../USAGE.md) §3. Cuesheet and Rundown Operations**.
+> 자세한 아키텍처와 경쟁사 비교는 [`WEBCGK_COMPREHENSIVE_GUIDE.md`](WEBCGK_COMPREHENSIVE_GUIDE.md) §4 참조.
 
 ---
 
-> **📌 This document serves as the architectural overview for the NRCS Cuesheet system.**  
-> Study these workflows before making code changes to locate exactly where your task fits in the pipeline.
+> **📌 이 문서는 WebCG-K의 NRCS 큐시트 시스템을 이해하기 위한 가이드입니다.**
+> 코드 수정 전에 이 문서를 읽고 전체 파이프라인에서 현재 작업이 어디에 위치하는지 파악하세요.

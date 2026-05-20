@@ -42,6 +42,12 @@ import { useAuth } from "../../../lib/auth";
 import { supabase } from "../../../lib/supabase";
 import { getWebcgkApiInline } from "../../../components/Overlay/PluginEditor/lib/webcgk-api";
 import {
+    buildOverlayReplicantData,
+    getDashboardSchemaProperties,
+    getSchemaDefaultValue,
+    setOverlayReplicantValue,
+} from "../../../lib/rundownOverlayData";
+import {
   type RundownItem,
   type RundownMeta,
   type RundownSection,
@@ -773,11 +779,16 @@ function RundownEditorPage() {
         try {
             const { data: template } = await supabase
                 .from("overlay_templates")
-                .select("html, css, js")
+                .select("source_code")
                 .eq("id", item.source_id)
                 .single();
             if (template) {
-                setPreviewCode(template);
+                const sourceCode = (template as any).source_code || {};
+                setPreviewCode({
+                    html: sourceCode.html || "",
+                    css: sourceCode.css || "",
+                    js: sourceCode.js || "",
+                });
             }
         } catch (err) {
             console.error("Failed to load overlay:", err);
@@ -828,7 +839,7 @@ ${html}
     // 프리뷰 iframe에 데이터 전달 후 SHOW
     const triggerPreviewShow = () => {
         if (previewIframeRef.current?.contentWindow && previewItem) {
-            const replicantData = previewItem.data?.dashboard_data || previewItem.data?.replicant_defaults || {};
+            const replicantData = buildOverlayReplicantData(previewItem.data);
             previewIframeRef.current.contentWindow.postMessage(
                 { type: "INIT", payload: replicantData },
                 "*",
@@ -897,6 +908,13 @@ ${html}
 
     // 선택된 아이템
     const selectedItem = items.find(i => i.id === selectedItemId);
+    const selectedOverlaySchemaProperties = selectedItem?.source_type === "overlay"
+        ? getDashboardSchemaProperties(selectedItem.data)
+        : {};
+    const selectedOverlaySchemaEntries = Object.entries(selectedOverlaySchemaProperties);
+    const selectedOverlayData = selectedItem?.source_type === "overlay"
+        ? buildOverlayReplicantData(selectedItem.data)
+        : {};
 
     if (loading) {
         return (
@@ -1409,6 +1427,78 @@ ${html}
                                     <label>타입</label>
                                     <span className="property-value">{selectedItem.source_type}</span>
                                 </div>
+
+                                {selectedItem.source_type === "overlay" && selectedOverlaySchemaEntries.length > 0 && (
+                                    <>
+                                        <div className="property-divider" />
+                                        <h4 style={{ margin: "0.5rem 0", fontSize: "0.8125rem", color: "var(--text-secondary)" }}>
+                                            오버레이 데이터
+                                        </h4>
+                                        {selectedOverlaySchemaEntries.map(([fieldKey, property]) => {
+                                            const fieldType = typeof property.type === "string" ? property.type : "string";
+                                            const value = Object.prototype.hasOwnProperty.call(selectedOverlayData, fieldKey)
+                                                ? selectedOverlayData[fieldKey]
+                                                : getSchemaDefaultValue(property);
+                                            const label = typeof property.title === "string" ? property.title : fieldKey;
+                                            const description = typeof property.description === "string" ? property.description : undefined;
+                                            const updateValue = (nextValue: unknown) => {
+                                                setItems(prev =>
+                                                    prev.map(item =>
+                                                        item.id === selectedItem.id
+                                                            ? { ...item, data: setOverlayReplicantValue(item.data, fieldKey, nextValue) }
+                                                            : item
+                                                    )
+                                                );
+                                            };
+
+                                            return (
+                                                <div className="property-group" key={fieldKey}>
+                                                    <label title={description}>{label}</label>
+                                                    {fieldType === "boolean" ? (
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={Boolean(value)}
+                                                            onChange={(e) => updateValue(e.target.checked)}
+                                                        />
+                                                    ) : Array.isArray(property.enum) ? (
+                                                        <select
+                                                            className="input"
+                                                            value={String(value ?? "")}
+                                                            onChange={(e) => updateValue(e.target.value)}
+                                                            title={description}
+                                                        >
+                                                            {(property.enum as unknown[]).map((option) => (
+                                                                <option key={String(option)} value={String(option)}>
+                                                                    {String(option)}
+                                                                </option>
+                                                            ))}
+                                                        </select>
+                                                    ) : fieldType === "number" ? (
+                                                        <input
+                                                            type="number"
+                                                            className="input"
+                                                            value={Number(value ?? 0)}
+                                                            min={typeof property.minimum === "number" ? property.minimum : typeof property.min === "number" ? property.min : undefined}
+                                                            max={typeof property.maximum === "number" ? property.maximum : typeof property.max === "number" ? property.max : undefined}
+                                                            step={typeof property.step === "number" ? property.step : undefined}
+                                                            onChange={(e) => updateValue(Number(e.target.value))}
+                                                            title={description}
+                                                        />
+                                                    ) : (
+                                                        <input
+                                                            type="text"
+                                                            className="input"
+                                                            value={String(value ?? "")}
+                                                            onChange={(e) => updateValue(e.target.value)}
+                                                            placeholder={fieldKey}
+                                                            title={description}
+                                                        />
+                                                    )}
+                                                </div>
+                                            );
+                                        })}
+                                    </>
+                                )}
 
                                 {/* 섹션 소속 변경 드롭다운 */}
                                 {sections.length > 0 && (

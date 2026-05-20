@@ -52,7 +52,7 @@ interface Rundown {
 const columnHelper = createColumnHelper<Rundown>();
 
 function RundownListPage() {
-    const { user } = useAuth();
+    const { user, activeWorkspaceId } = useAuth();
     const navigate = useNavigate();
     const queryClient = useQueryClient();
     const [globalFilter, setGlobalFilter] = useState("");
@@ -110,6 +110,10 @@ function RundownListPage() {
     // 새 큐시트 생성
     const handleCreateRundown = async () => {
         if (!user) return;
+        if (!activeWorkspaceId) {
+            alert("활성화된 워크스페이스가 없습니다. 워크스페이스를 선택하거나 생성해주세요.");
+            return;
+        }
         setIsCreating(true);
 
         try {
@@ -129,6 +133,7 @@ function RundownListPage() {
                     .insert({
                         name: "내 프로젝트",
                         owner_id: user.id,
+                        workspace_id: activeWorkspaceId,
                         settings: {},
                     } as any)
                     .select()
@@ -150,6 +155,7 @@ function RundownListPage() {
                     title: defaultTitle,
                     description: "",
                     created_by: user.id,
+                    workspace_id: activeWorkspaceId,
                     is_public: false,
                 } as any)
                 .select()

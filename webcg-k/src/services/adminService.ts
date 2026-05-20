@@ -4,6 +4,7 @@
  */
 
 import { supabase } from "../lib/supabase";
+import type { UserRole } from "../lib/auth";
 
 // ─── 타입 ────────────────────────────────────────────────────────
 
@@ -35,7 +36,7 @@ export interface ProfileWithMemberships {
 	id: string;
 	display_name: string | null;
 	is_admin: boolean;
-	role: string;
+	role: UserRole;
 	updated_at: string;
 	created_at: string;
 	memberships: MembershipInfo[];
@@ -67,7 +68,7 @@ export async function fetchProfilesWithMemberships(): Promise<ProfileWithMembers
 		list.push({
 			workspace_id: m.workspace_id,
 			workspace_name: wsMap.get(m.workspace_id) || "Unknown",
-			role: m.role,
+			role: (m.role || "viewer") as "owner" | "admin" | "member" | "viewer",
 		});
 		membershipMap.set(m.user_id, list);
 	}

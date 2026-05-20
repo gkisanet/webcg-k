@@ -1,125 +1,137 @@
-# Grid Layout Editor (Grid Editor)
+# 그리드 템플릿 편집기 (Grid Split Editor)
 
-> **Core Module for Regional Branch Station Graphic Standardization**  
-> Benchmarks: Microsoft PowerToys FancyZones | Architecture: Quadrant coordinates scale matrix
-
-The Grid Layout Editor is a visual tool that segments the broadcast screen into grid zones (Zone/Quadrant) to establish **standardized guidelines** for broadcast lower-thirds and graphical overlays.
+> **PowerToys FancyZones 스타일**의 클릭 기반 영역 분할 시스템
 
 ---
 
-### Concept: Analogous to Window Panes
+## 📌 핵심 개념
 
-Defining screen grids is **analogous to crafting window frame panes**:
+### 분할선 (SplitLine)
+캔버스를 나누는 선. 위치와 범위를 가집니다.
 
-| Window Frame | Grid Editor |
-| :--- | :--- |
-| Partition window frames (e.g. 2 panes, 4 panes) | Screen segmentation (e.g. 2x2, 1x3 column/rows) |
-| Glass pane number indicators | Quadrant ID designations (`q1`, `q2`, etc.) |
-| Frame boundaries dimensions specs | Zone width/height percentage ratios |
-
----
-
-## 📐 Grid Structure & Data Model
-
-A screen layout is defined by a single **GridTemplate**, partitioned internally into multiple **Quadrants**.
-
-*   **GridTemplate**: Declares template names, row/column split ratios (Grid Spacing), and split types (`split_type: 'vertical' | 'horizontal' | 'custom'`).
-*   **Quadrant**: Represents individual split zones. Declares unique IDs (`q1`, `q2`, etc.), coordinate ratios (`x`, `y`, `width`, `height` values spanning 0% to 100%), and snap toggles (`snap_enabled`).
-
-### Data Model Example (JSON Schema)
-
-#### `"grid_templates"` Table Schema
-```json
-{
-  "id": "78e4f6a9-8b2c-4d1e-9f3a-1c5b8d6f9a2b",
-  "name": "KBS News 9 Dual Anchor Split",
-  "split_type": "vertical",
-  "split_ratio": [45, 10, 45],
-  "created_at": "2026-05-17T08:00:00Z"
+```typescript
+interface SplitLine {
+  id: string;
+  orientation: "horizontal" | "vertical"; // 방향
+  position: number;   // 0~100% (선의 위치)
+  start: number;      // 0~100% (시작점)
+  end: number;        // 0~100% (끝점)
 }
 ```
 
-#### `"quadrants"` Table Schema (Linked via `grid_template_id`)
-```json
-[
-  {
-    "id": "q1",
-    "grid_template_id": "78e4f6a9-8b2c-4d1e-9f3a-1c5b8d6f9a2b",
-    "x": 0,
-    "y": 0,
-    "width": 45,
-    "height": 100,
-    "snap_enabled": true
-  },
-  {
-    "id": "q2",
-    "grid_template_id": "78e4f6a9-8b2c-4d1e-9f3a-1c5b8d6f9a2b",
-    "x": 45,
-    "y": 0,
-    "width": 10,
-    "height": 100,
-    "snap_enabled": false
-  },
-  {
-    "id": "q3",
-    "grid_template_id": "78e4f6a9-8b2c-4d1e-9f3a-1c5b8d6f9a2b",
-    "x": 55,
-    "y": 0,
-    "width": 45,
-    "height": 100,
-    "snap_enabled": true
-  }
-]
+### 영역 (Zone)
+분할선으로 나뉜 직사각형 구역. 분할선 데이터로부터 **동적으로 계산**됩니다.
+
+---
+
+## 🎯 사용법
+
+| 동작 | 설명 |
+|------|------|
+| **클릭** | 세로선 생성 |
+| **Shift + 클릭** | 가로선 생성 |
+| **드래그** | 선 위치 이동 |
+| **Delete** | 선택한 선 전체 삭제 |
+| **× 버튼** | 구간별 Trim 삭제 |
+| **Ctrl+Z** | 실행 취소 |
+| **Ctrl+Shift+Z** | 다시 실행 |
+
+---
+
+## 🔧 주요 기능 상세
+
+### 1. 50% 사분선 가이드라인 & 스냅
+- 캔버스 중앙에 점선 가이드라인 표시
+- 분할선 생성/이동 시 50% 근처(±3%)에서 **자동 스냅**
+
+### 2. Undo/Redo
+- 최대 **50개** 히스토리 유지
+- 드래그 완료, 클릭 생성, 삭제 시 자동 기록
+
+### 3. 교차점 Trim 삭제
+- 선 클릭 시 교차점 구간마다 **빨간 × 버튼** 표시
+- 버튼 클릭으로 **해당 구간만 삭제** (전체 선 삭제 아님)
+- 선의 `start`/`end`가 조정됨
+
+### 4. 연결점 연동
+- 선 A를 이동하면, A와 교차하는 선 B의 `start`/`end`도 함께 이동
+- Trim된 선도 연결점을 유지
+
+### 5. Fork 기능
+- 다른 사용자의 템플릿은 직접 편집 불가
+- "Fork" 버튼으로 내 계정에 복제 후 편집
+
+---
+
+## 📂 파일 구조
+
+```
+webcg-k/src/components/GridEditor/
+├── GridSplitEditor.tsx   # 메인 편집기 (클릭 분할)
+├── GridSplitEditor.css   # 스타일
+├── GridEditor.tsx        # (구버전, 미사용)
+├── GridCanvas.tsx        # (구버전, 미사용)
+└── ...
 ```
 
 ---
 
-## 🛠️ Split Algorithms
+## 🔄 개발 히스토리
 
-The Grid Editor is designed by benchmarking the layout model of **Microsoft PowerToys FancyZones**. Key splitting methods include:
+### 2026-02-04
 
-### 1. Vertical Split
-Segments the screen into column zones along vertical guidelines.
-*   **Formula**: Partitioning into $N$ vertical columns yields quadrant widths of `100 / N %` each.
-*   **Use Cases**: Split-screens for dual anchor feeds, or 3-way remote interview panels.
-
-### 2. Horizontal Split
-Segments the screen into row zones along horizontal guidelines.
-*   **Formula**: Partitioning into $N$ horizontal rows yields quadrant heights of `100 / N %` each.
-*   **Use Cases**: Breaking news tickers at the top and lower-third graphic strips at the bottom.
-
-### 3. Custom / Quad Split
-Intersects horizontal and vertical guidelines to generate symmetrical grid blocks or asymmetric quadrants.
-*   **Algorithm**: Dragging central splitters dynamically calculates adjoining quadrant `width` and `height` ratios proportional to mouse coordinates (enforcing structural sharing properties).
-
----
-
-## 🎨 UI/UX Design Specifications
-
-### 1. Grid Overlay Guide
-*   **Design**: Highlighted using thin dashed or translucent lines (`--border-subtle`).
-*   **Coloring**: Inactive lines utilize `rgba(255,255,255,0.15)`; transitions to `var(--accent-primary)` (`#00d4ff`) when highlighted or snap-engaged.
-
-### 2. Splitter Drag Handle
-*   **Thickness**: 8px (expands interactive bounding boxes on mouse hover).
-*   **Hover Effect**: `bg-cyan-400` neon glows + cursor transforms (`col-resize` or `row-resize`).
-
-### 3. Zone Preview Highlight
-*   **Snap Engagement**: Dragging graphics near grid boundaries highlights the corresponding quadrant via cyan translucent sheets (`rgba(0, 212, 255, 0.08)`), triggering a magnetic snapping drop zone.
+| 시간 | 변경 내용 |
+|------|-----------|
+| 16:14 | `GridSplitEditor.tsx` 신규 생성 - 클릭 분할 방식 |
+| 16:18 | 50% 사분선 가이드라인 & 스냅 추가 |
+| 16:21 | Fork 기능 (`forked_from` DB 컬럼) |
+| 16:28 | Undo/Redo (Ctrl+Z, Ctrl+Shift+Z) |
+| 16:30 | 교차점 Trim 삭제 버튼 |
+| 16:34 | `calculateZones`가 `start`/`end` 범위 반영 |
+| 16:37 | 선 이동 시 연결점 연동 |
+| 16:56 | 삭제 시 viewMode 유지 (새로고침 → 쿼리 갱신) |
+| 21:58 | 미리보기에 "PREVIEW" 라벨 추가 |
+| 22:03 | **저장 시 zones 데이터 함께 저장** - 미리보기 표시 수정 |
 
 ---
 
-## 📡 AI CG Wizard Integrations
+## 🧠 알고리즘: 영역 계산
 
-Schemas built inside the Grid Editor govern the base models for the **AI CG Wizard (Steps 1 & 2)**:
+`calculateZones(splits)` 함수는 분할선 배열을 받아 영역 배열을 반환합니다.
 
-1.  **Step 1: Grid Template Selection**: Queries saved database configurations and renders visual thumbnails.
-2.  **Step 2: Zone Selection**: Click events on target panes (`q1`, `q3`, etc.) register the specific Quadrant IDs inside the wizard's memory.
-3.  **Step 3: AI Prompt Synthesis**: The AI pipeline evaluates coordinates and dimension metadata to compute **optimized HTML absolute layouts and margins** that fit the targeted quadrants perfectly.
+**핵심 로직:**
+1. 루트 영역 (0,0,100,100)에서 시작
+2. 적용 가능한 분할선 찾기 (position이 범위 내, start/end가 겹침)
+3. **전체 커버**: 양분 (2등분)
+4. **부분 커버**: 3등분 (위/중간/아래 또는 왼쪽/중간/오른쪽)
+5. 재귀적으로 하위 영역 처리
+
+```
+예: 세로선이 위쪽 50%만 존재할 경우
+
+┌────┬────┐
+│ 1  │ 2  │  ← 분할됨
+├────┴────┤
+│    3    │  ← 분할 안 됨
+└─────────┘
+```
 
 ---
 
-## 🔗 Reference Manuals
+## 🎨 UI 구성
 
-*   **[AI_CG_GUIDE.md](./AI_CG_GUIDE.md)** — AI graphics prompting rules.
-*   **[SETUP.md](./SETUP.md)** — Database and workspace setup.
+```
+┌─────────────────────────────────────────────┐
+│ 돌아가기 │ [템플릿 이름 입력] │ 저장 버튼 │ ← 헤더
+├─────────────────────────────────────────────┤
+│ 1920×1080 │ 커서: X,Y │ 모드 │ Ctrl+Z 힌트 │ ← 정보 바
+├─────────────────────────────────────────────┤
+│                                             │
+│        ┌──────────┬──────────┐              │
+│        │    1     │    2     │              │
+│        ├──────────┼──────────┤              │
+│        │    3     │    4     │  ← 캔버스   │
+│        └──────────┴──────────┘              │
+│                                             │
+└─────────────────────────────────────────────┘
+```

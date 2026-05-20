@@ -4,7 +4,7 @@
  */
 
 import { createFileRoute, Link, Navigate } from "@tanstack/react-router";
-import { ArrowLeft, Bot, Copy, ExternalLink, HelpCircle, Layers, Radio, RotateCcw } from "lucide-react";
+import { ArrowLeft, Bot, Copy, ExternalLink, HelpCircle, Layers, Radio, RotateCcw, PenTool } from "lucide-react";
 import { useEffect, useState, useMemo, useRef, useCallback } from "react";
 import { useStore } from "@tanstack/react-store";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -17,6 +17,7 @@ import { Timeline, type RemotePlayheadData } from "../../components/Controller/T
 import { UserAvatars } from "../../components/Controller/UserAvatars";
 import { OverlayPanel } from "../../components/Controller/OverlayPanel";
 import { AiCharacterPanel } from "../../components/Controller/AiCharacterPanel";
+import { WhiteboardPanel } from "../../components/Controller/WhiteboardPanel";
 import { ErrorBoundary } from "../../components/ErrorBoundary";
 import { parsePlayheadState } from "../../lib/schemas";
 import { NrcsChangeAlert } from "../../components/Controller/NrcsChangeAlert";
@@ -31,8 +32,8 @@ import { useOverlayStore } from "../../hooks/useOverlayStore";
 import { computeRemaining, isTimerReplicant } from "../../lib/timerUtils";
 import { useAuth } from "../../lib/auth";
 import { addActionLog } from "../../stores/actionLogStore";
-import { timelineStore, type GraphicBlock, type TransitionType, resetCompletedBlocks, setPlayheadPosition, toggleScrubbing } from "../../stores/timelineStore";
-import type { BroadcastSession, PlayheadState, SavedLogoBlock, TimelineBlockData } from "../../lib/types/broadcast";
+import { timelineStore, type GraphicBlock, type TransitionType, resetCompletedBlocks, setPlayheadPosition } from "../../stores/timelineStore";
+import type { PlayheadState, SavedLogoBlock, TimelineBlockData } from "../../lib/types/broadcast";
 import {
   useSessionController,
   type PlayoutPayload,
@@ -64,7 +65,6 @@ function SessionControllerPage() {
         loading: sessionLoading,
         error: sessionError,
         isChannelReady,
-        rendererStatus,
         broadcast,
         savePlayheadState: savePlayheadStateToDb,
         updateStatus,
@@ -125,8 +125,8 @@ function SessionControllerPage() {
         return () => clearInterval(interval);
     }, [sessionId, overlayStore.overlays, overlayStore.updateReplicantData]);
 
-    // 탭 상태 (타임라인/오버레이/AI 캐릭터)
-    const [activeTab, setActiveTab] = useState<"timeline" | "overlay" | "character">("timeline");
+    // 탭 상태 (타임라인/오버레이/AI 캐릭터/판서 레이어)
+    const [activeTab, setActiveTab] = useState<"timeline" | "overlay" | "character" | "whiteboard">("timeline");
     // 단축키 도움말 모달
     const [showShortcutHelp, setShowShortcutHelp] = useState(false);
 
@@ -150,7 +150,6 @@ function SessionControllerPage() {
         connectedUsers,
         myColor,
         updatePlayheadPosition,
-        isScrubbing: presenceIsScrubbing,
         setIsScrubbing,
         updateLastBroadcastAt,
     } = useSessionPresence(sessionId);
@@ -187,7 +186,6 @@ function SessionControllerPage() {
         }));
 
     // ─── 멀티유저 스크러빙 ───
-    const playheadPosition = useStore(timelineStore, (state) => state.playheadPosition);
     const isScrubbing = useStore(timelineStore, (state) => state.isScrubbing);
 
     // 키보드 내비게이션 활성화 (AI 캐릭터 탭에서는 비활성화)
@@ -213,7 +211,6 @@ function SessionControllerPage() {
         )[0];
     }, [connectedUsers]);
 
-    const isPrimaryOperator = primaryOperator?.isCurrentUser ?? false;
 
     // ─── 플레이헤드 팔로잉 ───
     // 스크러빙 OFF + 주 오퍼레이터 아닐 때 → 주 오퍼레이터 playhead 자동 추적
@@ -274,8 +271,9 @@ function SessionControllerPage() {
                 id: b!.id,
                 name: b!.name,
                 trackId: b!.trackId,
-                color: b!.color,
+                color: b!.color || "",
                 transitionIn: b!.transitionIn,
+                sourceType: (b as any)?.sourceType,
                 sourceData: (b as any)?.sourceData,
             }));
 
@@ -300,9 +298,6 @@ function SessionControllerPage() {
         broadcastToRenderer();
     }, [pgmBlockIds, sessionId, isChannelReady, broadcastToRenderer]);
 
-    // Heartbeat → State Drift 감지 시 재발행
-    // We check rendererStatus for drift via a pattern: if renderer disconnected, warn.
-    // (Drift re-broadcast is now handled differently — the heartbeat hook manages its own status.)
 
     // PGM 변경 시 액션 로그 기록
     const prevPgmRef = useRef<string | null>(null);
@@ -692,40 +687,6 @@ function SessionControllerPage() {
                         </button>
                     )}
 
-                    {/* 렌더러 상태 표시 (Heartbeat T1-3) */}
-                    {rendererStatus && (
-                        <div
-                            style={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: "0.375rem",
-                                padding: "0.25rem 0.625rem",
-                                background: "var(--app-bg-muted)",
-                                borderRadius: "4px",
-                                fontSize: "0.6875rem",
-                                border: `1px solid ${rendererStatus.status === "connected" ? "rgba(16,185,129,0.3)" : rendererStatus.status === "delayed" ? "rgba(245,158,11,0.3)" : "rgba(239,68,68,0.3)"}`,
-                            }}
-                            title={`렌더러: ${rendererStatus.rendererId}\n메모리: ${rendererStatus.memoryUsedMB ?? "?"}MB / ${rendererStatus.memoryLimitMB ?? "?"}MB (${rendererStatus.memoryPercent ?? "?"}%)\nCG: ${rendererStatus.currentItemId ?? "없음"}`}
-                        >
-                            <span style={{
-                                width: "6px",
-                                height: "6px",
-                                borderRadius: "50%",
-                                background: rendererStatus.status === "connected" ? "#10b981" : rendererStatus.status === "delayed" ? "#f59e0b" : "#ef4444",
-                                animation: rendererStatus.status === "disconnected" ? "dotBlink 1s ease-in-out infinite" : undefined,
-                            }} />
-                            <span style={{
-                                color: rendererStatus.status === "connected" ? "var(--accent-success)" : rendererStatus.status === "delayed" ? "#f59e0b" : "#ef4444",
-                            }}>
-                                {rendererStatus.status === "connected" ? "OBS" : rendererStatus.status === "delayed" ? "OBS 지연" : "OBS 끊김"}
-                            </span>
-                            {rendererStatus.memoryPercent != null && rendererStatus.memoryPercent > 60 && (
-                                <span style={{ color: rendererStatus.memoryPercent > 80 ? "#ef4444" : "var(--text-tertiary)", fontSize: "0.5625rem" }}>
-                                    {rendererStatus.memoryPercent}%
-                                </span>
-                            )}
-                        </div>
-                    )}
 
                     {/* 초기화 버튼 — 항상 표시, 0일 때 비활성 */}
                     <Button
@@ -788,8 +749,6 @@ function SessionControllerPage() {
                                 lastBroadcastAt: null,
                             }
                         ]}
-                        isOwner={true}
-                        onPermissionClick={() => console.log("Permission panel - TODO")}
                     />
 
                     <SettingsPanel />
@@ -862,6 +821,14 @@ function SessionControllerPage() {
                             <Bot size={12} />
                             AI 캐릭터
                         </button>
+                        <button
+                            type="button"
+                            onClick={() => setActiveTab("whiteboard")}
+                            className={`controller-tab ${activeTab === "whiteboard" ? "active" : ""}`}
+                        >
+                            <PenTool size={12} />
+                            판서
+                        </button>
                     </div>
                 </div>
 
@@ -897,6 +864,11 @@ function SessionControllerPage() {
                             />
                         </ErrorBoundary>
                     )}
+                    {activeTab === "whiteboard" && (
+                        <ErrorBoundary componentName="판서 레이어">
+                            <WhiteboardPanel sessionId={sessionId} />
+                        </ErrorBoundary>
+                    )}
                 </div>
             </div>
             {/* 텍스트 핫 수정 드로어 (타임라인 블록 더블클릭 시) */}
@@ -918,4 +890,3 @@ function SessionControllerPage() {
         </RoleGuard>
     );
 }
-

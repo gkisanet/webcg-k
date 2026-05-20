@@ -42,6 +42,17 @@ export async function updateOverlayTemplate(
 	return data;
 }
 
+export async function updateOverlayTemplateVisibility(
+	id: string,
+	visibility: "private" | "workspace" | "public",
+) {
+	const { error } = await supabase
+		.from("overlay_templates")
+		.update({ visibility, updated_at: new Date().toISOString() })
+		.eq("id", id);
+	if (error) throw new Error(`오버레이 권한 변경 실패: ${error.message}`);
+}
+
 // ─── 갤러리 CRUD ─────────────────────────────────────────────────
 
 /**

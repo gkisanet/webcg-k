@@ -5,6 +5,7 @@
     flex-direction: column;
     height: 100%;
     background-color: var(--app-bg);
+    position: relative;
 }
 
 .grid-split-info {

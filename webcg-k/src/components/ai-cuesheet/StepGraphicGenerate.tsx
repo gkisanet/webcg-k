@@ -31,6 +31,7 @@ import { sanitizeGraphicCss } from "@/lib/aiGraphicUtils";
 interface StepGraphicGenerateProps {
   scenes: SceneContent[];
   programTitle: string;
+  sessionId?: string | null;
   graphicStates: SceneGraphicState[];
   onUpdateGraphicState: (sceneIdx: number, patch: Partial<SceneGraphicState>) => void;
   extractedThemes: Record<string, ExtractedTheme>;
@@ -42,7 +43,7 @@ interface StepGraphicGenerateProps {
 // ─── Main Component ───────────────────────────────────────────────
 
 export function StepGraphicGenerate({
-  scenes, programTitle, graphicStates, onUpdateGraphicState,
+  scenes, programTitle, sessionId, graphicStates, onUpdateGraphicState,
   extractedThemes, onExtractTheme, onBack, onComplete,
 }: StepGraphicGenerateProps) {
   const navigate = useNavigate();
@@ -104,7 +105,7 @@ export function StepGraphicGenerate({
           const existingId = graphicStates[sceneIdx]?.overlayTemplateId;
           const name = `Scene ${scene.order}: ${scene.trigger.slice(0, 80)}`;
           overlayTemplateId = await upsertGraphicAsOverlay(
-            result.html, result.css, name, userId, existingId,
+            result.html, result.css, name, userId, existingId, scene, programTitle, sessionId,
           );
         } catch (err) {
           console.warn("[Graphic] Failed to save as overlay template:", err);
@@ -124,7 +125,7 @@ export function StepGraphicGenerate({
         errorMessage: err.message || "Generation failed",
       });
     }
-  }, [scenes, programTitle, extractedThemes, onUpdateGraphicState]);
+  }, [scenes, programTitle, sessionId, extractedThemes, graphicStates, onUpdateGraphicState]);
 
   // ─── Modify ───────────────────────────────────────────────
 
@@ -150,7 +151,7 @@ export function StepGraphicGenerate({
           const existingId = graphicStates[sceneIdx]?.overlayTemplateId;
           const name = `Scene ${scene.order}: ${scene.trigger.slice(0, 80)}`;
           overlayTemplateId = await upsertGraphicAsOverlay(
-            result.html, result.css, name, userId, existingId,
+            result.html, result.css, name, userId, existingId, scene, programTitle, sessionId,
           );
         } catch (err) {
           console.warn("[Graphic] Failed to update overlay template:", err);
@@ -169,7 +170,7 @@ export function StepGraphicGenerate({
         errorMessage: err.message || "Modify failed",
       });
     }
-  }, [scenes, programTitle, graphicStates, modifyPrompt, onUpdateGraphicState]);
+  }, [scenes, programTitle, sessionId, graphicStates, modifyPrompt, onUpdateGraphicState]);
 
   // ─── Extract Theme ────────────────────────────────────────
 
@@ -452,7 +453,7 @@ ${css}
               onClick={onComplete}
               className="ml-2 text-xs bg-green-500/15 text-green-400 hover:bg-green-500/25 border border-green-500/30"
             >
-              <Check size={12} className="mr-1" /> Complete
+              <Check size={12} className="mr-1" /> 런다운 편집으로
             </Button>
           )}
         </div>

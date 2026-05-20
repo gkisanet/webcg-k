@@ -1,472 +1,519 @@
 # WebCG-K
 
-> **Web-Based Broadcasting Graphics System (Korea Edition)**
+> **Web Based Broadcasting Graphics System (Korea Edition)**
 
-Next-generation web-based broadcast graphics playout system. Harnesses React and modern web standards (HTML, CSS, JavaScript) to generate and control high-quality transparent overlay graphics for broadcast software like OBS Studio and vMix.
+차세대 웹 기반 방송 자막/그래픽 송출 시스템입니다. React와 웹 기술(HTML/CSS/JS)을 활용하여 OBS, vMix 등 방송 소프트웨어에 오버레이할 수 있는 투명 배경 그래픽을 생성하고 제어합니다.
 
 ---
 
-## 📐 System Architecture
+## 📐 시스템 아키텍처
 
 ```
-┌─────────── User Interface (React SPA) ──────────────────────────────────────────────┐
-│                                                                                     │
-│  ┌── Dashboard (/dashboard) ────────────┐  ┌── Controller (/controller/$sessionId) ─┐ │
-│  │ • Rundown Management                 │  │ • Timeline (Preview/PGM Monitors)     │ │
-│  │ • Graphics Editor (Penpot style)     │  │ • Overlay Gallery (ON/OFF Control)    │ │
-│  │ • Image Library (2K/4K)              │  │ • Action Log                          │ │
-│  │ • Overlay Templates + ✨ AI Wizard    │  │ • Playout Button (PGM Take)           │ │
-│  │ • Broadcast Session Management       │  │ • Logo Gallery                        │ │
-│  │ • Grid Layout Editor                 │  └───────────────────────────────────────┘ │
-│  └──────────────────────────────────────┘                                             │
-│                                                                                     │
-│  ┌── Renderer (/render/$sessionId) ────────────────────────────────────────────────┐ │
-│  │ OBS Browser Source ➔ Transparent graphics playout (1080p / 4K)                  │ │
-│  │ Subscribe to Supabase Realtime ➔ Real-time PGM state synchronization            │ │
-│  └─────────────────────────────────────────────────────────────────────────────────┘ │
-└─────────────────────────────────────────────────────────────────────────────────────┘
+┌─────────── 사용자 인터페이스 (React SPA) ──────────────────────────────────────────────┐
+│                                                                                       │
+│  ┌── 대시보드 (/dashboard) ─────────────┐  ┌── 컨트롤러 (/controller/$sessionId) ───┐ │
+│  │ • 런다운 관리                          │  │ • 타임라인 (Preview/PGM 모니터)         │ │
+│  │ • 그래픽 편집기 (Penpot 스타일)        │  │ • 오버레이 갤러리 (ON/OFF 송출 제어)    │ │
+│  │ • 이미지 라이브러리 (2K/4K)           │  │ • 액션 로그                              │ │
+│  │ • 오버레이 템플릿 + ✨ AI Wizard      │  │ • 송출 버튼 (PGM Take)                  │ │
+│  │ • 방송 세션 생성/관리                  │  │ • 로고 갤러리                            │ │
+│  │ • 그리드 레이아웃 편집기              │  └───────────────────────────────────────────┘ │
+│  └──────────────────────────────────────┘                                               │
+│                                                                                       │
+│  ┌── 렌더러 (/render/$sessionId) ──────────────────────────────────────────────────────┐ │
+│  │ OBS 브라우저 소스 → 투명 배경 그래픽 출력 (1080p / 4K)                              │ │
+│  │ Supabase Realtime 구독 → 실시간 PGM 상태 동기화                                    │ │
+│  └─────────────────────────────────────────────────────────────────────────────────────┘ │
+└───────────────────────────────────────────────────────────────────────────────────────────┘
             │                          │                          │
             ▼                          ▼                          ▼
-┌─────────── Supabase (Self-hosted / Docker) ─────────────────────────────────────────┐
-│  PostgreSQL  │  Auth (email)  │  Realtime (Broadcast)  │  Storage (images)             │
-│              │                │  Subscribe to          │  2K/4K Multi-resolution       │
-│              │                │  overlay_state         │                               │
-└─────────────────────────────────────────────────────────────────────────────────────┘
+┌─────────── Supabase (Self-hosted / Docker) ──────────────────────────────────────────────┐
+│  PostgreSQL  │  Auth (email)  │  Realtime (Broadcast)  │  Storage (images)               │
+│              │                │  overlay_state 구독     │  2K/4K 멀티 해상도             │
+└──────────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
-### Core Data Flow
+### 핵심 데이터 흐름
 
 ```mermaid
 sequenceDiagram
-    participant D as Dashboard
+    participant D as 대시보드
     participant DB as Supabase DB
-    participant C as Controller
-    participant R as Renderer (OBS)
+    participant C as 컨트롤러
+    participant R as 렌더러 (OBS)
 
-    D->>DB: Create Rundowns / Graphics / Overlays
-    D->>DB: Create broadcast_session (contains timeline_data)
-    C->>DB: Load Session + Load overlay_state
-    C->>DB: PGM Take (updates current_pgm)
-    DB-->>R: Realtime ➔ PGM Change Capture
-    R->>R: Render Graphics on Transparent Background
-    C->>DB: Overlay ON/OFF (updates overlay_state)
-    DB-->>R: Realtime ➔ Toggle Overlay Visibility
+    D->>DB: 런다운/그래픽/오버레이 템플릿 생성
+    D->>DB: broadcast_session 생성 (timeline_data 포함)
+    C->>DB: 세션 로드 + overlay_state 로드
+    C->>DB: PGM Take (current_pgm 업데이트)
+    DB-->>R: Realtime → PGM 상태 변경 감지
+    R->>R: 투명 배경에 그래픽 렌더링
+    C->>DB: 오버레이 ON/OFF (overlay_state 업데이트)
+    DB-->>R: Realtime → 오버레이 표시/숨김
 ```
 
 ---
 
-## ✨ Core Features
+## ✨ 핵심 기능
 
-### 🎬 Playout Timeline Controller
-Intuitive Premiere/Final Cut style multi-track playout timeline interface
-- Drag-and-drop graphic blocks & resize durations
-- Preview/PGM dual live monitors (WYSIWYG SVG rendering)
-- Keyboard shortcuts (`←`, `→`, `↑`, `Space`)
-- **Zoom In / Zoom Out** (25% to 100%) + `Ctrl+Mouse Wheel`
-- Action logs (full operations audit trails within sessions)
-- 🆕 **Segment Tab Bar** (Premiere-style Nested Sequence pattern) — auto-activates during NRCS integration
-- 🆕 **Auto-follow** — auto-advances to the subsequent segment tab upon completion
-- 🆕 **Zoom-to-Fit** — automatically fits zoom scale to active segment blocks
+### 🎬 타임라인 컨트롤러
+프리미어/파이널컷 스타일의 직관적인 타임라인 인터페이스
+- 그래픽 블록 드래그 & 리사이즈
+- Preview/PGM 듀얼 모니터 (WYSIWYG SVG 렌더링)
+- 키보드 단축키 (← → ↑ Space)
+- **줌인/줌아웃** (25%~100%) + Ctrl+마우스휠
+- 액션 로그 (세션 내 모든 조작 기록)
+- 🆕 **세그먼트 탭 바** (Premiere Nested Sequence 패턴) — NRCS 연동 시 자동 활성
+- 🆕 **Auto-follow** — 세그먼트 완료 시 다음 탭 자동 전환
+- 🆕 **Zoom-to-Fit** — 세그먼트 탭 전환 시 콘텐츠에 맞춤 줌 자동 조절
 
-### 📡 Overlay System (NodeCG-Style)
-Real-time graphics overlays decoupled from timelines
-- **Dashboard**: Full Overlay Template CRUD + ✨ AI Wizard (Gemini 2.0 Flash)
-- **Controller**: Playout Gallery (search/filter ➔ ON/OFF cards)
-- External API bindings (weather, earthquakes, public feeds)
-- Overlay depth conflict detection and resolution modals
+### 📡 오버레이 시스템 (NodeCG 스타일)
+타임라인과 독립적인 실시간 오버레이 레이어
+- **대시보드**: 오버레이 템플릿 CRUD + ✨ AI Wizard (Gemini 2.0 Flash)
+- **컨트롤러**: 송출 전용 갤러리 (필터/검색 → 카드 ON/OFF 제어)
+- 외부 데이터 바인딩 (날씨, 지진, 공공데이터 API)
+- 레이어 충돌 감지 및 해결 모달
 
-### 📋 Rundown System (Cuesheet)
-Sequential graphics management inspired by SPX-GC
-- 3-Pane Layout (Library | Rundown | Live Preview)
-- Drag-and-drop sequence sorting
-- Live text element inline editing
+### 📋 런다운 시스템 (큐시트)
+SPX-GC 스타일의 순차적 그래픽 관리
+- 3-Pane 레이아웃 (라이브러리 | 런다운 | 미리보기)
+- 드래그앤드롭 순서 변경
+- 텍스트 요소 실시간 편집
 
-### 🎨 Vector Graphics Editor
-Penpot/Figma style vector layout editor
-- `rect`, `text`, `group` elements + custom inline CSS overrides
-- Geometric snap guides & grid snapping alignment
-- Multistep Undo/Redo
+### 🎨 그래픽 편집기
+Penpot/Figma 스타일 벡터 에디터
+- rect, text, group 요소 + 커스텀 CSS
+- 스냅 시스템 & 스냅 가이드라인
+- Undo/Redo
 
-### 🖼 Asset Management
-2K / 4K multi-resolution image assets
-- Category-based library folders
-- Upload integrity modals
+### 🖼 이미지 관리
+2K/4K 멀티 해상도 시스템
+- 카테고리 기반 정리
+- 업로드 무결성 모달
 
-### 📺 Playout & Broadcasting
-Ultra-low latency playout via Supabase Realtime
-- Decoupled session controllers and renderers
-- Direct integrations with OBS Browser Sources
-- High-definition 1080p and 4K outputs
+### 📺 방송 송출 (Broadcast)
+Supabase Realtime 기반 실시간 송출
+- 세션 기반 컨트롤러/렌더러 분리
+- OBS 브라우저 소스 직접 연결
+- 1080p / 4K 해상도 지원
 
 ---
 
-## 📁 Project Directory Structure
+## 📁 프로젝트 구조
 
-> **🎯 Learning Objective**: Study the visual directory map below to understand "why these files exist here."
-> Broadcast graphics workflows flow through a 3-stage pipeline: **Authoring (Dashboard) ➔ Programming (Controller) ➔ Outputs (Renderer)**.
-> Our application codebase reflects this exact pipeline structure.
+> **🎯 학습 목표**: 아래 트리를 읽으면서 "왜 이 파일이 여기에 있는지"를 이해하세요.
+> 방송 시스템은 **저작(Dashboard) → 송출(Controller) → 출력(Renderer)** 3단계 파이프라인으로 흐릅니다.
+> 코드 구조도 이 흐름을 그대로 반영합니다.
 
 ```
-webcg-k/
+2026.WebCg-K/
 │
-├── src/
-│   ├── routes/                    # 🗺 Routing Layer (TanStack File-based Routing)
-│   │   │  ┌──────────────────────────────────────────────────────────────┐
-│   │   │  │ Why File-based Routing?                                      │
-│   │   │  │ File paths define URL endpoints (Convention over Config).     │
-│   │   │  │ Matches standard Next.js App Router conventions.             │
-│   │   │  └──────────────────────────────────────────────────────────────┘
-│   │   ├── __root.tsx             # Root layout configuration (AuthProvider, ErrorBoundary)
-│   │   ├── index.tsx              # Landing route (/)
-│   │   ├── login.tsx              # Login / Sign up credentials (/login)
+├── webcg-k/                            # 📱 프론트엔드 애플리케이션 (React 19 SPA)
+│   ├── src/
 │   │   │
-│   │   ├── dashboard.tsx          # Dashboard shell (Sidebar + nested Outlet navigation)
-│   │   ├── dashboard/
+│   │   ├── routes/                    # 🗺 페이지 (TanStack File-based Routing)
 │   │   │   │  ┌──────────────────────────────────────────────────────────────┐
-│   │   │   │  │ 📦 Route Code Splitting (B-5)                                │
-│   │   │   │  │ Split into *.tsx (configs) and *.lazy.tsx (components) to     │
-│   │   │   │  │ dynamically load assets on demand, optimizing bundles.        │
+│   │   │   │  │ Why File-based routing?                                     │
+│   │   │   │  │ 파일명 = URL 경로. Next.js App Router와 같은 컨벤션이며,   │
+│   │   │   │  │ 파일을 만들면 라우트가 자동 생성되어 설정 코드가 불필요.    │
 │   │   │   │  └──────────────────────────────────────────────────────────────┘
-│   │   │   ├── index.tsx / index.lazy.tsx         # Dashboard default (Metrics summaries)
-│   │   │   ├── rundowns/                          # Playout Rundown builder & lists
-│   │   │   ├── cuesheets/                         # Interactive Cuesheet lists
-│   │   │   ├── graphics/                          # ⭐ Graphics Catalog (Detailed below)
-│   │   │   │   ├── index.tsx / index.lazy.tsx     # Bundle, Gallery, and Grid tabs
-│   │   │   │   ├── graphicsTypes.tsx              # Co-located Typings & GraphicPreview component
-│   │   │   │   ├── $graphicId.tsx                 # Canvas graphical designer
-│   │   │   │   └── grid-templates/                # Layout boundary grid manager
-│   │   │   ├── bundles/                           # Theme package settings
-│   │   │   ├── images.tsx / images.lazy.tsx       # Media asset catalog (2K/4K resolution support)
-│   │   │   ├── broadcast.tsx / broadcast.lazy.tsx # Playout session config & status
-│   │   │   ├── templates.tsx / templates.lazy.tsx # ⭐ Overlay Management & AI Wizard UI
-│   │   │   ├── datasources.tsx / datasources.lazy.tsx # Connected API integrations
-│   │   │   │   ├── datasourcesTypes.ts            # Type definitions, constants, and utilities
-│   │   │   │   ├── NrcsPanel.tsx                  # NRCS interface controllers
-│   │   │   │   └── CustomSourceModal.tsx          # Dialog for custom public integrations
-│   │   │   ├── fonts.tsx / fonts.lazy.tsx         # Typefaces (14 system fonts + manual imports)
-│   │   │   ├── characters.tsx                     # Live AI avatars (Rive integration)
-│   │   │   ├── admin.tsx / admin.lazy.tsx         # Workspace settings & permissions (RBAC)
-│   │   │   │   ├── adminTypes.ts                  # Administrative provider declarations
-│   │   │   │   ├── AdminUsersTab.tsx              # Panel managing profile groups
-│   │   │   │   ├── AdminAiTab.tsx                 # Panel config for Gemini models
-│   │   │   │   └── AdminApiKeysTab.tsx            # API credential access lists
-│   │   │   └── dashboard-common.css               # Shared Dashboard styles
+│   │   │   ├── __root.tsx             # 최상위 레이아웃 (AuthProvider, ErrorBoundary)
+│   │   │   ├── index.tsx              # 랜딩 페이지 (/)
+│   │   │   ├── login.tsx              # 로그인/회원가입 (/login)
+│   │   │   │
+│   │   │   ├── dashboard.tsx          # 대시보드 레이아웃 (사이드바 + Outlet)
+│   │   │   ├── dashboard/
+│   │   │   │   │  ┌──────────────────────────────────────────────────────────────┐
+│   │   │   │   │  │ 📦 코드 스플리팅 (B-5)                                     │
+│   │   │   │   │  │ 각 라우트는 *.tsx(route config) + *.lazy.tsx(컴포넌트)로   │
+│   │   │   │   │  │ 분리. lazy.tsx는 라우트 접근 시에만 로드되어 초기 번들     │
+│   │   │   │   │  │ 크기를 줄임. (createFileRoute → createLazyFileRoute)       │
+│   │   │   │   │  └──────────────────────────────────────────────────────────────┘
+│   │   │   │   ├── index.tsx / index.lazy.tsx       # 대시보드 홈 (통계 카드)
+│   │   │   │   ├── rundowns/                        # 런다운 관리 (목록 + $rundownId 편집)
+│   │   │   │   ├── cuesheets/                       # 큐시트 관리
+│   │   │   │   ├── graphics/                        # ⭐ 그래픽 관리 — 아래 상세 설명
+│   │   │   │   │   ├── index.tsx / index.lazy.tsx    # 갤러리+번들+그리드 3탭 (TanStack Table)
+│   │   │   │   │   ├── graphicsTypes.tsx             # [B-1 분할] 타입 + GraphicPreview 컴포넌트
+│   │   │   │   │   ├── $graphicId.tsx    # 개별 그래픽 편집 페이지
+│   │   │   │   │   └── grid-templates/  # 그리드 템플릿 편집
+│   │   │   │   ├── bundles/             # 그래픽 번들 관리
+│   │   │   │   ├── images.tsx / images.lazy.tsx         # 이미지 라이브러리 (2K/4K)
+│   │   │   │   ├── broadcast.tsx / broadcast.lazy.tsx   # 방송 세션 생성/관리
+│   │   │   │   ├── templates.tsx / templates.lazy.tsx   # ⭐ 오버레이 템플릿 + AI Wizard
+│   │   │   │   ├── datasources.tsx / datasources.lazy.tsx # 외부 데이터 소스 관리
+│   │   │   │   │   ├── datasourcesTypes.ts       # [B-1 분할] 타입/상수/헬퍼
+│   │   │   │   │   ├── NrcsPanel.tsx             # [B-1 분할] NRCS 연동 탭
+│   │   │   │   │   └── CustomSourceModal.tsx     # [B-1 분할] 커스텀 소스 모달
+│   │   │   │   ├── fonts.tsx / fonts.lazy.tsx   # 폰트 관리 (14종 번들 + 업로드)
+│   │   │   │   ├── characters.tsx               # AI 캐릭터 관리 (Rive ViewModel)
+│   │   │   │   ├── admin.tsx / admin.lazy.tsx   # 관리자 페이지 (RBAC)
+│   │   │   │   │   ├── adminTypes.ts             # [B-1 분할] 타입/PROVIDERS
+│   │   │   │   │   ├── AdminUsersTab.tsx         # [B-1 분할] 사용자 관리 탭
+│   │   │   │   │   ├── AdminAiTab.tsx            # [B-1 분할] AI 모델 관리 탭
+│   │   │   │   │   └── AdminApiKeysTab.tsx       # [B-1 분할] API 키 관리 탭
+│   │   │   │   └── dashboard-common.css          # 대시보드 공통 CSS
+│   │   │   │
+│   │   │   ├── controller.tsx         # 컨트롤러 레이아웃
+│   │   │   ├── controller/
+│   │   │   │   └── $sessionId.tsx     # ⭐ 라이브 세션 컨트롤러 (타임라인+모니터+오버레이)
+│   │   │   │
+│   │   │   ├── render.tsx             # 렌더러 레이아웃 (OBS 브라우저 소스용)
+│   │   │   └── render/
+│   │   │       └── $sessionId.tsx     # 세션별 투명 배경 그래픽 출력
 │   │   │
-│   │   ├── controller.tsx         # Playout Controller wrapper
-│   │   ├── controller/
-│   │   │   └── $sessionId.tsx     # ⭐ Main Studio Controller (Timeline, Monitors, Overlays)
+│   │   ├── components/                # 🧩 UI 컴포넌트 (기능 도메인별 그룹)
+│   │   │   │  ┌──────────────────────────────────────────────────────────────┐
+│   │   │   │  │ 📐 컴포넌트 아키텍처 원칙                                    │
+│   │   │   │  │ • 1,000줄 초과 파일은 반드시 분할 (B-1 리팩토링)            │
+│   │   │   │  │ • 탭 기반 UI → 탭별 파일 분리 (HMR 성능 향상)               │
+│   │   │   │  │ • React.memo → 독립 파일 (props 변경 시에만 re-render)       │
+│   │   │   │  │ • 상수/타입 → co-locate 또는 공유 파일로                     │
+│   │   │   │  └──────────────────────────────────────────────────────────────┘
+│   │   │   │
+│   │   │   ├── Controller/            # ⭐ 송출 컨트롤러 구성요소
+│   │   │   │   ├── Timeline.tsx       # 프리미어 스타일 타임라인 (블록 드래그/줌)
+│   │   │   │   │   ├── timelineConstants.ts   # [B-1 분할] 줌 상수/컨텍스트/헬퍼
+│   │   │   │   │   ├── DraggableBlock.tsx      # [B-1 분할] 드래그/리사이즈 블록
+│   │   │   │   │   └── TimelineSubComponents.tsx # [B-1 분할] TrackRow/Playhead 등
+│   │   │   │   ├── PreviewMonitor.tsx  # Preview(PVW) 모니터 (SVG WYSIWYG)
+│   │   │   │   ├── PGMMonitor.tsx     # PGM 모니터 (송출 중인 그래픽)
+│   │   │   │   ├── OverlayPanel.tsx   # ⭐ 오버레이 송출 제어 (비즈니스 로직)
+│   │   │   │   │   ├── OverlayCard.tsx      # [B-1 분할] 카드 UI (React.memo)
+│   │   │   │   │   └── overlayConstants.tsx # [B-1 분할] 타입 5개 + 스타일 상수
+│   │   │   │   │  ┌──────────────────────────────────────────────────────────┐
+│   │   │   │   │  │ Why OverlayCard를 분리?                                  │
+│   │   │   │   │  │ 1,168줄 → 822줄. React.memo 컴포넌트는 독립 파일이      │
+│   │   │   │   │  │ 좋음 — 부모 재렌더 시에도 자체 props만 비교하므로        │
+│   │   │   │   │  │ 번들러가 트리쉐이킹으로 최적화 가능.                     │
+│   │   │   │   │  └──────────────────────────────────────────────────────────┘
+│   │   │   │   ├── OverlayPlayoutLayer.tsx # 오버레이 렌더링 레이어 (렌더러용)
+│   │   │   │   ├── AiCharacterPanel.tsx   # AI 캐릭터 제어 패널
+│   │   │   │   ├── AiCharacterLayer.tsx   # AI 캐릭터 렌더링 레이어
+│   │   │   │   ├── BroadcastButton.tsx    # PGM Take 버튼
+│   │   │   │   ├── ActionLogPanel.tsx     # 액션 로그 (모든 조작 기록)
+│   │   │   │   ├── LogoGallery.tsx        # 로고 갤러리
+│   │   │   │   ├── SettingsPanel.tsx      # 세션 설정
+│   │   │   │   └── UserAvatars.tsx        # 동시 접속 사용자 표시 (Presence)
+│   │   │   │
+│   │   │   ├── GraphicsEditor/        # 🎨 Penpot 스타일 그래픽 편집기
+│   │   │   │   ├── GraphicsEditor.tsx # 메인 편집기 오케스트레이터
+│   │   │   │   ├── GraphicsEditor.css # 에디터 전용 스타일
+│   │   │   │   ├── Canvas/           # 캔버스 렌더링 + 이벤트 처리
+│   │   │   │   ├── Elements/         # 개별 요소 렌더러 (rect, text, group)
+│   │   │   │   ├── Panels/           # ⭐ 속성 패널 (B-1 분할 완료)
+│   │   │   │   │   ├── PropertiesPanel.tsx  # 오케스트레이터 (172줄, 탭 전환만)
+│   │   │   │   │   ├── LayersPanel.tsx      # 레이어 목록 (z-index 관리)
+│   │   │   │   │   ├── ToolbarPanel.tsx     # 도구 모음
+│   │   │   │   │   └── tabs/                # [B-1 분할] 탭별 서브 컴포넌트
+│   │   │   │   │       ├── DesignTab.tsx    # Transform/Fill/Stroke/CornerRadius (576줄)
+│   │   │   │   │       ├── TextTab.tsx      # Typography/Alignment/Shadow (292줄)
+│   │   │   │   │       ├── AnimateTab.tsx   # Enter/Exit/Loop 프리셋 (299줄)
+│   │   │   │   │       └── CssTab.tsx       # Custom CSS 에디터 (28줄)
+│   │   │   │   │      ┌────────────────────────────────────────────────────┐
+│   │   │   │   │      │ 🏗 B-1 분할 사례: PropertiesPanel                  │
+│   │   │   │   │      │ Before: 1,295줄 거대 파일 (4개 탭이 한 파일에)     │
+│   │   │   │   │      │ After:  172줄 오케스트레이터 + 4개 탭 파일          │
+│   │   │   │   │      │ 효과: AnimateTab만 수정해도 DesignTab은 재컴파일   │
+│   │   │   │   │      │       되지 않아 HMR 속도 2~3배 향상                 │
+│   │   │   │   │      └────────────────────────────────────────────────────┘
+│   │   │   │   ├── hooks/            # 에디터 전용 훅 (useCanvasZoom 등)
+│   │   │   │   └── utils/            # 에디터 유틸리티 (스냅, 정렬 등)
+│   │   │   │
+│   │   │   ├── Overlay/              # ⭐ AI 오버레이 생성 Wizard (4단계)
+│   │   │   │   ├── OverlayCreationWizard.tsx  # 마법사 오케스트레이터
+│   │   │   │   ├── GridSelector.tsx    # Step 1: 그리드 선택
+│   │   │   │   ├── ZoneSelector.tsx    # Step 2: Zone 다중 선택
+│   │   │   │   ├── AiPromptPanel.tsx   # Step 3: AI 프롬프트 입력
+│   │   │   │   ├── CgVariationGallery.tsx # Step 4: AI 생성 결과 선택
+│   │   │   │   └── OverlayGallery.tsx  # 갤러리 관리
+│   │   │   │
+│   │   │   ├── Characters/            # AI 캐릭터 시스템 (Rive WebGL2)
+│   │   │   ├── GridEditor/            # 그리드 템플릿 편집기 (BSP 분할)
+│   │   │   ├── Graphics/              # 그래픽 갤러리 카드
+│   │   │   ├── Dashboard/             # 대시보드 사이드바
+│   │   │   ├── ui/                    # 🔧 shadcn/ui 공통 컴포넌트 (Button, Input 등)
+│   │   │   │
+│   │   │   ├── GraphicPreviewRenderer.tsx  # SVG 프리뷰 렌더러 (전체 시스템 공유)
+│   │   │   ├── AnimatedGraphicRenderer.tsx # DOM/CSS 애니메이션 렌더러 (25종)
+│   │   │   ├── NrcsTrack.tsx          # NRCS 자동화 트랙
+│   │   │   ├── NrcsMappingPreview.tsx  # NRCS→CG 매핑 미리보기
+│   │   │   └── ErrorBoundary.tsx      # SilentErrorBoundary (송출 무중단 보장)
 │   │   │
-│   │   ├── render.tsx             # Playout Output wrapper
-│   │   └── render/
-│   │       └── $sessionId.tsx     # Transparent playout engine linked directly by OBS
-│   │
-│   ├── components/                # 🧩 Presentation Elements (Grouped by domain)
-│   │   │  ┌──────────────────────────────────────────────────────────────┐
-│   │   │  │ 📐 Component Extraction Principles                            │
-│   │   │  │ • Files exceeding 1,000 lines are immediately refactored.    │
-│   │   │  │ • Tab panels reside in isolated files to protect HMR speed.   │
-│   │   │  │ • Export React.memo components to control repaint cycles.    │
-│   │   │  │ • Keep types and helper constants near their consumers.      │
-│   │   │  └──────────────────────────────────────────────────────────────┘
-│   │   ├── Controller/            # Studio Playout modules
-│   │   │   ├── Timeline.tsx       # Timeline panel (drag blocks, pan grids, zoom scale)
-│   │   │   │   ├── timelineConstants.ts  # Timeline context variables & zoom steps
-│   │   │   │   ├── DraggableBlock.tsx     # SVG block with resize/drag handles
-│   │   │   │   └── TimelineSubComponents.tsx # TrackRow grids and Playhead widgets
-│   │   │   ├── PreviewMonitor.tsx # PVW monitor (WYSIWYG layout previews)
-│   │   │   ├── PGMMonitor.tsx     # PGM monitor (Live output monitor)
-│   │   │   ├── OverlayPanel.tsx   # ⭐ Overlay controller & collision manager
-│   │   │   │   ├── OverlayCard.tsx        # Card widget (memoized for rendering)
-│   │   │   │   └── overlayConstants.tsx   # Styles, types, and schema helpers
-│   │   │   │  ┌──────────────────────────────────────────────────────────┐
-│   │   │   │  │ Why isolate OverlayCard?                                  │
-│   │   │   │  │ Prevents large file sizes and shields rendering from     │
-│   │   │   │  │ parent rerenders. Promotes precise bundler tree-shaking.  │
-│   │   │   │  └──────────────────────────────────────────────────────────┘
-│   │   │   ├── OverlayPlayoutLayer.tsx # Active on-screen graphics stack
-│   │   │   ├── AiCharacterPanel.tsx   # Controller for AI presenter models
-│   │   │   ├── AiCharacterLayer.tsx   # Transparent UI canvas for AI presenter
-│   │   │   ├── BroadcastButton.tsx    # Dedicated Take (PGM transition) action
-│   │   │   ├── ActionLogPanel.tsx     # Session activity log panels
-│   │   │   ├── LogoGallery.tsx        # Bug overlay selectors
-│   │   │   ├── SettingsPanel.tsx      # Playout session preferences
-│   │   │   └── UserAvatars.tsx        # Presence icons showing connected operators
+│   │   ├── lib/                       # 📚 라이브러리 & 타입 (전역 공유 유틸리티)
+│   │   │   │  ┌──────────────────────────────────────────────────────────────┐
+│   │   │   │  │ lib/ vs services/ 차이                                      │
+│   │   │   │  │ • lib/  = 순수 유틸리티, 타입 정의, 클라이언트 초기화       │
+│   │   │   │  │ • services/ = 외부 API 호출, 비즈니스 로직 포함             │
+│   │   │   │  │ 의존성 방향: services → lib (역방향 금지)                    │
+│   │   │   │  └──────────────────────────────────────────────────────────────┘
+│   │   │   ├── supabase.ts            # Supabase 클라이언트 싱글턴
+│   │   │   ├── auth.tsx               # AuthContext (로그인/로그아웃/세션)
+│   │   │   ├── database.types.ts      # DB 타입 (supabase gen types 자동 생성)
+│   │   │   ├── overlayTypes.ts        # 오버레이 타입 (OverlayAction, CgVariation 등)
+│   │   │   ├── gridTypes.ts           # 그리드 타입 (GridTemplate, Quadrant)
+│   │   │   ├── aiCharacterTypes.ts    # AI 캐릭터 ViewModel 타입
+│   │   │   ├── nrcsTypes.ts           # NRCS 보도정보 타입
+│   │   │   ├── fontRegistry.ts        # 14종 시스템 폰트 등록 (한글/영문 분리)
+│   │   │   ├── textMeasure.ts         # ⭐ 오프스크린 Canvas 텍스트 측정 (Auto-fit)
+│   │   │   ├── logger.ts              # 구조화된 Logger (네임스페이스 컬러 로깅)
+│   │   │   ├── i18n.ts                # react-i18next 다국어 설정 (10개 네임스페이스)
+│   │   │   ├── schemas.ts             # ⭐ [B-4] Zod 스키마 (런타임 타입 검증)
+│   │   │   ├── richTextUtils.ts       # 리치 텍스트 파싱 유틸
+│   │   │   ├── types/                 # 공통 타입 모음
+│   │   │   └── utils/                 # 범용 유틸리티
 │   │   │
-│   │   ├── GraphicsEditor/        # Visual design canvas (Penpot-like)
-│   │   │   ├── GraphicsEditor.tsx # Core editor manager
-│   │   │   ├── GraphicsEditor.css # Custom editor styling overrides
-│   │   │   ├── Canvas/            # Click handlers & geometric calculations
-│   │   │   ├── Elements/          # Element rendering layers (rect, text, group)
-│   │   │   └── Panels/            # Property inspectors
-│   │   │       ├── PropertiesPanel.tsx # Property tab director
-│   │   │       ├── LayersPanel.tsx     # Drag layers lists (manage index depths)
-│   │   │       ├── ToolbarPanel.tsx    # Tools palette (Selector, Text, Box)
-│   │   │       └── tabs/               # Sub-properties tab views
-│   │   │           ├── DesignTab.tsx   # Alignments, Strokes, Fills, CornerRadius (576 LOC)
-│   │   │           ├── TextTab.tsx     # Font weights, word breaks, text drop shadows (292 LOC)
-│   │   │           ├── AnimateTab.tsx  # In/Out transitions & preset selections (299 LOC)
-│   │   │           └── CssTab.tsx      # Live inline raw CSS custom fields (28 LOC)
-│   │   │          ┌────────────────────────────────────────────────────┐
-│   │   │          │ 🏗 Property panel extraction benefits              │
-│   │   │          │ Originally a massive 1,295-line component. Separating│
-│   │   │          │ tabs into dedicated files improves HMR performance │
-│   │   │          │ by 2x to 3x during individual changes.              │
-│   │   │          └────────────────────────────────────────────────────┘
+│   │   ├── services/                  # 🔌 서비스 레이어 (외부 API + 비즈니스 로직)
+│   │   │   ├── aiCgService.ts         # ⭐ Gemini 2.0 Flash AI CG 생성 엔진
+│   │   │   ├── overlayApiService.ts   # 오버레이 CRUD / 갤러리 / REST Export
+│   │   │   ├── dataProviders.ts       # 외부 데이터 프로바이더 (날씨/지진/Mock)
+│   │   │   ├── dataSourceService.ts   # 데이터소스 관리
+│   │   │   ├── bundleService.ts       # 그래픽 번들 CRUD
+│   │   │   ├── cuesheetService.ts     # 큐시트 관리
+│   │   │   ├── nrcsService.ts         # NRCS 보도정보 연동
+│   │   │   ├── nrcsMappingService.ts  # NRCS→CG 매핑 로직
+│   │   │   ├── nrcsRealtimeService.ts # NRCS 실시간 동기화
+│   │   │   ├── characterService.ts    # AI 캐릭터 관리
+│   │   │   ├── fontService.ts         # 폰트 업로드/관리
+│   │   │   ├── imageService.ts        # 이미지 업로드/관리
+│   │   │   ├── adminService.ts        # 관리자 API
+│   │   │   └── dashboardService.ts    # 대시보드 통계
 │   │   │
-│   │   ├── Overlay/               # AI Graphics Wizard steps
-│   │   │   ├── OverlayCreationWizard.tsx # Wizard step orchestrator
-│   │   │   ├── GridSelector.tsx   # Step 1: Base split-screen template selector
-│   │   │   ├── ZoneSelector.tsx   # Step 2: Quad boundary selections
-│   │   │   ├── AiPromptPanel.tsx  # Step 3: LLM prompt inputs
-│   │   │   ├── CgVariationGallery.tsx # Step 4: AI visual variation catalog
-│   │   │   └── OverlayGallery.tsx # Save templates lists
+│   │   ├── stores/                    # 🏪 전역 상태 (TanStack Store)
+│   │   │   │  ┌──────────────────────────────────────────────────────────────┐
+│   │   │   │  │ Why TanStack Store?                                         │
+│   │   │   │  │ Redux보다 경량하고 React 외부에서도 읽기/쓰기 가능.        │
+│   │   │   │  │ 타임라인 블록 조작처럼 60fps 업데이트가 필요한 경우         │
+│   │   │   │  │ React 렌더링과 디커플링하여 성능을 확보한다.                │
+│   │   │   │  └──────────────────────────────────────────────────────────────┘
+│   │   │   ├── timelineStore.ts       # ⭐ 타임라인 핵심 상태 (블록, PGM, 트랙)
+│   │   │   ├── blockManipulation.ts   # 블록 드래그/리사이즈 로직 (분리)
+│   │   │   └── actionLogStore.ts      # 액션 히스토리 (Undo용)
 │   │   │
-│   │   ├── Characters/            # AI presenter controllers (Rive WebGL2)
-│   │   ├── GridEditor/            # Grid boundaries layout manager
-│   │   ├── Graphics/              # Graphic card layouts
-│   │   ├── Dashboard/             # Left navigation dashboard sidebar
-│   │   ├── ui/                    # Common UI components (shadcn/ui Button, Input, etc.)
+│   │   ├── hooks/                     # 🪝 커스텀 훅 (재사용 가능한 상태 로직)
+│   │   │   ├── useKeyboardNavigation.ts  # 타임라인 키보드 내비게이션
+│   │   │   ├── useSessionPresence.ts     # Supabase Presence (동시 접속)
+│   │   │   ├── useRealtimeChannel.ts     # Supabase Realtime 채널 추상화
+│   │   │   ├── useDebounce.ts            # 입력 디바운스
+│   │   │   └── useClipboard.ts           # 클립보드 복사/붙여넣기
 │   │   │
-│   │   ├── GraphicPreviewRenderer.tsx # Shared SVG visual builder
-│   │   ├── AnimatedGraphicRenderer.tsx # CSS/DOM transition generator
-│   │   ├── NrcsTrack.tsx          # NRCS timing timeline rows
-│   │   ├── NrcsMappingPreview.tsx # Feed item mapping indicators
-│   │   └── ErrorBoundary.tsx      # Fail-safe (shields broadcast rendering from crashes)
+│   │   ├── locales/                   # 🌐 다국어 번역 파일 (react-i18next)
+│   │   │   ├── ko/                    # 한국어 (기본)
+│   │   │   │   ├── common.json        # 공통 UI (버튼, 상태, 네비게이션)
+│   │   │   │   ├── dashboard.json     # 대시보드 홈
+│   │   │   │   ├── broadcast.json     # 프로젝트 송출
+│   │   │   │   ├── admin.json         # 관리자 패널
+│   │   │   │   ├── datasources.json   # 데이터 소스
+│   │   │   │   ├── graphics.json      # 그래픽 관리
+│   │   │   │   ├── templates.json     # 템플릿
+│   │   │   │   ├── fonts.json         # 폰트
+│   │   │   │   ├── images.json        # 이미지
+│   │   │   │   └── rundowns.json      # 큐시트/런다운
+│   │   │   └── en/                    # 영어 (동일 구조)
+│   │   │
+│   │   ├── styles.css                 # 글로벌 CSS (다크 테마 + CSS Variables)
+│   │   └── router.tsx                 # TanStack Router 설정
 │   │
-│   ├── lib/                       # Utility Libraries & Global Typings
-│   │   │  ┌──────────────────────────────────────────────────────────────┐
-│   │   │  │ Differences: lib/ vs services/                               │
-│   │   │  │ • lib/  = Stateless helpers, type models, core config setup. │
-│   │   │  │ • services/ = External API requests & complex state mutations.│
-│   │   │  │ Dependency Rule: services may use lib, but lib never imports services. │
-│   │   │  └──────────────────────────────────────────────────────────────┘
-│   │   ├── supabase.ts            # Supabase instance singleton
-│   │   ├── auth.tsx               # AuthContext (sessions, tokens, profile syncs)
-│   │   ├── database.types.ts      # Automated database bindings (via Supabase CLI)
-│   │   ├── overlayTypes.ts        # Playout overlays typings (CgVariation, OverlayAction)
-│   │   ├── gridTypes.ts           # Screen quad division models
-│   │   ├── aiCharacterTypes.ts    # AI character animations state structures
-│   │   ├── nrcsTypes.ts           # Newsroom feeds models
-│   │   ├── fontRegistry.ts        # Pre-loaded web fonts mapping
-│   │   ├── textMeasure.ts         # Offscreen canvas size calculations (Auto-fit fonts)
-│   │   ├── logger.ts              # Custom console logger (colorized domains)
-│   │   ├── i18n.ts                # react-i18next framework config (10 namespaces)
-│   │   ├── schemas.ts             # ⭐ Zod schemas (guarantees API type safety at runtime)
-│   │   ├── richTextUtils.ts       # HTML string parsers
-│   │   ├── types/                 # Shared typings
-│   │   └── utils/                 # General helpers
-│   │
-│   ├── services/                  # Stateless business adapters
-│   │   ├── aiCgService.ts         # ⭐ Gemini 2.0 Flash AI graphics generation pipeline
-│   │   ├── overlayApiService.ts   # Overlay CRUD operations & API exports
-│   │   ├── dataProviders.ts       # Live data endpoints (weather, disasters, mock APIs)
-│   │   ├── dataSourceService.ts   # Third-party endpoints config
-│   │   ├── bundleService.ts       # Theme bundle CRUD operations
-│   │   ├── cuesheetService.ts     # Sequential playout cuesheets CRUD
-│   │   ├── nrcsService.ts         # Newsroom feeds manager
-│   │   ├── nrcsMappingService.ts  # Script segment ➔ Graphic layout parser
-│   │   ├── nrcsRealtimeService.ts # Real-time feed sync adapters
-│   │   ├── characterService.ts    # AI character config
-│   │   ├── fontService.ts         # File system typefaces loader
-│   │   ├── imageService.ts        # Image uploads & optimizations
-│   │   ├── adminService.ts        # Administration endpoints
-│   │   └── dashboardService.ts    # Statistics summaries
-│   │
-│   ├── stores/                    # Client-side State Stores (TanStack Store)
-│   │   │  ┌──────────────────────────────────────────────────────────────┐
-│   │   │  │ Why TanStack Store?                                          │
-│   │   │  │ Extremely lightweight. Can be edited outside the React tree. │
-│   │   │  │ Handles rapid 60fps updates (like block dragging) cleanly     │
-│   │   │  │ by bypassing React's default render loops to secure speed.   │
-│   │   │  └──────────────────────────────────────────────────────────────┘
-│   │   ├── timelineStore.ts       # Timeline central state (blocks, track lines, PGM states)
-│   │   ├── blockManipulation.ts   # Interactive block drag & resize logic
-│   │   └── actionLogStore.ts      # Local transaction list (Undo/Redo capabilities)
-│   │
-│   ├── hooks/                     # Common Custom Hooks
-│   │   ├── useKeyboardNavigation.ts # Timeline hotkeys mapping
-│   │   ├── useSessionPresence.ts    # Real-time multi-operator indicators
-│   │   ├── useRealtimeChannel.ts    # Real-time channel abstracts
-│   │   ├── useDebounce.ts           # Debounce delays
-│   │   └── useClipboard.ts          # OS clipboard integration helper
-│   │
-│   ├── locales/                   # Translation dictionaries (react-i18next)
-│   │   ├── ko/                    # Korean locales (Default)
-│   │   └── en/                    # English locales (Mirrored schema)
-│   │
-│   ├── styles.css                 # Main application CSS (Dark Theme tokens)
-│   └── router.tsx                 # TanStack Router configuration instance
+│   └── package.json
 │
-└── package.json
+├── supabase/                           # ☁️ 백엔드 (Self-hosted Supabase / Docker)
+│   │  ┌──────────────────────────────────────────────────────────────────┐
+│   │  │ Why Self-hosted?                                                │
+│   │  │ 방송사 내부망에서 운용되므로 클라우드 의존 최소화.              │
+│   │  │ Docker Compose 하나로 DB+Auth+Realtime+Storage 전부 실행.      │
+│   │  └──────────────────────────────────────────────────────────────────┘
+│   ├── migrations/                    # 43개 SQL 마이그레이션 (자동 적용)
+│   │   ├── ...profiles.sql            # 사용자 프로필 + RLS
+│   │   ├── ...projects.sql            # 프로젝트 (방송 프로그램 단위)
+│   │   ├── ...graphics.sql            # 그래픽 템플릿 (SVG 요소 배열)
+│   │   ├── ...broadcast_sessions.sql  # 방송 세션 (PGM/PVW 상태)
+│   │   ├── ...overlay_templates.sql   # ⭐ 오버레이 템플릿
+│   │   ├── ...overlay_state.sql       # ⭐ 오버레이 실시간 상태 (Realtime 구독 대상)
+│   │   ├── ...session_action_logs.sql # 조작 감사 로그
+│   │   └── ...                        # (기타 마이그레이션)
+│   └── config.toml                    # Supabase 로컬 설정
+│
+└── docs/                               # 📖 프로젝트 문서
+    ├── USAGE.md                       # ⭐ 통합 사용 메뉴얼 (전체 워크플로우 + 단축키)
+    ├── assets/                        # 문서용 이미지/스크린샷
+    ├── study/                         # 학습·분석 문서
+    └── guide/                         # 📖 워크플로우·기술 가이드
+        ├── SETUP.md                   # 환경 설정
+        ├── TROUBLESHOOTING.md         # 문제 해결
+        ├── NRCS_CUESHEET_WORKFLOW.md  # NRCS 큐시트
+        ├── AI_CG_GUIDE.md             # AI CG 생성
+        ├── AI_CHARACTER_SYSTEM.md     # AI 캐릭터 시스템
+        ├── RENDERER_RESOLUTION.md     # 렌더러 해상도
+        ├── REALTIME_SYNC_ARCHITECTURE.md # Realtime 동기화
+        ├── SHADCN_GUIDE.md            # UI 컴포넌트
+        └── GRID_EDITOR.md             # 그리드 편집기
 ```
 
 ---
 
-## 🏗 Architectural Details
+## 🏗 아키텍처 상세
 
-### Component Tree Map
+### 컴포넌트 계층 구조
 
-> Sub-components extracted from large files are marked with a `[B-1]` tag in the diagram below.
+> 아래 다이어그램에서 `[B-1]` 표시는 거대 파일 분할로 새로 생긴 서브 컴포넌트입니다.
 
 ```mermaid
 graph TB
     Root["__root.tsx<br/>(AuthProvider + ErrorBoundary)"]
 
     Root --> Login["login.tsx"]
-    Root --> DashLayout["dashboard.tsx<br/>(Sidebar Layout)"]
+    Root --> DashLayout["dashboard.tsx<br/>(사이드바 레이아웃)"]
     Root --> CtrlLayout["controller.tsx"]
     Root --> RenderLayout["render.tsx"]
 
-    DashLayout --> DashHome["index.tsx<br/>(Stats Metrics Summary)"]
-    DashLayout --> Rundowns["rundowns/<br/>(Rundown Manager)"]
-    DashLayout --> Graphics["graphics/<br/>(Graphics Catalog + Grids)"]
-    DashLayout --> Images["images.tsx<br/>(Asset Managers)"]
-    DashLayout --> Broadcast["broadcast.tsx<br/>(Session Playouts)"]
-    DashLayout --> Templates["templates.tsx<br/>(Overlays & AI Wizard)"]
-    DashLayout --> DataSources["datasources.tsx<br/>(External API Connectors)"]
-    DashLayout --> Fonts["fonts.tsx<br/>(Font Managers)"]
-    DashLayout --> Characters["characters.tsx<br/>(AI Presenters)"]
-    DashLayout --> Admin["admin.tsx<br/>(RBAC Management)"]
+    DashLayout --> DashHome["index.tsx<br/>(통계 대시보드)"]
+    DashLayout --> Rundowns["rundowns/<br/>(런다운 관리)"]
+    DashLayout --> Graphics["graphics/<br/>(그래픽 + 번들 + 그리드)"]
+    DashLayout --> Images["images.tsx<br/>(이미지 2K/4K)"]
+    DashLayout --> Broadcast["broadcast.tsx<br/>(세션 관리)"]
+    DashLayout --> Templates["templates.tsx<br/>(오버레이 + AI Wizard)"]
+    DashLayout --> DataSources["datasources.tsx<br/>(API 데이터 관리)"]
+    DashLayout --> Fonts["fonts.tsx<br/>(14종 폰트)"]
+    DashLayout --> Characters["characters.tsx<br/>(AI 캐릭터)"]
+    DashLayout --> Admin["admin.tsx<br/>(RBAC)"]
 
-    Graphics --> GraphicsTypes["[B-1] graphicsTypes.tsx<br/>(Graphics Preview Helpers)"]
+    Graphics --> GraphicsTypes["[B-1] graphicsTypes.tsx<br/>(타입 + GraphicPreview)"]
 
     CtrlLayout --> Session["$sessionId.tsx"]
     Session --> Timeline["Timeline.tsx"]
     Session --> PVW["PreviewMonitor"]
     Session --> PGM["PGMMonitor"]
-    Session --> OvPanel["OverlayPanel.tsx<br/>(Overlay Logic Manager)"]
+    Session --> OvPanel["OverlayPanel.tsx<br/>(822줄 비즈니스)"]
     Session --> CharPanel["AiCharacterPanel"]
     Session --> BroadBtn["BroadcastButton"]
     Session --> ActionLog["ActionLogPanel"]
 
-    OvPanel --> OvCard["[B-1] OverlayCard<br/>(React.memo Component)"]
-    OvPanel --> OvConst["[B-1] overlayConstants<br/>(Styles & Helpers)"]
+    OvPanel --> OvCard["[B-1] OverlayCard<br/>(React.memo)"]
+    OvPanel --> OvConst["[B-1] overlayConstants<br/>(타입+스타일)"]
 
-    RenderLayout --> Renderer["$sessionId.tsx<br/>(OBS Playout Window)"]
+    RenderLayout --> Renderer["$sessionId.tsx<br/>(OBS 투명 배경 출력)"]
 
-    Templates -->|"✨ AI Generator"| Wizard["OverlayCreationWizard"]
+    Templates -->|"✨ AI 생성"| Wizard["OverlayCreationWizard"]
     Wizard --> GridSel["GridSelector"]
     Wizard --> ZoneSel["ZoneSelector"]
     Wizard --> AiPrompt["AiPromptPanel"]
     Wizard --> VarGal["CgVariationGallery"]
 
-    Graphics -->|Edit| GfxEditor["GraphicsEditor"]
-    GfxEditor --> PropPanel["PropertiesPanel<br/>(Inspectors orchestrator)"]
-    PropPanel --> DesignTab["[B-1] DesignTab<br/>(Geometry Tab)"]
-    PropPanel --> TextTab["[B-1] TextTab<br/>(Typography Tab)"]
-    PropPanel --> AnimateTab["[B-1] AnimateTab<br/>(Transitions Tab)"]
-    PropPanel --> CssTab["[B-1] CssTab<br/>(Custom CSS Tab)"]
+    Graphics -->|편집| GfxEditor["GraphicsEditor"]
+    GfxEditor --> PropPanel["PropertiesPanel<br/>(172줄 오케스트레이터)"]
+    PropPanel --> DesignTab["[B-1] DesignTab<br/>(576줄)"]
+    PropPanel --> TextTab["[B-1] TextTab<br/>(292줄)"]
+    PropPanel --> AnimateTab["[B-1] AnimateTab<br/>(299줄)"]
+    PropPanel --> CssTab["[B-1] CssTab<br/>(28줄)"]
 ```
 
-### Overlay System Responsibilities
+### 오버레이 아키텍처 (역할 분리)
 
-| Area | Role | Primary Components |
+| 영역 | 역할 | 주요 컴포넌트 |
 |------|------|-------------|
-| **Dashboard** (Authoring) | CRUD operations on overlay templates, AI Creation Wizard | `templates.tsx`, `OverlayCreationWizard` |
-| **Controller** (Playout) | Active overlay filters & search, ON/OFF buttons | `OverlayPanel.tsx` |
-| **Renderer** (Output) | Real-time listeners to toggle display visibility | `render/$sessionId.tsx` |
+| **대시보드** (저작) | 오버레이 템플릿 생성/편집/삭제, AI Wizard | `templates.tsx`, `OverlayCreationWizard` |
+| **컨트롤러** (송출) | 사전 정의 오버레이 필터/검색, ON/OFF 제어 | `OverlayPanel.tsx` |
+| **렌더러** (출력) | Realtime 구독으로 오버레이 표시/숨김 | `render/$sessionId.tsx` |
 
-### State Isolation Patterns
+### 상태 관리 전략
 
-| Scope | Tool | Target Content |
+| 레이어 | 도구 | 대상 |
 |--------|------|------|
-| **Component Local** | `useState`, `useRef` | Dialog open states, local text forms, tabs |
-| **Global Client** | TanStack Store | Drag coordinates, zoom levels, PGM active blocks |
-| **Server State** | Supabase (direct client requests) | Graphics metadata, active programs lists, users profiles |
-| **Real-time Sync** | Supabase Realtime Channels | Action logs sharing, active overlays, PGM triggers |
-| **Presence** | Supabase Presence channels | Online operators cursor tracking |
+| **로컬 컴포넌트** | `useState`, `useRef` | 모달, 폼, UI 토글 |
+| **전역 상태** | TanStack Store | 타임라인 블록, PGM 상태 |
+| **서버 상태** | Supabase (직접 쿼리) | 템플릿, 세션, 오버레이 |
+| **실시간 동기화** | Supabase Realtime | PGM 변경, 오버레이 ON/OFF |
+| **프레즌스** | Supabase Presence | 동시 접속 사용자 |
+
+## 🎮 사용 방법
+
+### 1. 큐시트 편집
+1. `/dashboard/rundowns` → 런다운 선택
+2. 라이브러리에서 그래픽 추가 → 드래그앤드롭 정렬
+3. **"프로젝트 생성"** 클릭
+
+### 2. 송출
+1. `/dashboard/broadcast` → 프로젝트 선택 → **"송출하기"**
+2. 컨트롤러에서 타임라인 블록 선택 → **Space** 키 PGM Take
+3. OBS 렌더러 URL: `http://localhost:3000/render/{sessionId}?resolution=1080p`
+
+### 3. 오버레이 관리
+1. `/dashboard/templates` → 오버레이 생성 (수동 또는 ✨ AI Wizard)
+2. 컨트롤러 → 오버레이 탭 → "+ 추가" → ON/OFF 제어
+3. 충돌 감지 시 모달에서 "겹쳐서 표시" 또는 "블록 숨기고 표시" 선택
 
 ---
 
-## 🎮 How to Operate
+## ⌨️ 단축키
 
-### 1. Rundown Setup & Preparation
-1. Navigate to `/dashboard/rundowns` and select your target program.
-2. Drag and drop graphic overlays from the library into the rundown sequence list.
-3. Click the **"Publish Project"** button.
+### 타임라인 컨트롤러
+| 키 | 기능 |
+|----|------|
+| `←` `→` | 블록 이동 |
+| `↑` | Preview로 선택 |
+| `Space` | PGM 송출 |
+| `Ctrl+휠↑` | 줌인 (최대 100%) |
+| `Ctrl+휠↓` | 줌아웃 (최소 25%) |
+| `Alt+←` / `Alt+→` | 🆕 세그먼트 탭 이동 |
+| `Ctrl+Shift+L` | 🆕 로고 Expand (세그먼트 전체 CG 구간) |
 
-### 2. Live Playout Controller Execution
-1. Navigate to `/dashboard/broadcast`, select your program, and click **"Start Playout Session"**.
-2. Inside the Studio Controller, select any timeline block and press the **Space** key to trigger a **PGM Take**.
-3. Point your OBS Browser Source to the output endpoint: `http://localhost:3000/render/{sessionId}?resolution=1080p`.
+### 런다운 편집기
+| 키 | 기능 |
+|----|------|
+| `↑` `↓` | 아이템 선택 이동 |
+| `Space` | 다음 아이템 |
+| `Delete` | 삭제 |
+| `Ctrl+C/V` | 복사/붙여넣기 |
 
-### 3. Overlay Control & Conflicts
-1. Navigate to `/dashboard/templates` and create overlays manually or using the **AI Wizard**.
-2. Open the Studio Controller ➔ Overlays panel ➔ click **"Add Overlay"** ➔ click to toggle ON/OFF cards.
-3. If overlay layers occupy the same screen zone, choose **"Stack Overlays"** or **"Replace Background Block"** in the conflict modal.
+### 그래픽 편집기
+| 키 | 기능 |
+|----|------|
+| `Ctrl+G` | 그룹화 |
+| `Ctrl+Shift+G` | 그룹 해제 |
+| `Ctrl+Z/Y` | Undo/Redo |
 
----
-
-## ⌨️ Keyboard Shortcuts
-
-### Timeline Playout Controller
-| Shortcut | Action |
-|----------|--------|
-| `←` / `→` | Slide selected timeline block left / right |
-| `↑` | Load selected block into the Preview Monitor (PVW) |
-| `Space` | **PGM Take** (push Preview graphics live to air) |
-| `Ctrl + Scroll Up` | Zoom in timeline tracks (up to 100%) |
-| `Ctrl + Scroll Down` | Zoom out timeline tracks (down to 25%) |
-| `Alt + ←` / `Alt + →` | 🆕 Transition between segment tabs |
-| `Ctrl + Shift + L` | 🆕 Expand Logo row to span all segment sections |
-
-### Rundown List Editor
-| Shortcut | Action |
-|----------|--------|
-| `↑` / `↓` | Move selection highlights |
-| `Space` | Select the subsequent block |
-| `Delete` | Remove selected rundown row |
-| `Ctrl + C` / `Ctrl + V` | Copy & paste rundown templates |
-
-### Graphics Vector Canvas
-| Shortcut | Action |
-|----------|--------|
-| `Ctrl + G` | Group selected graphics elements |
-| `Ctrl + Shift + G` | Ungroup container elements |
-| `Ctrl + Z` / `Ctrl + Y` | Undo / Redo visual changes |
-
-### Developer Utilities
-| Shortcut | Action |
-|----------|--------|
-| `Ctrl + Shift + K` | Force log out and purge session storage |
-| Append URL query `?reset` | Reset local session credentials and redirect to login |
+### 개발자 유틸리티
+| 키 | 기능 |
+|----|------|
+| `Ctrl+Shift+K` | 강제 로그아웃 (세션 클리어) |
+| URL `?reset` | 세션 초기화 후 로그인 리다이렉트 |
 
 ---
 
-## 🔧 CLI Commands
+## 🔧 개발 명령어
 
 ```bash
-# --- Supabase Database Lifecycle ---
-npx -y supabase start       # Spin up local Docker database
-npx -y supabase stop        # Stop local containers
-npx -y supabase status      # Display local endpoints
-npx -y supabase db reset    # Purge database, apply migrations, and seed seed.sql
+# Supabase 관리
+npx -y supabase start       # 시작
+npx -y supabase stop        # 중지
+npx -y supabase status      # 상태 확인
+npx -y supabase db reset    # DB 초기화 (마이그레이션 재적용)
 
-# --- Frontend Application ---
-npm run dev                  # Launch local HMR Vite server
-npx tsc --noEmit             # Perform TypeScript compiler check
+# 프론트엔드
+npm run dev                  # 개발 서버
+npx tsc --noEmit             # TypeScript 타입 체크
 
-# --- Migration Helpers ---
-npx -y supabase migration new <description>  # Create a clean DDL file
+# 새 마이그레이션 생성
+npx -y supabase migration new <description>
 ```
 
 ---
 
-## 📝 Documentations
+## 📝 문서
 
-| Document File | Purpose |
+| 문서 | 설명 |
 |------|------|
-| [USAGE.md](docs/USAGE.md) | Operations manual containing full editor shortcuts and studio workflows. |
-| [SETUP.md](docs/guide/SETUP.md) | Bootstrap guide for setting up developer environment dependencies. |
-| [TROUBLESHOOTING.md](docs/guide/TROUBLESHOOTING.md) | Resolutions to common local environment and build conflicts. |
-| [NRCS_CUESHEET_WORKFLOW.md](docs/guide/NRCS_CUESHEET_WORKFLOW.md) | Guide to newsroom NRCS automation and segment synchronization. |
-| [AI_CG_GUIDE.md](docs/guide/AI_CG_GUIDE.md) | Guide to writing prompts and parameters for overlay generations. |
-| [REALTIME_SYNC_ARCHITECTURE.md](docs/guide/REALTIME_SYNC_ARCHITECTURE.md) | In-depth layout of realtime database sync and playout channel protocols. |
+| [USAGE.md](docs/USAGE.md) | 전체 워크플로우·단축키·사용법 |
+| [SETUP.md](docs/guide/SETUP.md) | 환경 설정 가이드 |
+| [TROUBLESHOOTING.md](docs/guide/TROUBLESHOOTING.md) | 문제 해결 |
+| [NRCS_CUESHEET_WORKFLOW.md](docs/guide/NRCS_CUESHEET_WORKFLOW.md) | NRCS 큐시트 워크플로우 |
+| [AI_CG_GUIDE.md](docs/guide/AI_CG_GUIDE.md) | AI CG 생성 가이드 |
+| [REALTIME_SYNC_ARCHITECTURE.md](docs/guide/REALTIME_SYNC_ARCHITECTURE.md) | Realtime 동기화 아키텍처 |
 
-> To explore the complete design tokens and guidelines, refer to the [Root README](../README.md).
+> 전체 모노레포 문서 가이드는 [루트 README](../README.md)를 참조하세요.
 
 ---
 
-## 📜 License
+## 📜 라이선스
 
 MIT License

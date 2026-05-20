@@ -17,12 +17,17 @@ import { AnimatedGraphicRenderer } from "../AnimatedGraphicRenderer";
 import { CompositorLayer } from "../Compositor/CompositorLayer";
 import type { OverlayStateItem } from "../../hooks/useOverlayStore";
 import type { PluginAction } from "../../lib/webcgkSrcdoc";
+import { normalizeBroadcastSourceData } from "../../lib/broadcastSourceData";
+import { BroadcastHtmlOverlay } from "../Renderer/BroadcastHtmlOverlay";
+import { RendererWhiteboard } from "../Renderer/RendererWhiteboard";
 // ■ AiCharacterLayer는 렌더러(render.tsx)에서만 표시
 // Why? PGM 모니터는 400px 미리보기 패널인데, Rive 캔버스가
 //   inset:0 + z-index:100으로 전체를 덮어 UI가 파괴됨.
 //   Rive 렌더링은 1920×1080 전용 렌더러에서만 수행.
 import { VideoInputLayer } from "./VideoInputLayer";
 import { loadVideoInputConfig } from "../../services/videoInputService";
+
+const WB_PREVIEW_PREFIX = "wb-pvw-";
 
 // Track ID로 z-index 계산 (Track 1이 가장 높음)
 function getZIndexFromTrack(trackId: number, _maxTracks?: number): number {
@@ -50,7 +55,7 @@ interface LayerState {
 	animationPhase: "none" | "fading-in" | "fading-out" | "stable";
 }
 
-export function PGMMonitor({ sessionId, isBroadcasting = false, notBroadcastingWarning = false, scrubWarning = false, programOverlays, onPluginAction }: {
+export function PGMMonitor({ sessionId: _sessionId, isBroadcasting = false, notBroadcastingWarning = false, scrubWarning = false, programOverlays, onPluginAction }: {
 	sessionId?: string;
 	/** 송출 중 여부 — false이면 그래픽을 표시하지 않음 */
 	isBroadcasting?: boolean;
@@ -69,6 +74,7 @@ export function PGMMonitor({ sessionId, isBroadcasting = false, notBroadcastingW
 		timelineStore,
 		(state) => state.lastBroadcastPosition,
 	);
+	const pgmBlockIds = useStore(timelineStore, (state) => state.pgmBlockIds);
 	const fadeDuration = useStore(timelineStore, (state) => state.fadeDuration);
 
 	// 영상 입력 설정 (PVW와 동일한 설정 공유)
@@ -91,9 +97,20 @@ export function PGMMonitor({ sessionId, isBroadcasting = false, notBroadcastingW
 
 	// 현재 송출 위치의 블록 IDs
 	const activeBlockIds = useMemo(() => {
+		if (pgmBlockIds.size > 0) {
+			return new Set(
+				Array.from(pgmBlockIds.values()).filter(
+					(blockId) => !blockId.startsWith(WB_PREVIEW_PREFIX),
+				),
+			);
+		}
 		const activeBlocks = getBlocksAtPosition(blocks, lastBroadcastPosition);
-		return new Set(activeBlocks.map((b) => b.id));
-	}, [blocks, lastBroadcastPosition]);
+		return new Set(
+			activeBlocks
+				.filter((block) => !block.id.startsWith(WB_PREVIEW_PREFIX))
+				.map((block) => block.id),
+		);
+	}, [blocks, lastBroadcastPosition, pgmBlockIds]);
 
 	// 레이어 상태 관리
 	const [layerStates, setLayerStates] = useState<Map<string, LayerState>>(
@@ -330,12 +347,9 @@ function GraphicLayer({
 				? `pgmFadeOut ${fadeDuration}ms ease-in forwards`
 				: "none";
 
-	// sourceData가 있으면 실제 그래픽 렌더링
-	const isTemplate = block.sourceData?.elements?.length > 0;
-	const isImage = block.sourceType === "image" && block.sourceData?.imageUrl;
-	const hasGraphicData = isTemplate || isImage;
+	const source = normalizeBroadcastSourceData(block.sourceType, block.sourceData);
 
-	const needsDomRenderer = isTemplate && block.sourceData?.elements?.some(
+	const needsDomRenderer = source.kind === "template" && source.elements.some(
 		(el: any) => el.animation || el.type === "html_plugin"
 	);
 
@@ -347,38 +361,42 @@ function GraphicLayer({
 				animation: animationStyle,
 			}}
 		>
-			{hasGraphicData ? (
-				isTemplate ? (
+			{source.kind === "whiteboard" ? (
+				<RendererWhiteboard whiteboardId={source.whiteboardId} phase="idle" />
+			) : source.kind === "overlay" ? (
+				<BroadcastHtmlOverlay payload={source.overlay} title={block.name} />
+			) : source.kind === "template" || source.kind === "image" ? (
+				source.kind === "template" ? (
 					// 실제 그래픽 렌더링
 					needsDomRenderer ? (
 						<AnimatedGraphicRenderer
-							elements={block.sourceData.elements}
-							canvasWidth={block.sourceData.canvasWidth || 1920}
-							canvasHeight={block.sourceData.canvasHeight || 1080}
+							elements={source.elements}
+							canvasWidth={source.canvasWidth}
+							canvasHeight={source.canvasHeight}
 							phase="idle"
 							style={{ width: "100%", height: "100%" }}
 						/>
 					) : (
 						<GraphicPreviewRenderer
-							elements={block.sourceData.elements}
-							canvasWidth={block.sourceData.canvasWidth || 1920}
-							canvasHeight={block.sourceData.canvasHeight || 1080}
+							elements={source.elements}
+							canvasWidth={source.canvasWidth}
+							canvasHeight={source.canvasHeight}
 							style={{ width: "100%", height: "100%" }}
 						/>
 					)
 				) : (
 					// 순수 이미지 에셋 렌더링
 					<img
-						src={block.sourceData.imageUrl}
-						alt={block.sourceData.imageName || block.name}
+						src={source.imageUrl}
+						alt={source.imageName || block.name}
 						style={
-							block.sourceData.imageX !== undefined && block.sourceData.imageY !== undefined
+							source.imageX !== undefined && source.imageY !== undefined
 								? {
 										position: "absolute",
-										left: `${(block.sourceData.imageX / 1920) * 100}%`,
-										top: `${(block.sourceData.imageY / 1080) * 100}%`,
-										width: block.sourceData.imageW ? `${(block.sourceData.imageW / 1920) * 100}%` : "100%",
-										height: block.sourceData.imageH ? `${(block.sourceData.imageH / 1080) * 100}%` : "100%",
+										left: `${(source.imageX / 1920) * 100}%`,
+										top: `${(source.imageY / 1080) * 100}%`,
+										width: source.imageW ? `${(source.imageW / 1920) * 100}%` : "100%",
+										height: source.imageH ? `${(source.imageH / 1080) * 100}%` : "100%",
 										objectFit: "contain",
 										pointerEvents: "none",
 								  }
@@ -420,4 +438,3 @@ function GraphicLayer({
 		</div>
 	);
 }
-

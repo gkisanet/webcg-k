@@ -1,5 +1,5 @@
 import { Link, useLocation } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
 	Bot,
 	Building2,
@@ -19,6 +19,7 @@ import {
 	Tag,
 	Type,
 	Grid3x3,
+	PenTool,
 } from "lucide-react";
 import { useAuth } from "../../lib/auth";
 import { useTranslation } from "react-i18next";
@@ -47,6 +48,7 @@ const creationNavItems: NavItem[] = [
 	{ to: "/dashboard/studio/graphics", icon: <Palette size={20} />, labelKey: "nav.graphicsSvg" },
 	{ to: "/dashboard/studio/overlays", icon: <Layers size={20} />, labelKey: "nav.overlaysHtml" },
 	{ to: "/dashboard/studio/grid-templates", icon: <Grid3x3 size={20} />, labelKey: "nav.gridTemplates" },
+	{ to: "/dashboard/studio/whiteboards", icon: <PenTool size={20} />, labelKey: "nav.whiteboards" },
 	{ to: "/dashboard/rundowns", icon: <List size={20} />, labelKey: "nav.cuesheets", divider: true },
 	{ to: "/dashboard/broadcast", icon: <MonitorPlay size={20} />, labelKey: "nav.projectBroadcast" },
 ];
@@ -83,9 +85,17 @@ export function Sidebar() {
 	const { data: workspaces = [] } = useQuery({
 		queryKey: ["workspaces"],
 		queryFn: fetchWorkspaces,
+		enabled: !!user,
 	});
 
 	const activeWorkspace = workspaces.find((ws: any) => ws.id === activeWorkspaceId);
+
+	useEffect(() => {
+		if (workspaces.length !== 1) return;
+		const onlyWorkspace = workspaces[0] as { id: string };
+		if (!onlyWorkspace?.id || activeWorkspaceId === onlyWorkspace.id) return;
+		void setActiveWorkspace(onlyWorkspace.id);
+	}, [workspaces, activeWorkspaceId, setActiveWorkspace]);
 
 	// 현재 경로와 매칭 확인
 	const isActive = (path: string) => {

@@ -41,6 +41,11 @@ Controller(조작부)와 분리되어 1920×1080 투명 배경의 sandboxed ifra
 
 ## 2. 방송 렌더링의 물리적 제약 (Broadcast Rendering Rules)
 - **Zone Bounds (영역 지정)**: 프롬프트에 특정 Zone의 위치/크기(x, y, width, height)가 주어지면, \`#overlay\`는 전체 화면이 아닌 해당 크기로 고정되고 \`position: absolute; left: {x}px; top: {y}px\`로 배치되어야 합니다. Zone 지정이 없으면 1920×1080 전체 화면을 사용합니다.
+- **스크롤바 절대 방지 및 뷰포트 격리 (CRITICAL: No Scrollbars)**:
+  - 방송 그래픽(Broadcast Graphics)은 모니터나 마우스로 제어하는 일반 화면이 아닌 송출 장비로 직접 투사되는 화면입니다. 따라서 **가로/세로 모든 스크롤바(Scrollbar)가 나타나는 것을 엄격히 금지**합니다.
+  - 최상위 요소인 \`#overlay\` 및 \`body\`에는 반드시 \`overflow: hidden;\`을 적용하고 스크롤 메커니즘이 활성화되지 않게 하십시오.
+  - 그래픽의 전체 레이아웃은 뷰포트(또는 지정된 Zone Bounds) 크기 내에 완벽하게 들어맞아야(fit) 합니다. 화면을 초과하여 늘어나는 컨테이너를 절대 설계하지 마세요.
+  - 데이터가 많아질 경우(예: 축구 선발 라인업 리스트 등), 스크롤 대신 화면에 한 번에 표시할 최대 개수를 제한하고(예: 선발 명단 11명 고정 배치, 교체 명단 최대 5명 등), Grid/Flex 레이아웃 비율조정 및 \`overflow: hidden\`과 \`text-overflow: ellipsis\`를 적극 활용하여 정갈하게 한 화면에 우겨넣어야 합니다.
 - **60fps GPU 가속 (필수)**: 애니메이션은 오직 \`transform\`(translate, scale, rotate), \`opacity\`, \`filter\`만 사용하십시오. \`top\`, \`left\`, \`margin\`, \`padding\`, \`width\`, \`height\`, \`font-size\`를 애니메이션에 사용하면 리플로우가 발생하여 방송 프레임이 끊깁니다.
 - **방송 가독성 (필수)**:
   - 모든 텍스트에 강한 그림자 적용: \`text-shadow: 0 2px 4px rgba(0,0,0,0.8)\`

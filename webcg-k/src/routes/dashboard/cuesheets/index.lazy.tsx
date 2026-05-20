@@ -29,6 +29,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useAuth } from "../../../lib/auth";
 import {
 	fetchCuesheets,
 	createCuesheet,
@@ -63,9 +64,12 @@ type TabType = "standalone" | "data-linked";
 
 function CuesheetsPage() {
 	const queryClient = useQueryClient();
+	const { user, activeWorkspaceId } = useAuth();
+
 	const { data: cuesheets = [], isLoading } = useQuery({
-		queryKey: ["cuesheets"],
-		queryFn: fetchCuesheets,
+		queryKey: ["cuesheets", activeWorkspaceId],
+		queryFn: () => fetchCuesheets(activeWorkspaceId!),
+		enabled: !!user && !!activeWorkspaceId,
 	});
 
 	const { data: bundles = [] } = useQuery({
@@ -109,18 +113,27 @@ function CuesheetsPage() {
 
 	// 큐시트 생성
 	const handleCreate = async () => {
-		if (!formProgram.trim()) return;
+		if (!formProgram.trim()) {
+			alert("프로그램명을 입력해주세요.");
+			return;
+		}
+		if (!activeWorkspaceId) {
+			alert("활성화된 워크스페이스가 없습니다. 워크스페이스를 선택하거나 생성해주세요.");
+			return;
+		}
 		try {
 			await createCuesheet({
 				program_name: formProgram.trim(),
 				program_date: formDate,
 				bundle_id: formBundleId || undefined,
 				source_type: createType,
+				workspace_id: activeWorkspaceId,
 			});
 			resetCreateModal();
 			queryClient.invalidateQueries({ queryKey: ["cuesheets"] });
 		} catch (err) {
 			console.error("큐시트 생성 실패:", err);
+			alert("큐시트 생성 중 오류가 발생했습니다.");
 		}
 	};
 

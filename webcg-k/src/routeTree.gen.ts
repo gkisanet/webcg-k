@@ -31,6 +31,7 @@ import { Route as DashboardStudioGraphicsIndexRouteImport } from './routes/dashb
 import { Route as DashboardStudioBundlesIndexRouteImport } from './routes/dashboard/studio/bundles/index'
 import { Route as DashboardAssetsImagesIndexRouteImport } from './routes/dashboard/assets/images/index'
 import { Route as DashboardAssetsFontsIndexRouteImport } from './routes/dashboard/assets/fonts/index'
+import { Route as DashboardStudioWhiteboardsWhiteboardIdRouteImport } from './routes/dashboard/studio/whiteboards/$whiteboardId'
 import { Route as DashboardStudioGraphicsGraphicIdRouteImport } from './routes/dashboard/studio/graphics/$graphicId'
 import { Route as DashboardStudioBundlesBundleIdRouteImport } from './routes/dashboard/studio/bundles/$bundleId'
 import { Route as DashboardStudioOverlaysEditorPluginIdRouteImport } from './routes/dashboard/studio/overlays/editor.$pluginId'
@@ -42,6 +43,9 @@ const DashboardGraphicTaggingLazyRouteImport = createFileRoute(
 )()
 const DashboardAiCuesheetLazyRouteImport = createFileRoute(
   '/dashboard/ai-cuesheet',
+)()
+const DashboardStudioWhiteboardsIndexLazyRouteImport = createFileRoute(
+  '/dashboard/studio/whiteboards/',
 )()
 const DashboardStudioGridTemplatesIndexLazyRouteImport = createFileRoute(
   '/dashboard/studio/grid-templates/',
@@ -153,6 +157,16 @@ const DashboardCuesheetsCuesheetIdRoute =
     path: '/cuesheets/$cuesheetId',
     getParentRoute: () => DashboardRoute,
   } as any)
+const DashboardStudioWhiteboardsIndexLazyRoute =
+  DashboardStudioWhiteboardsIndexLazyRouteImport.update({
+    id: '/studio/whiteboards/',
+    path: '/studio/whiteboards/',
+    getParentRoute: () => DashboardRoute,
+  } as any).lazy(() =>
+    import('./routes/dashboard/studio/whiteboards/index.lazy').then(
+      (d) => d.Route,
+    ),
+  )
 const DashboardStudioGridTemplatesIndexLazyRoute =
   DashboardStudioGridTemplatesIndexLazyRouteImport.update({
     id: '/studio/grid-templates/',
@@ -205,6 +219,12 @@ const DashboardAssetsFontsIndexRoute =
   } as any).lazy(() =>
     import('./routes/dashboard/assets/fonts/index.lazy').then((d) => d.Route),
   )
+const DashboardStudioWhiteboardsWhiteboardIdRoute =
+  DashboardStudioWhiteboardsWhiteboardIdRouteImport.update({
+    id: '/studio/whiteboards/$whiteboardId',
+    path: '/studio/whiteboards/$whiteboardId',
+    getParentRoute: () => DashboardRoute,
+  } as any)
 const DashboardStudioGraphicsGraphicIdRoute =
   DashboardStudioGraphicsGraphicIdRouteImport.update({
     id: '/studio/graphics/$graphicId',
@@ -256,12 +276,14 @@ export interface FileRoutesByFullPath {
   '/dashboard/rundowns/': typeof DashboardRundownsIndexRoute
   '/dashboard/studio/bundles/$bundleId': typeof DashboardStudioBundlesBundleIdRoute
   '/dashboard/studio/graphics/$graphicId': typeof DashboardStudioGraphicsGraphicIdRoute
+  '/dashboard/studio/whiteboards/$whiteboardId': typeof DashboardStudioWhiteboardsWhiteboardIdRoute
   '/dashboard/assets/fonts/': typeof DashboardAssetsFontsIndexRoute
   '/dashboard/assets/images/': typeof DashboardAssetsImagesIndexRoute
   '/dashboard/studio/bundles/': typeof DashboardStudioBundlesIndexRoute
   '/dashboard/studio/graphics/': typeof DashboardStudioGraphicsIndexRoute
   '/dashboard/studio/overlays/': typeof DashboardStudioOverlaysIndexRoute
   '/dashboard/studio/grid-templates/': typeof DashboardStudioGridTemplatesIndexLazyRoute
+  '/dashboard/studio/whiteboards/': typeof DashboardStudioWhiteboardsIndexLazyRoute
   '/dashboard/studio/graphics/grid-templates/$templateId': typeof DashboardStudioGraphicsGridTemplatesTemplateIdRoute
   '/dashboard/studio/graphics/grid-templates/new': typeof DashboardStudioGraphicsGridTemplatesNewRoute
   '/dashboard/studio/overlays/editor/$pluginId': typeof DashboardStudioOverlaysEditorPluginIdRoute
@@ -285,12 +307,14 @@ export interface FileRoutesByTo {
   '/dashboard/rundowns': typeof DashboardRundownsIndexRoute
   '/dashboard/studio/bundles/$bundleId': typeof DashboardStudioBundlesBundleIdRoute
   '/dashboard/studio/graphics/$graphicId': typeof DashboardStudioGraphicsGraphicIdRoute
+  '/dashboard/studio/whiteboards/$whiteboardId': typeof DashboardStudioWhiteboardsWhiteboardIdRoute
   '/dashboard/assets/fonts': typeof DashboardAssetsFontsIndexRoute
   '/dashboard/assets/images': typeof DashboardAssetsImagesIndexRoute
   '/dashboard/studio/bundles': typeof DashboardStudioBundlesIndexRoute
   '/dashboard/studio/graphics': typeof DashboardStudioGraphicsIndexRoute
   '/dashboard/studio/overlays': typeof DashboardStudioOverlaysIndexRoute
   '/dashboard/studio/grid-templates': typeof DashboardStudioGridTemplatesIndexLazyRoute
+  '/dashboard/studio/whiteboards': typeof DashboardStudioWhiteboardsIndexLazyRoute
   '/dashboard/studio/graphics/grid-templates/$templateId': typeof DashboardStudioGraphicsGridTemplatesTemplateIdRoute
   '/dashboard/studio/graphics/grid-templates/new': typeof DashboardStudioGraphicsGridTemplatesNewRoute
   '/dashboard/studio/overlays/editor/$pluginId': typeof DashboardStudioOverlaysEditorPluginIdRoute
@@ -316,12 +340,14 @@ export interface FileRoutesById {
   '/dashboard/rundowns/': typeof DashboardRundownsIndexRoute
   '/dashboard/studio/bundles/$bundleId': typeof DashboardStudioBundlesBundleIdRoute
   '/dashboard/studio/graphics/$graphicId': typeof DashboardStudioGraphicsGraphicIdRoute
+  '/dashboard/studio/whiteboards/$whiteboardId': typeof DashboardStudioWhiteboardsWhiteboardIdRoute
   '/dashboard/assets/fonts/': typeof DashboardAssetsFontsIndexRoute
   '/dashboard/assets/images/': typeof DashboardAssetsImagesIndexRoute
   '/dashboard/studio/bundles/': typeof DashboardStudioBundlesIndexRoute
   '/dashboard/studio/graphics/': typeof DashboardStudioGraphicsIndexRoute
   '/dashboard/studio/overlays/': typeof DashboardStudioOverlaysIndexRoute
   '/dashboard/studio/grid-templates/': typeof DashboardStudioGridTemplatesIndexLazyRoute
+  '/dashboard/studio/whiteboards/': typeof DashboardStudioWhiteboardsIndexLazyRoute
   '/dashboard/studio/graphics/grid-templates/$templateId': typeof DashboardStudioGraphicsGridTemplatesTemplateIdRoute
   '/dashboard/studio/graphics/grid-templates/new': typeof DashboardStudioGraphicsGridTemplatesNewRoute
   '/dashboard/studio/overlays/editor/$pluginId': typeof DashboardStudioOverlaysEditorPluginIdRoute
@@ -348,12 +374,14 @@ export interface FileRouteTypes {
     | '/dashboard/rundowns/'
     | '/dashboard/studio/bundles/$bundleId'
     | '/dashboard/studio/graphics/$graphicId'
+    | '/dashboard/studio/whiteboards/$whiteboardId'
     | '/dashboard/assets/fonts/'
     | '/dashboard/assets/images/'
     | '/dashboard/studio/bundles/'
     | '/dashboard/studio/graphics/'
     | '/dashboard/studio/overlays/'
     | '/dashboard/studio/grid-templates/'
+    | '/dashboard/studio/whiteboards/'
     | '/dashboard/studio/graphics/grid-templates/$templateId'
     | '/dashboard/studio/graphics/grid-templates/new'
     | '/dashboard/studio/overlays/editor/$pluginId'
@@ -377,12 +405,14 @@ export interface FileRouteTypes {
     | '/dashboard/rundowns'
     | '/dashboard/studio/bundles/$bundleId'
     | '/dashboard/studio/graphics/$graphicId'
+    | '/dashboard/studio/whiteboards/$whiteboardId'
     | '/dashboard/assets/fonts'
     | '/dashboard/assets/images'
     | '/dashboard/studio/bundles'
     | '/dashboard/studio/graphics'
     | '/dashboard/studio/overlays'
     | '/dashboard/studio/grid-templates'
+    | '/dashboard/studio/whiteboards'
     | '/dashboard/studio/graphics/grid-templates/$templateId'
     | '/dashboard/studio/graphics/grid-templates/new'
     | '/dashboard/studio/overlays/editor/$pluginId'
@@ -407,12 +437,14 @@ export interface FileRouteTypes {
     | '/dashboard/rundowns/'
     | '/dashboard/studio/bundles/$bundleId'
     | '/dashboard/studio/graphics/$graphicId'
+    | '/dashboard/studio/whiteboards/$whiteboardId'
     | '/dashboard/assets/fonts/'
     | '/dashboard/assets/images/'
     | '/dashboard/studio/bundles/'
     | '/dashboard/studio/graphics/'
     | '/dashboard/studio/overlays/'
     | '/dashboard/studio/grid-templates/'
+    | '/dashboard/studio/whiteboards/'
     | '/dashboard/studio/graphics/grid-templates/$templateId'
     | '/dashboard/studio/graphics/grid-templates/new'
     | '/dashboard/studio/overlays/editor/$pluginId'
@@ -547,6 +579,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardCuesheetsCuesheetIdRouteImport
       parentRoute: typeof DashboardRoute
     }
+    '/dashboard/studio/whiteboards/': {
+      id: '/dashboard/studio/whiteboards/'
+      path: '/studio/whiteboards'
+      fullPath: '/dashboard/studio/whiteboards/'
+      preLoaderRoute: typeof DashboardStudioWhiteboardsIndexLazyRouteImport
+      parentRoute: typeof DashboardRoute
+    }
     '/dashboard/studio/grid-templates/': {
       id: '/dashboard/studio/grid-templates/'
       path: '/studio/grid-templates'
@@ -587,6 +626,13 @@ declare module '@tanstack/react-router' {
       path: '/assets/fonts'
       fullPath: '/dashboard/assets/fonts/'
       preLoaderRoute: typeof DashboardAssetsFontsIndexRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/studio/whiteboards/$whiteboardId': {
+      id: '/dashboard/studio/whiteboards/$whiteboardId'
+      path: '/studio/whiteboards/$whiteboardId'
+      fullPath: '/dashboard/studio/whiteboards/$whiteboardId'
+      preLoaderRoute: typeof DashboardStudioWhiteboardsWhiteboardIdRouteImport
       parentRoute: typeof DashboardRoute
     }
     '/dashboard/studio/graphics/$graphicId': {
@@ -653,12 +699,14 @@ interface DashboardRouteChildren {
   DashboardRundownsIndexRoute: typeof DashboardRundownsIndexRoute
   DashboardStudioBundlesBundleIdRoute: typeof DashboardStudioBundlesBundleIdRoute
   DashboardStudioGraphicsGraphicIdRoute: typeof DashboardStudioGraphicsGraphicIdRoute
+  DashboardStudioWhiteboardsWhiteboardIdRoute: typeof DashboardStudioWhiteboardsWhiteboardIdRoute
   DashboardAssetsFontsIndexRoute: typeof DashboardAssetsFontsIndexRoute
   DashboardAssetsImagesIndexRoute: typeof DashboardAssetsImagesIndexRoute
   DashboardStudioBundlesIndexRoute: typeof DashboardStudioBundlesIndexRoute
   DashboardStudioGraphicsIndexRoute: typeof DashboardStudioGraphicsIndexRoute
   DashboardStudioOverlaysIndexRoute: typeof DashboardStudioOverlaysIndexRoute
   DashboardStudioGridTemplatesIndexLazyRoute: typeof DashboardStudioGridTemplatesIndexLazyRoute
+  DashboardStudioWhiteboardsIndexLazyRoute: typeof DashboardStudioWhiteboardsIndexLazyRoute
   DashboardStudioGraphicsGridTemplatesTemplateIdRoute: typeof DashboardStudioGraphicsGridTemplatesTemplateIdRoute
   DashboardStudioGraphicsGridTemplatesNewRoute: typeof DashboardStudioGraphicsGridTemplatesNewRoute
   DashboardStudioOverlaysEditorPluginIdRoute: typeof DashboardStudioOverlaysEditorPluginIdRoute
@@ -678,6 +726,8 @@ const DashboardRouteChildren: DashboardRouteChildren = {
   DashboardRundownsIndexRoute: DashboardRundownsIndexRoute,
   DashboardStudioBundlesBundleIdRoute: DashboardStudioBundlesBundleIdRoute,
   DashboardStudioGraphicsGraphicIdRoute: DashboardStudioGraphicsGraphicIdRoute,
+  DashboardStudioWhiteboardsWhiteboardIdRoute:
+    DashboardStudioWhiteboardsWhiteboardIdRoute,
   DashboardAssetsFontsIndexRoute: DashboardAssetsFontsIndexRoute,
   DashboardAssetsImagesIndexRoute: DashboardAssetsImagesIndexRoute,
   DashboardStudioBundlesIndexRoute: DashboardStudioBundlesIndexRoute,
@@ -685,6 +735,8 @@ const DashboardRouteChildren: DashboardRouteChildren = {
   DashboardStudioOverlaysIndexRoute: DashboardStudioOverlaysIndexRoute,
   DashboardStudioGridTemplatesIndexLazyRoute:
     DashboardStudioGridTemplatesIndexLazyRoute,
+  DashboardStudioWhiteboardsIndexLazyRoute:
+    DashboardStudioWhiteboardsIndexLazyRoute,
   DashboardStudioGraphicsGridTemplatesTemplateIdRoute:
     DashboardStudioGraphicsGridTemplatesTemplateIdRoute,
   DashboardStudioGraphicsGridTemplatesNewRoute:

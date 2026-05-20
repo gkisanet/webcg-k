@@ -14,7 +14,7 @@
 
 import React, { useEffect, useMemo, useRef } from "react";
 import type { SemanticScene } from "../../lib/types/semanticTypes";
-import { layoutIntentToCSS, zoneToBounds, boundsWidthToPx, bgClass, accentBarClass, accentWidthClass, resolveAnimationKeyframes } from "./layoutUtils";
+import { layoutIntentToCSS, zoneToBounds, boundsWidthToPx, bgClass, resolveAnimationKeyframes, accentBarClass, accentWidthClass } from "./layoutUtils";
 import { SafeNodeRenderer, ContainerWidthContext } from "./NodeRenderer";
 
 // ─── Props ─────────────────────────────────────────────────────────
@@ -28,7 +28,6 @@ interface SemanticRendererProps {
 }
 
 const DEFAULT_FADE_MS = 500;
-const TYPING_STAGGER_MS = 80;  // typewriter: 노드당 stagger delay
 
 // ─── Component ─────────────────────────────────────────────────────
 
@@ -104,7 +103,7 @@ export const SemanticRenderer = React.memo(function SemanticRenderer({
     >
       {accentBar && (
         <div
-          className={`cg-accent-bar cg-accent-bar--${accentBar} cg-accent-width-${accentWidth}`}
+          className={`cg-accent-bar ${accentBarClass(accentBar)} ${accentWidthClass(accentWidth)}`}
           aria-hidden="true"
         />
       )}

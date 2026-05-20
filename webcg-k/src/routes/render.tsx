@@ -17,14 +17,16 @@ import { supabase } from "../lib/supabase";
 import { GraphicPreviewRenderer } from "../components/GraphicPreviewRenderer";
 import { AnimatedGraphicRenderer } from "../components/AnimatedGraphicRenderer";
 import { CompositorLayer } from "../components/Compositor/CompositorLayer";
-import { buildPluginSrcdoc } from "../lib/webcgkSrcdoc";
 import { ThemeProvider } from "../components/SemanticRenderer/ThemeProvider";
 import { useOverlayStore } from "../hooks/useOverlayStore";
 import { computeRemaining, isTimerReplicant } from "../lib/timerUtils";
 import { AiCharacterLayer } from "../components/Controller/AiCharacterLayer";
-import { SilentErrorBoundary } from "../components/ErrorBoundary";
 import { type Resolution, type BroadcastItemPayload } from "../lib/types/broadcast";
 import { parsePlayheadState, parseTimelineData } from "../lib/schemas";
+import { RendererWhiteboard } from "../components/Renderer/RendererWhiteboard";
+import { BroadcastHtmlOverlay } from "../components/Renderer/BroadcastHtmlOverlay";
+import { SilentErrorBoundary } from "../components/ErrorBoundary";
+import { normalizeBroadcastSourceData } from "../lib/broadcastSourceData";
 import {
 	startHeartbeat,
 	sendAck,
@@ -42,17 +44,27 @@ export const Route = createFileRoute("/render")({
 		// 예: /render?sessionId=xxx&tag=viewer → "viewer" 태그 오버레이만 표시
 		// 태그 없으면 기존 동작(모든 오버레이 표시)
 		const tag = search.tag as string;
+		const hideAnnotation =
+			search.hideAnnotation === "1" ||
+			search.hideAnnotation === "true" ||
+			search.hideAnnotation === true;
+		const passive =
+			search.passive === "1" ||
+			search.passive === "true" ||
+			search.passive === true;
 		return {
 			resolution: (resolution === "4k" ? "4k" : "1080p") as Resolution,
 			sessionId: sessionId || null,
 			tag: tag || null,
+			hideAnnotation,
+			passive,
 		};
 	},
 	component: RenderPage,
 });
 
 function RenderPage() {
-	const { sessionId, resolution, tag } = Route.useSearch();
+	const { sessionId, resolution, tag, hideAnnotation, passive } = Route.useSearch();
 
 	// 세션 상태 — live일 때만 그래픽 표시
 	const [isLive, setIsLive] = useState(false);
@@ -128,12 +140,26 @@ function RenderPage() {
 					const restoredItems = new Map<number, BroadcastItemPayload>();
 					for (const [trackIdStr, blockId] of Object.entries(pgmBlockIds)) {
 						const blk = blocks.find((b) => b.id === blockId);
+						
+						if (!blk && blockId.startsWith("wb-pgm-")) {
+							const boardId = blockId.slice("wb-pgm-".length);
+							restoredItems.set(Number(trackIdStr), {
+								id: blockId,
+								name: "판서 레이어",
+								trackId: Number(trackIdStr),
+								sourceType: "whiteboard",
+								sourceData: { whiteboardId: boardId } as any,
+							});
+							continue;
+						}
+
 						if (blk) {
 							const graphicData = blk.data ?? blk.sourceData ?? undefined;
 							restoredItems.set(Number(trackIdStr), {
 								id: blk.id,
 								name: blk.name,
 								trackId: blk.trackId,
+								sourceType: blk.source_type as any,
 								sourceData: graphicData as any,
 							});
 						}
@@ -218,21 +244,21 @@ function RenderPage() {
 						return newTracks;
 					});
 
-					if (data.seqNum != null) sendAck(channel, data.seqNum, "rendered");
+					if (!passive && data.seqNum != null) sendAck(channel, data.seqNum, "rendered");
 				} else if (data.action === "PLAY" && data.item) {
 					// 레거시 단일 PLAY 호환
 					setIsLive(true);
 					const newTracks = new Map<number, TrackState>();
 					newTracks.set(data.item.trackId ?? 0, { item: data.item, phase: "enter" });
 					setTracks(newTracks);
-					if (data.seqNum != null) sendAck(channel, data.seqNum, "rendered");
+					if (!passive && data.seqNum != null) sendAck(channel, data.seqNum, "rendered");
 				} else if (data.action === "STOP" || data.action === "CLEAR") {
 					setTracks(prev => {
 						const next = new Map(prev);
 						for (const [id, ts] of next) next.set(id, { ...ts, phase: "exit" });
 						return next;
 					});
-					if (data.seqNum != null) sendAck(channel, data.seqNum, "received");
+					if (!passive && data.seqNum != null) sendAck(channel, data.seqNum, "received");
 				}
 			})
 			.subscribe((status) => {
@@ -251,23 +277,25 @@ function RenderPage() {
 			});
 
 		// Heartbeat: 최상위 트랙 아이템 ID 반환
-		const stopHeartbeat = startHeartbeat(
-			channel,
-			() => {
-				const items = tracksRef.current;
-				if (items.size === 0) return null;
-				// 가장 높은 trackId의 아이템 ID 반환
-				const sorted = [...items.entries()].sort(([a], [b]) => b - a);
-				return sorted[0]?.[1]?.item?.id ?? null;
-			},
-			1000,
-		);
+		const stopHeartbeat = passive
+			? () => {}
+			: startHeartbeat(
+					channel,
+					() => {
+						const items = tracksRef.current;
+						if (items.size === 0) return null;
+						// 가장 높은 trackId의 아이템 ID 반환
+						const sorted = [...items.entries()].sort(([a], [b]) => b - a);
+						return sorted[0]?.[1]?.item?.id ?? null;
+					},
+					1000,
+				);
 
 		return () => {
 			stopHeartbeat();
 			channel.unsubscribe();
 		};
-	}, [sessionId]);
+	}, [passive, sessionId]);
 
 	// Micro-Flush 복원 + 메모리 감시
 	useEffect(() => {
@@ -327,47 +355,30 @@ function RenderPage() {
 	const renderGraphicItem = useCallback((item: BroadcastItemPayload, phase: TrackState["phase"] = "enter") => {
 		if (!item || !item.sourceData) return null;
 
-		const isOverlay = item.sourceType === "overlay" && (item.sourceData.html || item.sourceData.css);
-		const isTemplate = item.sourceData.elements && item.sourceData.elements.length > 0;
-		const isImage = item.sourceType === "image" && item.sourceData.imageUrl;
+		const source = normalizeBroadcastSourceData(item.sourceType, item.sourceData);
 
-
-		// AI Cuesheet overlay: render iframe directly from HTML+CSS payload
-		if (isOverlay) {
-			const overlayHtml = item.sourceData.html || "";
-			const overlayCss = item.sourceData.css || "";
-			const srcdoc = buildPluginSrcdoc({
-				html: overlayHtml, css: overlayCss, js: "",
-				width: 1920, height: 1080, autoShow: true,
-			});
-			return (
-				<div style={{ position: "absolute", inset: 0 }}>
-					<iframe
-						srcDoc={srcdoc}
-						style={{ width: "100%", height: "100%", border: "none" }}
-						sandbox="allow-scripts"
-						title={item.name}
-					/>
-				</div>
-			);
+		if (source.kind === "whiteboard") {
+			if (hideAnnotation) return null;
+			return <RendererWhiteboard whiteboardId={source.whiteboardId} phase={phase} />;
 		}
 
-		if (isTemplate || isImage) {
-			const cw = item.sourceData.canvasWidth || 1920;
-			const ch = item.sourceData.canvasHeight || 1080;
+		if (source.kind === "overlay") {
+			return <BroadcastHtmlOverlay payload={source.overlay} title={item.name} />;
+		}
 
-			const needsDomRenderer = isTemplate && item.sourceData.elements?.some(
+		if (source.kind === "template" || source.kind === "image") {
+			const needsDomRenderer = source.kind === "template" && source.elements.some(
 				(el: any) => el.animation || el.type === "html_plugin"
 			);
 
 			return (
 				<div style={{ position: "absolute", inset: 0 }}>
-					{isTemplate ? (
+					{source.kind === "template" ? (
 						needsDomRenderer ? (
 							<AnimatedGraphicRenderer
-								elements={item.sourceData.elements || []}
-								canvasWidth={cw}
-								canvasHeight={ch}
+								elements={source.elements}
+								canvasWidth={source.canvasWidth}
+								canvasHeight={source.canvasHeight}
 								phase={phase === "exit" ? "exit" : "enter"}
 								style={{ width: "100%", height: "100%" }}
 								resolution={resolution}
@@ -375,24 +386,24 @@ function RenderPage() {
 							/>
 						) : (
 							<GraphicPreviewRenderer
-								elements={item.sourceData.elements || []}
-								canvasWidth={cw}
-								canvasHeight={ch}
+								elements={source.elements}
+								canvasWidth={source.canvasWidth}
+								canvasHeight={source.canvasHeight}
 								resolution={resolution}
 							/>
 						)
 					) : (
 						<img
-							src={item.sourceData.imageUrl}
-							alt={item.sourceData.imageName || item.name}
+							src={source.imageUrl}
+							alt={source.imageName || item.name}
 							style={
-								item.sourceData.imageX !== undefined && item.sourceData.imageY !== undefined
+								source.imageX !== undefined && source.imageY !== undefined
 									? {
 											position: "absolute",
-											left: `${(item.sourceData.imageX / 1920) * 100}%`,
-											top: `${(item.sourceData.imageY / 1080) * 100}%`,
-											width: item.sourceData.imageW ? `${(item.sourceData.imageW / 1920) * 100}%` : "100%",
-											height: item.sourceData.imageH ? `${(item.sourceData.imageH / 1080) * 100}%` : "100%",
+											left: `${(source.imageX / 1920) * 100}%`,
+											top: `${(source.imageY / 1080) * 100}%`,
+											width: source.imageW ? `${(source.imageW / 1920) * 100}%` : "100%",
+											height: source.imageH ? `${(source.imageH / 1080) * 100}%` : "100%",
 											objectFit: "contain",
 											pointerEvents: "none",
 									  }
@@ -409,7 +420,7 @@ function RenderPage() {
 				{item.name} (No Graphic Data)
 			</div>
 		);
-	}, [resolution]);
+	}, [hideAnnotation, resolution]);
 
 	return (
 		<div style={{ width: "100vw", height: "100vh", overflow: "hidden", backgroundColor: "transparent", display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -469,7 +480,11 @@ function RenderPage() {
 				{/* 🛡️ 각 레이어를 SilentErrorBoundary로 격리 — 하나가 크래시해도 다른 레이어/송출 유지 */}
 				{isLive && sessionId && filteredOverlays.length > 0 && (
 					<SilentErrorBoundary componentName="CompositorLayer">
-						<CompositorLayer overlays={filteredOverlays} onPluginAction={handlePluginAction} onRenderStateChange={reportRenderState} />
+						<CompositorLayer
+							overlays={filteredOverlays}
+							onPluginAction={handlePluginAction}
+							onRenderStateChange={passive ? undefined : reportRenderState}
+						/>
 					</SilentErrorBoundary>
 				)}
 				{isLive && sessionId && (

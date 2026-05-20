@@ -23,11 +23,11 @@ import {
   importanceToFontWeight,
   importanceToOpacity,
   layoutIntentToCSS,
+  layoutWeightStyle,
   iconHintToSVG,
   frameClass,
   dividerAttr,
   filterCustomClasses,
-  layoutWeightStyle,
 } from "./layoutUtils";
 import { calculateAutoFitScale } from "../../lib/textMeasure";
 import { themeStore } from "../../stores/themeStore";
@@ -176,6 +176,7 @@ export const NodeRenderer = React.memo(function NodeRenderer({
           data-divider={dividerData !== "none" ? dividerData : undefined}
           style={{
             ...layoutIntentToCSS(layout_intent),
+            ...layoutWeightStyle(layout_intent.layout_weight),
             position: "relative",
             left: undefined,
             top: undefined,

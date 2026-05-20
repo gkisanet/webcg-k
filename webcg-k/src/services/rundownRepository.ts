@@ -52,7 +52,8 @@ export async function fetchRundownMeta(rundownId: string): Promise<RundownMeta> 
 
 /**
  * rundown_items 조회 + overlay source_code enrichment.
- * overlay 아이템의 경우 overlay_templates에서 source_code를 가져와 item.data.payload에 주입.
+ * overlay 아이템의 경우 overlay_templates에서 source_code를 가져와
+ * item.data 최상위와 item.data.payload 양쪽에 주입한다.
  */
 export async function fetchRundownItems(rundownId: string): Promise<RundownItem[]> {
   const { data: itemsData, error } = await supabase
@@ -70,19 +71,46 @@ export async function fetchRundownItems(rundownId: string): Promise<RundownItem[
     const overlayIds = [...new Set(overlayItems.map((i) => i.source_id))];
     const { data: templates } = await supabase
       .from("overlay_templates")
-      .select("id, source_code")
+      .select("id, source_code, dashboard_schema, replicant_defaults, ai_metadata")
       .in("id", overlayIds);
 
     if (templates) {
       const templateMap = new Map(
-        (templates as any[]).map((t) => [t.id, t.source_code]),
+        (templates as any[]).map((t) => [t.id, t]),
       );
       for (const item of overlayItems) {
-        const sc = templateMap.get(item.source_id);
+        const template = templateMap.get(item.source_id);
+        const sc = template?.source_code;
         if (sc) {
+          const existingData = item.data || {};
+          const sourceCode = {
+            html: sc.html || "",
+            css: sc.css || "",
+            js: sc.js || "",
+          };
+          const dashboardSchema = existingData.dashboard_schema || template.dashboard_schema || null;
+          const replicantDefaults = existingData.replicant_defaults || template.replicant_defaults || {};
+          const replicantData =
+            existingData.replicant_data ||
+            existingData.dashboard_data ||
+            replicantDefaults;
+
           item.data = {
-            ...(item.data || {}),
-            payload: { html: sc.html || "", css: sc.css || "" },
+            ...existingData,
+            ...sourceCode,
+            source_code: sourceCode,
+            dashboard_schema: dashboardSchema,
+            replicant_defaults: replicantDefaults,
+            replicant_data: replicantData,
+            ai_metadata: existingData.ai_metadata || template.ai_metadata || null,
+            payload: {
+              ...(existingData.payload || {}),
+              ...sourceCode,
+              source_code: sourceCode,
+              dashboard_schema: dashboardSchema,
+              replicant_defaults: replicantDefaults,
+              replicant_data: replicantData,
+            },
           };
         }
       }

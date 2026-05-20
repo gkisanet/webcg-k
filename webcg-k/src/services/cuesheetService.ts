@@ -61,10 +61,12 @@ export interface NrcsCuesheetItem {
 // ─── 큐시트 CRUD ──────────────────────────────────────────────────
 
 /** 큐시트 목록 조회 */
-export async function fetchCuesheets(): Promise<NrcsCuesheet[]> {
+export async function fetchCuesheets(workspaceId: string): Promise<NrcsCuesheet[]> {
+	if (!workspaceId) return [];
 	const { data, error } = await supabase
 		.from("nrcs_cuesheets")
 		.select("*")
+		.eq("workspace_id", workspaceId)
 		.order("program_date", { ascending: false });
 	if (error) throw error;
 	return (data || []) as unknown as NrcsCuesheet[];
@@ -99,8 +101,9 @@ export async function createCuesheet(params: {
 	bundle_id?: string;
 	source_type?: "manual" | "nrcs" | "csv";
 	source_id?: string;
-	workspace_id?: string | null;
+	workspace_id: string;
 }): Promise<NrcsCuesheet> {
+	if (!params.workspace_id) throw new Error("workspace_id is required");
 	const { data: { user } } = await supabase.auth.getUser();
 	if (!user) throw new Error("인증 필요");
 
@@ -113,7 +116,7 @@ export async function createCuesheet(params: {
 			bundle_id: params.bundle_id || null,
 			source_type: params.source_type || "manual",
 			source_id: params.source_id || null,
-			workspace_id: params.workspace_id || null,
+			workspace_id: params.workspace_id,
 		})
 		.select()
 		.single();
@@ -167,6 +170,7 @@ export async function deleteCuesheet(cuesheetId: string): Promise<void> {
  * 프로그램의 모든 기사를 순회하여 큐시트 아이템으로 변환 + 매핑
  */
 export async function generateCuesheetFromNrcs(
+		workspaceId: string,
 	program: NewsProgram,
 	newsItems: NrcsNewsItem[],
 	bundleId: string,
@@ -176,6 +180,7 @@ export async function generateCuesheetFromNrcs(
 		program_name: program.name,
 		program_date: program.date,
 		bundle_id: bundleId,
+			workspace_id: workspaceId,
 	});
 
 	// 2. 각 기사를 큐시트 아이템으로 변환

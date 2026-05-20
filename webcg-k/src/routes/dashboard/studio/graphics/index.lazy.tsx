@@ -23,12 +23,14 @@ import {
   fetchGraphics,
   deleteGraphic,
   updateGraphic,
+  updateGraphicVisibility,
 } from "../../../../services/graphicService";
 import {
   fetchGridTemplates,
   cloneGridTemplate,
   deleteGridTemplate,
   updateGridTemplate,
+  updateGridTemplateVisibility,
 } from "../../../../services/gridTemplateService";
 import { GridTemplateRow } from "../../../../lib/gridTypes";
 import {
@@ -62,6 +64,7 @@ import { useAuth } from "../../../../lib/auth";
 import type { Graphic, ListItem, BundleListItem, ViewMode } from "./-graphicsTypes";
 import { GraphicPreview } from "./-graphicsTypes";
 import { OverlayCreationWizard } from "../../../../components/Overlay/OverlayCreationWizard";
+import { VisibilityToggle } from "../../../../components/Common/VisibilityToggle";
 import type { CgVariation, ZoneBounds } from "../../../../lib/overlayTypes";
 import "../../dashboard-common.css";
 
@@ -78,10 +81,20 @@ const columnHelper = createColumnHelper<ListItem>();
 // 번들 전용 columnHelper
 const bundleColumnHelper = createColumnHelper<BundleListItem>();
 
+function formatPanelDate(value: string) {
+	return new Date(value).toLocaleDateString("ko-KR");
+}
+
+function getVisibilityLabel(visibility?: "private" | "workspace" | "public") {
+	if (visibility === "private") return "비공개";
+	if (visibility === "public") return "전체 공개";
+	return "팀 공유";
+}
+
 function GraphicsPage() {
 	const navigate = useNavigate();
 	const { user } = useAuth();
-	const [viewMode, setViewMode] = useState<ViewMode>("gallery");
+	const [viewMode] = useState<ViewMode>("gallery");
 	const [globalFilter, setGlobalFilter] = useState("");
 	const [selectedItem, setSelectedItem] = useState<ListItem | null>(null);
 	// 번들 선택 상태 (별도 관리 — 타입이 다름)
@@ -278,10 +291,19 @@ function GraphicsPage() {
 		[bundles],
 	);
 
-	// 템플릿 업데이트 mutation
+	// 템플릿 업데이트 mutation (이름/설명 등)
 	const updateTemplateMutation = useMutation({
 		mutationFn: async (updates: { id: string; description?: string; is_public?: boolean }) => {
 			await updateGridTemplate(updates.id, { description: updates.description, is_public: updates.is_public });
+		},
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ["gridTemplates"] });
+		},
+	});
+
+	const updateTemplateVisibilityMutation = useMutation({
+		mutationFn: async (args: { id: string; visibility: "private" | "workspace" | "public" }) => {
+			await updateGridTemplateVisibility(args.id, args.visibility);
 		},
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ["gridTemplates"] });
@@ -292,12 +314,28 @@ function GraphicsPage() {
 	const updateGraphicMutation = useMutation({
 		mutationFn: async (updates: { id: string; description?: string; is_public?: boolean }) => {
 			await updateGraphic(updates.id, { description: updates.description, is_public: updates.is_public });
-			if (error) throw error;
 		},
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ["graphics"] });
 		},
 	});
+
+	const updateGraphicVisibilityMutation = useMutation({
+		mutationFn: async (args: { id: string; visibility: "private" | "workspace" | "public" }) => {
+			await updateGraphicVisibility(args.id, args.visibility);
+		},
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ["graphics"] });
+		},
+	});
+
+	const handleVisibilityToggle = (item: ListItem, nextVis: string) => {
+		if (item._type === "grid-templates") {
+			updateTemplateVisibilityMutation.mutate({ id: item.id, visibility: nextVis as any });
+		} else if (item._type === "gallery") {
+			updateGraphicVisibilityMutation.mutate({ id: item.id, visibility: nextVis as any });
+		}
+	};
 
 	// 현재 뷰 모드에 따른 데이터
 	const currentData: ListItem[] = viewMode === "grid-templates" ? templates : graphics;
@@ -333,30 +371,32 @@ function GraphicsPage() {
 					</span>
 				),
 			}),
-			// 소유자 컬럼 (내 것인지 표시)
+			// 공유(가시성) 컬럼
 			columnHelper.display({
-				id: "owner",
-				header: "소유자",
+				id: "visibility",
+				header: "공유",
 				cell: ({ row }) => {
 					const item = row.original;
-					if (item._type === "grid-templates") {
-						const template = item as GridTemplateRow & { _type: ViewMode };
-						const isOwner = template.owner_id === user?.id;
+					// eslint-disable-next-line @typescript-eslint/no-explicit-any
+					const visibility = (item as any).visibility || "workspace";
+					const isOwner = (item as any).owner_id === user?.id;
+					
+					if (isOwner) {
 						return (
-							<span className={`owner-badge ${isOwner ? "mine" : "other"}`}>
-								{isOwner ? "나" : "공개"}
-							</span>
-						);
-					} else if (item._type === "gallery") {
-						const graphic = item as Graphic & { _type: ViewMode };
-						const isOwner = graphic.owner_id === user?.id;
-						return (
-							<span className={`owner-badge ${isOwner ? "mine" : "other"}`}>
-								{isOwner ? "나" : "공개"}
-							</span>
+							<VisibilityToggle 
+								visibility={visibility} 
+								onToggle={(nextVis) => handleVisibilityToggle(item, nextVis)} 
+								size={16} 
+							/>
 						);
 					}
-					return <span className="owner-badge other">-</span>;
+					
+					// 소유자가 아니면 그냥 아이콘만 (클릭 불가)
+					return (
+						<div style={{ opacity: 0.7, pointerEvents: "none" }}>
+							<VisibilityToggle visibility={visibility} onToggle={() => {}} size={16} />
+						</div>
+					);
 				},
 			}),
 			// 큐시트 사용 여부
@@ -620,57 +660,30 @@ function GraphicsPage() {
 			</div>
 
 			{/* 검색/필터 바 — broadcast 페이지 통일 */}
-			<div
-				style={{
-					display: "flex", alignItems: "center", gap: "0.75rem", flexWrap: "wrap",
-					padding: "0.875rem 1rem",
-					background: "var(--app-bg-alt)", border: "1px solid var(--border-subtle)",
-					borderRadius: "8px", marginBottom: "1rem",
-				}}
-			>
+			<div className="graphics-filter-panel">
 				{/* 텍스트 검색 */}
-				<div style={{
-					display: "flex", alignItems: "center", gap: "0.5rem",
-					padding: "0.375rem 0.75rem", background: "var(--app-bg-muted)",
-					borderRadius: "6px", flex: 1, minWidth: "200px", maxWidth: "320px",
-				}}>
-					<Search size={14} style={{ color: "var(--text-tertiary)", flexShrink: 0 }} />
+				<div className="graphics-filter-search">
+					<Search size={14} className="graphics-filter-icon" />
 					<input
+						className="graphics-filter-input"
 						type="text"
 						placeholder="그래픽 검색..."
 						value={globalFilter}
 						onChange={(e) => setGlobalFilter(e.target.value)}
-						style={{
-							background: "transparent", border: "none", outline: "none",
-							color: "var(--text-primary)", fontSize: "0.8125rem", width: "100%",
-						}}
 					/>
 					{globalFilter && (
-						<button type="button" onClick={() => setGlobalFilter("")}
-							style={{ background: "none", border: "none", cursor: "pointer", padding: "2px", color: "var(--text-tertiary)" }}>
+						<button type="button" className="graphics-filter-clear" onClick={() => setGlobalFilter("")}>
 							<X size={12} />
 						</button>
 					)}
 				</div>
 
 				{/* 날짜 범위 */}
-				<div style={{ display: "flex", alignItems: "center", gap: "0.375rem" }}>
-					<Calendar size={14} style={{ color: "var(--text-tertiary)" }} />
-					<input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)}
-						style={{
-							padding: "0.375rem 0.5rem", fontSize: "0.75rem",
-							background: "var(--app-bg-muted)", border: "1px solid var(--border-subtle)",
-							borderRadius: "6px", color: "var(--text-primary)",
-						}}
-					/>
-					<span style={{ color: "var(--text-tertiary)", fontSize: "0.75rem" }}>~</span>
-					<input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)}
-						style={{
-							padding: "0.375rem 0.5rem", fontSize: "0.75rem",
-							background: "var(--app-bg-muted)", border: "1px solid var(--border-subtle)",
-							borderRadius: "6px", color: "var(--text-primary)",
-						}}
-					/>
+				<div className="graphics-filter-date-range">
+					<Calendar size={14} className="graphics-filter-icon" />
+					<input className="graphics-filter-date" type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} />
+					<span className="graphics-filter-separator">~</span>
+					<input className="graphics-filter-date" type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} />
 				</div>
 
 				{/* Action buttons moved to header */}
@@ -888,47 +901,38 @@ function GraphicsPage() {
 								</div>
 							</div>
 							<div className="preview-details">
-								<h2 className="preview-title">
-									📦 {selectedBundle.name}
-									{selectedBundle.is_default && (
-										<span style={{
-											fontSize: 10, background: "var(--accent-primary)", color: "#fff",
-											padding: "1px 6px", borderRadius: 4, marginLeft: 8,
-										}}>
-											기본
+								<div className="preview-title-row">
+									<h2 className="preview-title">
+										<span className="preview-title-main">
+											<Package size={15} />
+											{selectedBundle.name}
 										</span>
+									</h2>
+									{selectedBundle.is_default && (
+										<span className="preview-badge preview-badge-accent">기본</span>
 									)}
-								</h2>
+								</div>
 								{selectedBundle.program_name && (
-									<p style={{ fontSize: 12, color: "var(--text-secondary)", margin: "4px 0" }}>
-										📺 {selectedBundle.program_name}
-									</p>
+									<p className="preview-subtitle">{selectedBundle.program_name}</p>
 								)}
 								{selectedBundle.description && (
 									<p className="preview-description">
 										{selectedBundle.description}
 									</p>
 								)}
-								<div style={{ fontSize: 11, color: "var(--text-tertiary)", marginTop: 8, display: "flex", gap: 12 }}>
-									<span>🗓 {new Date(selectedBundle.created_at).toLocaleDateString("ko-KR")}</span>
-									<span>✏️ {new Date(selectedBundle.updated_at).toLocaleDateString("ko-KR")}</span>
+								<div className="preview-meta-row">
+									<span className="preview-meta-chip">생성 {formatPanelDate(selectedBundle.created_at)}</span>
+									<span className="preview-meta-chip">수정 {formatPanelDate(selectedBundle.updated_at)}</span>
 								</div>
 
 								{/* 액션 버튼 */}
 								<div className="preview-actions">
-									<Button asChild>
-										<Link to={`/dashboard/bundles/${selectedBundle.id}` as any}>
-											<Pencil size={16} />
-											편집
-										</Link>
-									</Button>
-									<Button
-										variant="destructive"
-										onClick={() => handleDeleteBundle(selectedBundle.id)}
-									>
-										<Trash2 size={16} />
-										삭제
-									</Button>
+									<Link to={`/dashboard/bundles/${selectedBundle.id}` as any} className="btn-panel-edit">
+										<Pencil size={14} /> 편집
+									</Link>
+									<button type="button" className="btn-panel-delete" onClick={() => handleDeleteBundle(selectedBundle.id)}>
+										<Trash2 size={14} /> 삭제
+									</button>
 								</div>
 							</div>
 						</>
@@ -1046,19 +1050,21 @@ function GraphicsPage() {
 											/>
 										</div>
 										<div className="setting-group toggle-group">
-											<label htmlFor="template-public">공개 여부</label>
-											<button
-												id="template-public"
-												type="button"
-												className={`toggle-btn ${(selectedItem as GridTemplateRow).is_public ? "active" : ""}`}
-												onClick={() => {
-													const newValue = !(selectedItem as GridTemplateRow).is_public;
-													setSelectedItem({ ...selectedItem, is_public: newValue } as any);
-													updateTemplateMutation.mutate({ id: selectedItem.id, is_public: newValue });
-												}}
-											>
-												{(selectedItem as GridTemplateRow).is_public ? "🌐 공개" : "🔒 비공개"}
-											</button>
+											<label htmlFor="template-public">공개 범위</label>
+											<div className="preview-visibility-control">
+												<VisibilityToggle
+													visibility={(selectedItem as any).visibility || "workspace"}
+													onToggle={(nextVis) => {
+														const updatedItem = { ...selectedItem, visibility: nextVis } as any;
+														setSelectedItem(updatedItem);
+														updateTemplateVisibilityMutation.mutate({ id: selectedItem.id, visibility: nextVis });
+													}}
+													size={18}
+												/>
+												<span className="preview-visibility-text">
+													{getVisibilityLabel((selectedItem as any).visibility || "workspace")}
+												</span>
+											</div>
 										</div>
 									</div>
 								) : (selectedItem._type === "gallery" && (selectedItem as Graphic).owner_id === user?.id) ? (
@@ -1081,19 +1087,21 @@ function GraphicsPage() {
 											/>
 										</div>
 										<div className="setting-group toggle-group">
-											<label htmlFor="graphic-public">공개 여부</label>
-											<button
-												id="graphic-public"
-												type="button"
-												className={`toggle-btn ${(selectedItem as Graphic).is_public ? "active" : ""}`}
-												onClick={() => {
-													const newValue = !(selectedItem as Graphic).is_public;
-													setSelectedItem({ ...selectedItem, is_public: newValue } as any);
-													updateGraphicMutation.mutate({ id: selectedItem.id, is_public: newValue });
-												}}
-											>
-												{(selectedItem as Graphic).is_public ? "🌐 공개" : "🔒 비공개"}
-											</button>
+											<label htmlFor="graphic-public">공개 범위</label>
+											<div className="preview-visibility-control">
+												<VisibilityToggle
+													visibility={(selectedItem as any).visibility || "workspace"}
+													onToggle={(nextVis) => {
+														const updatedItem = { ...selectedItem, visibility: nextVis } as any;
+														setSelectedItem(updatedItem);
+														updateGraphicVisibilityMutation.mutate({ id: selectedItem.id, visibility: nextVis });
+													}}
+													size={18}
+												/>
+												<span className="preview-visibility-text">
+													{getVisibilityLabel((selectedItem as any).visibility || "workspace")}
+												</span>
+											</div>
 										</div>
 									</div>
 								) : selectedItem.description && (
@@ -1101,59 +1109,58 @@ function GraphicsPage() {
 										{selectedItem.description}
 									</p>
 								)}
+								<div className="preview-meta-row">
+									{"owner_id" in selectedItem && selectedItem.owner_id !== user?.id && (
+										<span className="preview-meta-chip">소유자 {selectedItem.owner_id}</span>
+									)}
+									<span className="preview-meta-chip">생성 {formatPanelDate(selectedItem.created_at)}</span>
+									{"updated_at" in selectedItem && (
+										<span className="preview-meta-chip">수정 {formatPanelDate(selectedItem.updated_at)}</span>
+									)}
+								</div>
 
 								{/* 액션 버튼 */}
 								<div className="preview-actions">
 									{selectedItem._type === "grid-templates" ? (
 										(selectedItem as GridTemplateRow).owner_id === user?.id ? (
-											<Button asChild>
-												<Link
-													to="/dashboard/studio/graphics/grid-templates/$templateId"
-													params={{ templateId: selectedItem.id }}
-												>
-													<Pencil size={16} />
-													편집
-												</Link>
-											</Button>
+											<Link
+												className="btn-panel-edit"
+												to="/dashboard/studio/graphics/grid-templates/$templateId"
+												params={{ templateId: selectedItem.id }}
+											>
+												<Pencil size={14} /> 편집
+											</Link>
 										) : (
-											<Button
+											<button type="button" className="btn-panel-fork"
 												onClick={() => handleFork(selectedItem as GridTemplateRow & { _type: ViewMode })}
 												disabled={forking}
 											>
-												<GitFork size={16} />
-												{forking ? "복제 중..." : "Fork (복제)"}
-											</Button>
+												<GitFork size={14} /> {forking ? "복제 중..." : "Fork 복제"}
+											</button>
 										)
 									) : (
 										// 그래픽(gallery) 모드
 										(selectedItem as Graphic).owner_id === user?.id ? (
-											<Button asChild>
-												<Link
-													to="/dashboard/studio/graphics/$graphicId"
-													params={{ graphicId: selectedItem.id }}
-												>
-													<Pencil size={16} />
-													편집
-												</Link>
-											</Button>
+											<Link
+												className="btn-panel-edit"
+												to="/dashboard/studio/graphics/$graphicId"
+												params={{ graphicId: selectedItem.id }}
+											>
+												<Pencil size={14} /> 편집
+											</Link>
 										) : (
-											<Button
+											<button type="button" className="btn-panel-fork"
 												onClick={() => handleForkGraphic(selectedItem as Graphic & { _type: ViewMode })}
 												disabled={forking}
 											>
-												<GitFork size={16} />
-												{forking ? "복제 중..." : "Fork (복제)"}
-											</Button>
+												<GitFork size={14} /> {forking ? "복제 중..." : "Fork 복제"}
+											</button>
 										)
 									)}
 									{((selectedItem._type === "gallery" && (selectedItem as Graphic).owner_id === user?.id) || (selectedItem._type === "grid-templates" && (selectedItem as GridTemplateRow).owner_id === user?.id)) && (
-										<Button
-											variant="destructive"
-											onClick={() => handleDelete(selectedItem)}
-										>
-											<Trash2 size={16} />
-											삭제
-										</Button>
+										<button type="button" className="btn-panel-delete" onClick={() => handleDelete(selectedItem)}>
+											<Trash2 size={14} /> 삭제
+										</button>
 									)}
 								</div>
 							</div>

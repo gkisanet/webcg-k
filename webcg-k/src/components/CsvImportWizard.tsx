@@ -33,6 +33,8 @@ import { CG_TYPE_LABELS } from "@/lib/nrcsTypes";
 import type { CgTextType } from "@/lib/nrcsTypes";
 import type { TemplateBundle } from "@/services/bundleService";
 
+import { useAuth } from "@/lib/auth";
+
 // ─── 타입 ────────────────────────────────────────────────────────
 
 /** WebCG-K 큐시트 아이템의 필드 목록 */
@@ -63,6 +65,7 @@ export function CsvImportWizard({
 	onComplete: (cuesheet: NrcsCuesheet) => void;
 	onCancel: () => void;
 }) {
+	const { activeWorkspaceId } = useAuth();
 	const [step, setStep] = useState<1 | 2 | 3>(1);
 	const [csvResult, setCsvResult] = useState<CsvParseResult | null>(null);
 	const [fileName, setFileName] = useState("");
@@ -153,6 +156,10 @@ export function CsvImportWizard({
 			setError("프로그램명을 입력하세요.");
 			return;
 		}
+		if (!activeWorkspaceId) {
+			setError("활성화된 워크스페이스가 없습니다. 워크스페이스를 선택하거나 생성해주세요.");
+			return;
+		}
 		setCreating(true);
 		setError("");
 		try {
@@ -161,6 +168,7 @@ export function CsvImportWizard({
 				program_name: programName.trim(),
 				program_date: programDate,
 				bundle_id: selectedBundleId || undefined,
+				workspace_id: activeWorkspaceId,
 			});
 
 			// 2. 아이템 일괄 삽입

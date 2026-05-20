@@ -15,16 +15,16 @@ import {
 	Plus,
 	Grid3x3,
 	Search,
-	Calendar,
 	ArrowUpDown,
 	Pencil,
 	GitFork,
 	X,
 	Trash2,
 } from "lucide-react";
-import React, { useState, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "../../../../lib/auth";
+import { VisibilityToggle } from "../../../../components/Common/VisibilityToggle";
 import "../../dashboard-common.css";
 
 export const Route = createLazyFileRoute("/dashboard/studio/grid-templates/")({
@@ -33,18 +33,26 @@ export const Route = createLazyFileRoute("/dashboard/studio/grid-templates/")({
 
 const columnHelper = createColumnHelper<GridTemplateRow>();
 
+function formatPanelDate(value: string) {
+	return new Date(value).toLocaleDateString("ko-KR");
+}
+
+function getVisibilityLabel(visibility?: "private" | "workspace" | "public") {
+	if (visibility === "private") return "비공개";
+	if (visibility === "public") return "전체 공개";
+	return "팀 공유";
+}
+
 function GridTemplatesPage() {
 	const navigate = useNavigate();
 	const { user } = useAuth();
 	const [globalFilter, setGlobalFilter] = useState("");
 	const [forking, setForking] = useState(false);
-	const [dateFrom, setDateFrom] = useState("");
-	const [dateTo, setDateTo] = useState("");
 	const [selectedItem, setSelectedItem] = useState<GridTemplateRow | null>(null);
 	const queryClient = useQueryClient();
 
     const updateTemplateMutation = useMutation({
-		mutationFn: async (vars: { id: string; description?: string; is_public?: boolean }) => {
+		mutationFn: async (vars: { id: string; description?: string; is_public?: boolean; visibility?: "private" | "workspace" | "public" }) => {
 			const { error } = await supabase.from("grid_templates").update(vars).eq("id", vars.id);
 			if (error) throw error;
 		},
@@ -240,34 +248,19 @@ function GridTemplatesPage() {
 			</div>
 
 			{/* 필터 바 */}
-			<div
-				style={{
-					display: "flex", alignItems: "center", gap: "0.75rem", flexWrap: "wrap",
-					padding: "0.875rem 1rem",
-					background: "var(--app-bg-alt)", border: "1px solid var(--border-subtle)",
-					borderRadius: "8px", marginBottom: "1rem",
-				}}
-			>
+			<div className="graphics-filter-panel">
 				{/* 텍스트 검색 */}
-				<div style={{
-					display: "flex", alignItems: "center", gap: "0.5rem",
-					padding: "0.375rem 0.75rem", background: "var(--app-bg-muted)",
-					borderRadius: "6px", flex: 1, minWidth: "200px", maxWidth: "320px",
-				}}>
-					<Search size={14} style={{ color: "var(--text-tertiary)", flexShrink: 0 }} />
+				<div className="graphics-filter-search">
+					<Search size={14} className="graphics-filter-icon" />
 					<input
+						className="graphics-filter-input"
 						type="text"
 						placeholder="템플릿 검색..."
 						value={globalFilter}
 						onChange={(e) => setGlobalFilter(e.target.value)}
-						style={{
-							background: "transparent", border: "none", outline: "none",
-							color: "var(--text-primary)", fontSize: "0.8125rem", width: "100%",
-						}}
 					/>
 					{globalFilter && (
-						<button type="button" onClick={() => setGlobalFilter("")}
-							style={{ background: "none", border: "none", cursor: "pointer", padding: "2px", color: "var(--text-tertiary)" }}>
+						<button type="button" className="graphics-filter-clear" onClick={() => setGlobalFilter("")}>
 							<X size={12} />
 						</button>
 					)}
@@ -424,19 +417,21 @@ function GridTemplatesPage() {
 										/>
 									</div>
 									<div className="setting-group toggle-group">
-										<label htmlFor="template-public">공개 여부</label>
-										<button
-											id="template-public"
-											type="button"
-											className={`toggle-btn ${selectedItem.is_public ? "active" : ""}`}
-											onClick={() => {
-												const newValue = !selectedItem.is_public;
-												setSelectedItem({ ...selectedItem, is_public: newValue });
-												updateTemplateMutation.mutate({ id: selectedItem.id, is_public: newValue });
-											}}
-										>
-											{selectedItem.is_public ? "🌐 공개" : "🔒 비공개"}
-										</button>
+										<label htmlFor="template-public">공개 범위</label>
+										<div className="preview-visibility-control">
+											<VisibilityToggle
+												visibility={(selectedItem as any).visibility || "workspace"}
+												onToggle={(nextVis) => {
+													const updatedItem = { ...selectedItem, visibility: nextVis } as any;
+													setSelectedItem(updatedItem);
+													updateTemplateMutation.mutate({ id: selectedItem.id, visibility: nextVis });
+												}}
+												size={18}
+											/>
+											<span className="preview-visibility-text">
+												{getVisibilityLabel((selectedItem as any).visibility || "workspace")}
+											</span>
+										</div>
 									</div>
 								</div>
 							) : (
@@ -446,53 +441,45 @@ function GridTemplatesPage() {
 											{selectedItem.description}
 										</p>
 									)}
-									<div style={{ fontSize: 11, color: "var(--text-tertiary)", marginTop: 8 }}>
-										<span>소유자: {selectedItem.owner_id}</span>
-									</div>
 								</>
 							)}
-							<div style={{ fontSize: 11, color: "var(--text-tertiary)", marginTop: 8, display: "flex", gap: 12 }}>
-								<span>🗓 {new Date(selectedItem.created_at).toLocaleDateString("ko-KR")}</span>
+							<div className="preview-meta-row">
+								{selectedItem.owner_id !== user?.id && (
+									<span className="preview-meta-chip">소유자 {selectedItem.owner_id}</span>
+								)}
+								<span className="preview-meta-chip">생성 {formatPanelDate(selectedItem.created_at)}</span>
+								<span className="preview-meta-chip">수정 {formatPanelDate(selectedItem.updated_at)}</span>
 							</div>
 
 							{/* 액션 버튼 */}
 							<div className="preview-actions">
 								{selectedItem.owner_id === user?.id ? (
 									<>
-										<Button asChild>
-											<Link
-												to="/dashboard/studio/graphics/grid-templates/$templateId"
-												params={{ templateId: selectedItem.id }}
-											>
-												<Pencil size={16} />
-												편집
-											</Link>
-										</Button>
-										<Button
-											variant="destructive"
-											onClick={() => handleDelete(selectedItem)}
+										<Link
+											className="btn-panel-edit"
+											to="/dashboard/studio/graphics/grid-templates/$templateId"
+											params={{ templateId: selectedItem.id }}
 										>
-											<Trash2 size={16} />
-											삭제
-										</Button>
+											<Pencil size={14} /> 편집
+										</Link>
+										<button type="button" className="btn-panel-delete" onClick={() => handleDelete(selectedItem)}>
+											<Trash2 size={14} /> 삭제
+										</button>
 									</>
 								) : (
-									<Button
-										variant="outline"
-										onClick={() => handleFork(selectedItem)}
-										disabled={forking}
-									>
-										<GitFork size={16} />
-										복제하여 사용하기
-									</Button>
+									<button type="button" className="btn-panel-fork" onClick={() => handleFork(selectedItem)} disabled={forking}>
+										<GitFork size={14} /> 복제하여 사용하기
+									</button>
 								)}
 							</div>
 						</div>
 					</>
 				) : (
 					<div className="preview-placeholder">
-						<Grid3x3 size={64} />
-						<p>항목을 선택하면 미리보기가 표시됩니다.</p>
+						<Grid3x3 size={40} style={{ opacity: 0.3 }} />
+						<p style={{ fontSize: "0.8125rem", margin: 0, color: "var(--text-tertiary)" }}>
+							항목을 선택하면 미리보기가 표시됩니다.
+						</p>
 					</div>
 				)}
 			</div>

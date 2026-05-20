@@ -6,6 +6,12 @@
  *
  * 각 서비스는 자신의 도메인 시스템 프롬프트를 callAI()의 첫 번째 인자로 전달한다.
  *
+ * ■ 2026-05-20: Strategy Pattern 도입
+ *   프로바이더마다 추론(Reasoning/Thinking) 활성화 방법, temperature 제약,
+ *   응답 형태가 모두 다릅니다. 이를 ProviderReasoningStrategy 인터페이스로
+ *   정규화하여, 새 프로바이더 추가 시 callOpenAICompatible 본문을 건드리지 않고
+ *   PROVIDER_STRATEGIES 레지스트리에 Strategy 객체만 등록하면 됩니다.
+ *
  * ■ 2026-05: Gemini 네이티브 REST API(generateContent) → OpenAI 호환 엔드포인트로 통합
  *   모든 프로바이더가 단일 callOpenAICompatible() 경로를 통해 호출된다.
  */
@@ -37,6 +43,163 @@ const CONFIG_CACHE_TTL_MS = 60_000;
 
 let _cachedApiKey: string | null = null;
 let _cachedApiKeyId: string | null = null;
+
+// ─── 프로바이더별 추론 전략 (Strategy Pattern) ────────────────────
+//
+// Why Strategy Pattern:
+//   기존에는 callOpenAICompatible() 안에 isDeepseekThinking, isOpenRouterReasoning,
+//   isGeminiReasoning 등의 boolean 플래그가 산발적으로 분기되어 있었습니다.
+//   새 프로바이더(moonshot, huggingface)를 추가할 때마다 조건문이 누적되어
+//   유지보수가 어려워지는 문제가 있었습니다.
+//
+//   비유하자면, 기존 코드는 "만능 리모컨 하나에 모든 가전제품의 버튼을 다 올려놓은 것"이고,
+//   Strategy Pattern은 "각 가전제품이 자신의 리모컨을 갖고 있는 것"입니다.
+//   새 가전(프로바이더)이 추가되면 새 리모컨(Strategy)만 만들면 됩니다.
+
+/**
+ * 프로바이더별 추론(Reasoning/Thinking) 전략 인터페이스
+ *
+ * 1단계: isReasoning — 이 프로바이더+설정 조합이 추론 모드인지 판단
+ * 2단계: applyToBody — request body에 추론 관련 파라미터를 주입
+ * 3단계: skipTemperature — 추론 모드일 때 temperature/top_p를 생략할지 결정
+ */
+interface ProviderReasoningStrategy {
+	/** 이 프로바이더+설정 조합이 reasoning 모드인지 */
+	isReasoning(config: CachedModelConfig): boolean;
+	/** request body에 reasoning 관련 파라미터를 주입 */
+	applyToBody(body: Record<string, unknown>, config: CachedModelConfig): void;
+	/** reasoning 모드일 때 temperature/top_p를 생략해야 하는지 */
+	skipTemperature(config: CachedModelConfig): boolean;
+	/** 프로바이더 전용 헤더 (예: OpenRouter의 HTTP-Referer) */
+	extraHeaders?(): Record<string, string>;
+}
+
+// ── 각 프로바이더의 Strategy 구현 ──
+//
+// 프로바이더마다 다른 점:
+//   - Gemini: reasoning_effort + thinking_config.include_thoughts, temperature 공존 가능
+//   - DeepSeek: reasoning_effort + extra_body.thinking, temperature/top_p 무시됨
+//   - Moonshot (Kimi): DeepSeek와 유사한 thinking 구조
+//   - OpenRouter: reasoning.enabled + reasoning.effort, temperature 무시됨
+//   - Groq/Cerebras/HuggingFace: reasoning 미지원, 순수 OpenAI chat 호환
+
+const PROVIDER_STRATEGIES: Record<string, ProviderReasoningStrategy> = {
+	gemini: {
+		isReasoning: (c) => !!(c.generationConfig as any).thinkingEnabled,
+		applyToBody: (body, c) => {
+			const gc = c.generationConfig as any;
+			// 1. reasoning_effort: Gemini는 "low", "medium", "high" 지원
+			body.reasoning_effort = gc.thinkingEffort || "high";
+			// 2. include_thoughts: 사고 과정 요약을 응답에 포함할지
+			if (gc.includeThoughts) {
+				body.extra_body = {
+					google: {
+						thinking_config: {
+							include_thoughts: true,
+						},
+					},
+				};
+			}
+			// 3. service_tier: flex(저비용) / priority(고속)
+			if (gc.serviceTier) {
+				body.service_tier = gc.serviceTier;
+			}
+		},
+		// Gemini는 reasoning + temperature 공존 가능
+		skipTemperature: () => false,
+	},
+
+	deepseek: {
+		isReasoning: (c) => !!(c.generationConfig as any).deepseekThinking,
+		applyToBody: (body, c) => {
+			const gc = c.generationConfig as any;
+			// DeepSeek V4 Pro: reasoning_effort("high"|"max") + extra_body.thinking
+			// 응답: reasoning_content(사고 과정) + content(최종 답변) 분리
+			body.reasoning_effort = gc.deepseekReasoningEffort || "high";
+			body.extra_body = { thinking: { type: "enabled" } };
+		},
+		// DeepSeek reasoning 시 temperature/top_p/presence_penalty/frequency_penalty 모두 무시됨
+		skipTemperature: () => true,
+	},
+
+	moonshot: {
+		// Kimi K2.6: DeepSeek와 유사한 thinking 구조를 사용
+		isReasoning: (c) => !!(c.generationConfig as any).moonshotThinking,
+		applyToBody: (body) => {
+			// Moonshot thinking mode: extra_body.thinking으로 활성화
+			// 응답: reasoning_content + content 분리 (DeepSeek와 동일)
+			body.extra_body = { thinking: { type: "enabled" } };
+		},
+		skipTemperature: () => true,
+	},
+
+	openrouter: {
+		isReasoning: (c) => {
+			const gc = c.generationConfig as any;
+			// 1. 명시적 설정이 있으면 따름
+			if (gc.reasoning?.enabled === true) return true;
+			if (gc.reasoning?.enabled === false) return false;
+			// 2. 모델 ID 패턴으로 추론 모델 자동 감지
+			//    (Kimi K2.6, QwQ, DeepSeek R1, O1/O3 등)
+			return /kimi|qwq|r1|reasoner|o1|o3/.test(c.modelId);
+		},
+		applyToBody: (body, c) => {
+			const reasoningConfig: Record<string, unknown> = (c.generationConfig as any).reasoning || {};
+			// OpenRouter reasoning API: reasoning.enabled + optional effort/max_tokens
+			body.reasoning = {
+				enabled: true,
+				...(reasoningConfig.max_tokens !== undefined ? { max_tokens: reasoningConfig.max_tokens } : {}),
+				...(reasoningConfig.effort ? { effort: reasoningConfig.effort } : {}),
+			};
+		},
+		skipTemperature: () => true,
+		// OpenRouter 필수 헤더: HTTP-Referer, X-Title
+		extraHeaders: () => ({
+			"HTTP-Referer": "https://webcg-k.local",
+			"X-Title": "WebCG-K",
+		}),
+	},
+
+	// ── 순수 OpenAI chat 호환 프로바이더 (reasoning 미지원) ──
+	// Groq, Cerebras, HuggingFace는 추론 모드가 없으므로
+	// 모든 Strategy 메서드가 no-op입니다.
+
+	groq: {
+		isReasoning: () => false,
+		applyToBody: () => {},
+		skipTemperature: () => false,
+	},
+
+	cerebras: {
+		isReasoning: () => false,
+		applyToBody: () => {},
+		skipTemperature: () => false,
+	},
+
+	huggingface: {
+		isReasoning: () => false,
+		applyToBody: () => {},
+		skipTemperature: () => false,
+	},
+
+	github: {
+		isReasoning: () => false,
+		applyToBody: () => {},
+		skipTemperature: () => false,
+	},
+};
+
+/** 알 수 없는 프로바이더에 대한 안전한 기본 전략 */
+const DEFAULT_STRATEGY: ProviderReasoningStrategy = {
+	isReasoning: () => false,
+	applyToBody: () => {},
+	skipTemperature: () => false,
+};
+
+/** 프로바이더에 해당하는 Strategy를 조회. 등록되지 않은 프로바이더는 기본 전략 반환. */
+function getStrategy(provider: string): ProviderReasoningStrategy {
+	return PROVIDER_STRATEGIES[provider] || DEFAULT_STRATEGY;
+}
 
 // ─── 동적 모델 설정 조회 ─────────────────────────────────────────
 
@@ -92,30 +255,15 @@ export function invalidateModelCache() {
  * 현재 활성 모델이 추론 모델인지 확인.
  * 서비스별 시스템 프롬프트 분기에 사용.
  * config 생략 시 내부 캐시를 사용 (getActiveConfig() 호출 후라면 캐시 히트).
+ *
+ * Why Strategy로 통합: 기존에는 provider별 if/else 분기가 이 함수와
+ * callOpenAICompatible() 양쪽에 중복되어 있었습니다. Strategy로 통합하면
+ * reasoning 판단 로직이 한 곳(PROVIDER_STRATEGIES)에만 존재합니다.
  */
 export function isCurrentModelReasoning(config?: CachedModelConfig): boolean {
 	const cfg = config || _cachedConfig;
 	if (!cfg) return false;
-	const genConf = (cfg.generationConfig || {}) as any;
-
-	// Gemini thinking 모델 (gemini-3-flash 등 + thinking.enabled)
-	if (cfg.provider === "gemini") {
-		return !!genConf.thinkingEnabled;
-	}
-
-	// DeepSeek thinking mode
-	if (cfg.provider === "deepseek") {
-		return !!genConf.deepseekThinking;
-	}
-
-	// OpenRouter reasoning model (Kimi K2.6, QwQ, DeepSeek R1, O1/O3 등)
-	if (cfg.provider === "openrouter") {
-		if (genConf.reasoning?.enabled === true) return true;
-		if (genConf.reasoning?.enabled === false) return false;
-		return /kimi|qwq|r1|reasoner|o1|o3/.test(cfg.modelId);
-	}
-
-	return false;
+	return getStrategy(cfg.provider).isReasoning(cfg);
 }
 
 // ─── API 키 조회 ─────────────────────────────────────────────────
@@ -141,12 +289,18 @@ async function getApiKey(config: CachedModelConfig): Promise<string> {
 		}
 	}
 
+	// 프로바이더별 환경변수 매핑
+	// Why 환경변수 분리: 각 프로바이더는 독립적인 API 키를 요구합니다.
+	// DB에 키가 없으면 .env 파일의 환경변수로 fallback합니다.
 	const envKeys: Record<string, string> = {
 		gemini: "VITE_GEMINI_API_KEY",
 		deepseek: "VITE_DEEPSEEK_API_KEY",
 		groq: "VITE_GROQ_API_KEY",
 		github: "VITE_GITHUB_TOKEN",
 		openrouter: "VITE_OPENROUTER_API_KEY",
+		cerebras: "VITE_CEREBRAS_API_KEY",
+		moonshot: "VITE_MOONSHOT_API_KEY",
+		huggingface: "VITE_HUGGINGFACE_API_KEY",
 	};
 
 	const envVar = envKeys[config.provider] || "VITE_GEMINI_API_KEY";
@@ -187,14 +341,37 @@ function logUsage(modelId: string, requestType: string, usage: any) {
 
 // ─── API 호출 — 통합 OpenAI 호환 (모든 프로바이더) ──────────────
 
+export async function readJsonResponseWithRawFallback(res: Response, provider: string): Promise<any> {
+	let rawBody = "";
+	try {
+		rawBody = await res.clone().text();
+	} catch {
+		rawBody = "(body read failed)";
+	}
+
+	try {
+		return JSON.parse(rawBody);
+	} catch {
+		console.error(`[AI-Core] ${provider} 응답 JSON 파싱 실패.`, {
+			status: res.status,
+			rawBody: rawBody.substring(0, 500),
+		});
+		throw new Error(`${provider} 응답이 유효한 JSON이 아닙니다 (status ${res.status}). 서버가 빈 응답을 반환했을 수 있습니다.${rawBody ? " 응답 본문: " + rawBody.substring(0, 200) : ""}`);
+	}
+}
+
 /**
  * 모든 프로바이더에 대한 통합 API 호출
  *
- * 프로바이더별 자동 처리:
- * - Gemini: OpenAI 호환 엔드포인트(https://generativelanguage.googleapis.com/v1beta/openai)
- * - DeepSeek: reasoning_effort + extra_body.thinking
- * - OpenRouter: HTTP-Referer/X-Title 헤더, reasoning.enabled
- * - Groq/GitHub/Cerebras: 표준 OpenAI 호환
+ * 프로바이더별 처리는 PROVIDER_STRATEGIES 레지스트리에 위임합니다.
+ * 새 프로바이더를 추가할 때 이 함수를 수정할 필요가 없습니다.
+ *
+ * 흐름:
+ *   1. Strategy 조회 → isReasoning 판단
+ *   2. 공통 request body 구성
+ *   3. Strategy.applyToBody()로 프로바이더별 파라미터 주입
+ *   4. Strategy.extraHeaders()로 프로바이더별 헤더 추가
+ *   5. fetch → 응답 파싱 → reasoning fallback 처리
  */
 async function callOpenAICompatible(
 	systemPrompt: string,
@@ -206,30 +383,27 @@ async function callOpenAICompatible(
 	enforceJsonObject: boolean,
 	retryCount = 0,
 ): Promise<{ text: string; usage: any }> {
+	// ── 1. Strategy 조회 ──
+	const strategy = getStrategy(config.provider);
+	const isReasoning = strategy.isReasoning(config);
+
 	// Gemini: 항상 OpenAI 호환 엔드포인트 사용 (네이티브 API 대체)
 	const baseUrl = config.provider === "gemini" ? GEMINI_OPENAI_BASE : config.baseUrl;
 	const url = `${baseUrl}/chat/completions`;
 	const genConf = config.generationConfig as any;
 
+	// ── 2. 공통 헤더 ──
 	const headers: Record<string, string> = {
 		"Content-Type": "application/json",
 		Authorization: `Bearer ${apiKey}`,
 	};
-	if (config.provider === "openrouter") {
-		headers["HTTP-Referer"] = "https://webcg-k.local";
-		headers["X-Title"] = "WebCG-K";
+
+	// 프로바이더 전용 헤더 추가 (예: OpenRouter의 HTTP-Referer)
+	if (strategy.extraHeaders) {
+		Object.assign(headers, strategy.extraHeaders());
 	}
 
-	// ── Reasoning 모드 감지 ──
-	const isDeepseekThinking = config.provider === "deepseek" && !!genConf.deepseekThinking;
-	const isOpenRouterReasoning = config.provider === "openrouter" && (
-		genConf.reasoning?.enabled === true ||
-		(genConf.reasoning?.enabled !== false && /kimi|qwq|r1|reasoner|o1|o3/.test(config.modelId))
-	);
-	const isGeminiReasoning = config.provider === "gemini" && !!genConf.thinkingEnabled;
-	const isReasoning = isDeepseekThinking || isOpenRouterReasoning || isGeminiReasoning;
-
-	// ── 요청 바디 ──
+	// ── 3. 공통 요청 바디 ──
 	const body: Record<string, unknown> = {
 		model: config.modelId,
 		messages: [
@@ -239,9 +413,8 @@ async function callOpenAICompatible(
 		max_tokens: maxOutputTokens,
 	};
 
-	// Reasoning 모드: DeepSeek/OpenRouter는 temperature, top_p 미지원 → 생략
-	// Gemini는 reasoning_effort와 temperature/top_p 공존 가능
-	if (!isReasoning || isGeminiReasoning) {
+	// temperature/top_p: reasoning 모드이면서 해당 프로바이더가 제약하면 생략
+	if (!isReasoning || !strategy.skipTemperature(config)) {
 		body.temperature = temperature ?? genConf.temperature ?? 0.9;
 		body.top_p = genConf.topP ?? 0.95;
 	}
@@ -255,41 +428,12 @@ async function callOpenAICompatible(
 		}
 	}
 
-	// ── Thinking / Reasoning (프로바이더별 분기) ──
-	if (isDeepseekThinking) {
-		const effort = genConf.deepseekReasoningEffort || "high";
-		body.reasoning_effort = effort;
-		body.extra_body = { thinking: { type: "enabled" } };
-	}
-	if (isOpenRouterReasoning) {
-		const reasoningConfig: Record<string, unknown> = genConf.reasoning || {};
-		body.reasoning = {
-			enabled: true,
-			...(reasoningConfig.max_tokens !== undefined ? { max_tokens: reasoningConfig.max_tokens } : {}),
-			...(reasoningConfig.effort ? { effort: reasoningConfig.effort } : {}),
-		};
-	}
-	if (isGeminiReasoning) {
-		const effort = genConf.thinkingEffort || "high";
-		body.reasoning_effort = effort;
-		// include_thoughts: Gemini 사고 요약 반환 (extra_body)
-		if (genConf.includeThoughts) {
-			body.extra_body = {
-				google: {
-					thinking_config: {
-						include_thoughts: true,
-					},
-				},
-			};
-		}
+	// ── 4. Thinking / Reasoning 파라미터 주입 (Strategy에 위임) ──
+	if (isReasoning) {
+		strategy.applyToBody(body, config);
 	}
 
-	// Gemini service tier — flex(저비용) / priority(고속)
-	if (config.provider === "gemini" && genConf.serviceTier) {
-		body.service_tier = genConf.serviceTier;
-	}
-
-	// ── fetch ──
+	// ── 5. fetch ──
 	const res = await fetch(url, {
 		method: "POST",
 		headers,
@@ -308,14 +452,7 @@ async function callOpenAICompatible(
 		throw new Error(`${config.provider} API 에러 (${res.status}): ${errorBody}`);
 	}
 
-	let json: any;
-	try {
-		json = await res.json();
-	} catch (parseErr) {
-		const rawBody = await res.clone().text().catch(() => "(body read failed)");
-		console.error(`[AI-Core] ${config.provider} 응답 JSON 파싱 실패.`, { status: res.status, rawBody: rawBody.substring(0, 500) });
-		throw new Error(`${config.provider} 응답이 유효한 JSON이 아닙니다 (status ${res.status}). 서버가 빈 응답을 반환했을 수 있습니다.${rawBody ? " 응답 본문: " + rawBody.substring(0, 200) : ""}`);
-	}
+	const json = await readJsonResponseWithRawFallback(res, config.provider);
 
 	const choice = json.choices?.[0];
 	const finishReason: string | undefined = choice?.finish_reason;
@@ -374,8 +511,8 @@ export interface CallAiOptions {
 /**
  * 활성 AI 모델을 호출하여 응답 텍스트를 반환한다.
  *
- * 모든 프로바이더(Gemini, DeepSeek, OpenRouter, Groq 등)를
- * 단일 OpenAI 호환 경로로 통합 호출한다.
+ * 모든 프로바이더(Gemini, DeepSeek, OpenRouter, Groq, Cerebras,
+ * Moonshot, HuggingFace 등)를 단일 OpenAI 호환 경로로 통합 호출한다.
  *
  * @param systemPrompt - 도메인별 시스템 프롬프트 (필수)
  * @param userPrompt  - 사용자 프롬프트

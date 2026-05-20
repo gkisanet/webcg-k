@@ -9,7 +9,7 @@
  *   3) 모델별 토큰 사용량을 테이블 컬럼으로 직접 표시
  */
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
 	createColumnHelper,
 	flexRender,
@@ -99,6 +99,29 @@ export function AdminAiTab({
 	const [isTesting, setIsTesting] = useState(false);
 	const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
 	const [sorting, setSorting] = useState<SortingState>([]);
+
+	// ─── 상태 동기화 ───────────────────────────────────────────────
+	// 부모의 models 프롭이 비동기적으로 갱신될 때, 현재 열려 있는 설정 모달의 모델 데이터를 최신 데이터와 동기화 (Single Source of Truth 보장)
+	useEffect(() => {
+		if (settingsModel) {
+			const latest = models.find((m) => m.model_id === settingsModel.model_id);
+			if (latest) {
+				// [1차 방어선 - 이중 동기화 아키텍처]
+				// 부모 프롭(models)이 비동기적으로 갱신될 때 최신 데이터를 반영하되,
+				// 사용자가 모달 내에서 직접 즉각 변경한 api_key_id가 구식 프롭 데이터에 의해 롤백(null 등으로 회귀)되는 것을 방어한다.
+				setSettingsModel((prev) => {
+					if (!prev) return latest;
+					const isApiKeyDirty = prev.api_key_id !== latest.api_key_id;
+					return {
+						...latest,
+						// 사용자가 변경한 최신 로컬 상태가 존재하고 최신 프롭이 아직 구식 상태를 유지하고 있다면,
+						// 로컬 상태를 우선적으로 유지하여 UI 깜빡임 및 오프싱크 현상을 차단한다.
+						api_key_id: isApiKeyDirty && prev.api_key_id !== undefined ? prev.api_key_id : latest.api_key_id,
+					};
+				});
+			}
+		}
+	}, [models, settingsModel?.model_id]);
 
 	// ─── 테이블 데이터: 모델 + 사용량 조인 ───────────────────────
 	const tableData: ModelRow[] = useMemo(() =>
@@ -489,7 +512,11 @@ export function AdminAiTab({
 							<label><Key size={11} /> API 키:</label>
 							<select
 								value={settingsModel.api_key_id || ""}
-								onChange={(e) => linkApiKey(settingsModel.model_id, e.target.value || null)}
+								onChange={(e) => {
+									const val = e.target.value || null;
+									linkApiKey(settingsModel.model_id, val);
+									setSettingsModel((prev) => (prev ? { ...prev, api_key_id: val } : null));
+								}}
 							>
 								<option value="">환경변수 사용</option>
 								{apiKeys.filter((k) => k.service === settingsModel.provider || k.service === "custom").map((k) => (

@@ -60,7 +60,7 @@ export interface PluginSourceCode {
 
 /** 대시보드 스키마 프로퍼티 (JSON Schema 기반) */
 export interface DashboardSchemaProperty {
-	type: "string" | "number" | "boolean" | "color" | "select" | "array";
+	type: "string" | "number" | "boolean" | "color" | "select" | "array" | "object";
 	title: string;
 	default?: unknown;
 	/** 필드 설명 (스키마 에디터용) */
@@ -75,6 +75,10 @@ export interface DashboardSchemaProperty {
 	minimum?: number;
 	maximum?: number;
 	step?: number;
+	/** array 타입일 때 내부 아이템 스키마 */
+	items?: DashboardSchemaProperty;
+	/** object 타입일 때 내부 프로퍼티 스키마 */
+	properties?: Record<string, DashboardSchemaProperty>;
 }
 
 /** 대시보드 스키마: 플러그인의 제어 가능한 데이터 필드 정의 */
@@ -96,6 +100,8 @@ export interface OverlayTemplateExtended {
 	refresh_interval: number | null;
 	animation_config: AnimationConfig;
 	is_public: boolean;
+	visibility: "private" | "workspace" | "public";
+	workspace_id: string | null;
 	// AI 확장 컬럼
 	grid_template_id: string | null;
 	zone_ids: string[] | null;
@@ -127,11 +133,19 @@ export interface ZoneBounds {
 
 /** AI 메타데이터 */
 export interface AiMetadata {
-	model: string;
-	prompt: string;
+	model?: string;
+	prompt?: string;
 	dataContext?: Record<string, unknown>;
-	generatedAt: string;
+	generatedAt?: string;
 	variationIndex?: number;
+	lifecycle?: string;
+	source?: string;
+	gallery_policy?: string;
+	folder?: string;
+	session_id?: string;
+	program_title?: string;
+	scene_order?: number;
+	graphic_type?: string;
 }
 
 // ─── Action Button 시스템 ──────────────────────────────────────────

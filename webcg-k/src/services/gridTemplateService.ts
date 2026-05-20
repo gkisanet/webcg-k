@@ -47,11 +47,22 @@ export async function cloneGridTemplate(
 
 export async function updateGridTemplate(
   id: string,
-  updates: { description?: string; is_public?: boolean },
+  updates: { description?: string; is_public?: boolean; visibility?: "private" | "workspace" | "public"; workspace_id?: string | null },
 ): Promise<void> {
   const { error } = await supabase
     .from("grid_templates")
     .update({ ...updates, updated_at: new Date().toISOString() })
+    .eq("id", id);
+  if (error) throw error;
+}
+
+export async function updateGridTemplateVisibility(
+  id: string,
+  visibility: "private" | "workspace" | "public",
+): Promise<void> {
+  const { error } = await supabase
+    .from("grid_templates")
+    .update({ visibility, updated_at: new Date().toISOString() })
     .eq("id", id);
   if (error) throw error;
 }

@@ -13,6 +13,7 @@
 import { useEffect } from "react";
 import {
 	broadcastToPGM,
+	clearGapSelection,
 	copySelectedBlock,
 	deleteSelectedBlock,
 	exitScrubbing,
@@ -26,6 +27,7 @@ import {
 	pasteBlock,
 	returnToLastBroadcast,
 	rippleDeleteGap,
+	selectBlock,
 	setPlayheadPosition,
 	timelineStore,
 	toggleScrubbing,
@@ -211,14 +213,11 @@ export function useKeyboardNavigation(
 					break;
 
 				case "Escape":
-					// ESC: 선택 해제 + 스크러빙 해제
+					// ESC: 선택 해제 + 스크러빙 해제 (캡슐화된 도메인 액션 호출)
 					e.preventDefault();
-					timelineStore.setState((state) => ({
-						...state,
-						selectedBlockId: null,
-						selectedGap: null,
-						isScrubbing: false,
-					}));
+					selectBlock(null);
+					clearGapSelection();
+					exitScrubbing();
 					break;
 
 				default:

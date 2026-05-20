@@ -121,20 +121,12 @@ export function Canvas({
         horizontal: number[]; // y 좌표 배열
     }>({ vertical: [], horizontal: [] });
 
-    // Drag Ghost — React 우회 직접 DOM 조작용 ref + 상태
-    const ghostRef = useRef<HTMLDivElement>(null);
+    // 실시간 드래그용 Throttling 레퍼런스 + 가이드라인 Ref
+    const rafRef = useRef<number | null>(null);
+    const nextUpdateRef = useRef<{ id: string; x: number; y: number } | null>(null);
+    const isUpdatingRef = useRef<boolean>(false);
     const snapVLinesRef = useRef<HTMLDivElement>(null);
     const snapHLinesRef = useRef<HTMLDivElement>(null);
-    const dragEndPosRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
-    const [dragGhost, setDragGhost] = useState<{
-        id: string;
-        x: number; y: number;
-        width: number; height: number;
-        rotation: number;
-        fill?: string;
-        borderRadius?: number;
-        type: GraphicElement["type"];
-    } | null>(null);
 
     // 🆕 Text Frame 인라인 편집 상태
     // Shape 더블클릭 시 진입: 해당 슬롯의 텍스트를 직접 편집
@@ -204,6 +196,7 @@ export function Canvas({
             if (!element || element.locked) return;
 
             e.stopPropagation();
+            e.preventDefault();
             const coords = getCanvasCoords(e);
 
             // 선택
@@ -221,18 +214,6 @@ export function Canvas({
                 startY: coords.y,
                 elStartX: element.x,
                 elStartY: element.y,
-            });
-            // Drag Ghost 활성화
-            setDragGhost({
-                id: elementId,
-                x: element.x,
-                y: element.y,
-                width: element.width,
-                height: element.height,
-                rotation: element.rotation,
-                fill: element.fill?.type === "solid" ? element.fill.color : undefined,
-                borderRadius: element.borderRadius,
-                type: element.type,
             });
         },
         [elements, selectedIds, onSelect, getCanvasCoords]
@@ -295,11 +276,27 @@ export function Canvas({
                 if (!element) return;
 
                 // handle 방향 정규화 — "nw-resize" / "top-left" 양쪽 모두 지원
-                const h = resizing.handle;
-                const isWest  = h.includes("left")  || h.startsWith("w") || h.includes("w-resize");
-                const isEast  = h.includes("right") || h.startsWith("e") || h.includes("e-resize");
-                const isNorth = h.includes("top")   || h.startsWith("n") || h.includes("nw") || h.includes("ne") || h.includes("n-resize");
-                const isSouth = h.includes("bottom")|| h.startsWith("s") || h.includes("sw") || h.includes("se") || h.includes("s-resize");
+                const handleDir = (() => {
+                    const map: Record<string, { w: boolean; e: boolean; n: boolean; s: boolean }> = {
+                        "nw-resize": { w: true, e: false, n: true, s: false },
+                        "n-resize":  { w: false, e: false, n: true, s: false },
+                        "ne-resize": { w: false, e: true, n: true, s: false },
+                        "e-resize":  { w: false, e: true, n: false, s: false },
+                        "se-resize": { w: false, e: true, n: false, s: true },
+                        "s-resize":  { w: false, e: false, n: false, s: true },
+                        "sw-resize": { w: true, e: false, n: false, s: true },
+                        "w-resize":  { w: true, e: false, n: false, s: false },
+                        "top-left":     { w: true, e: false, n: true, s: false },
+                        "top-right":    { w: false, e: true, n: true, s: false },
+                        "bottom-left":  { w: true, e: false, n: false, s: true },
+                        "bottom-right": { w: false, e: true, n: false, s: true },
+                    };
+                    return map[resizing.handle] || { w: false, e: false, n: false, s: false };
+                })();
+                const isWest = handleDir.w;
+                const isEast = handleDir.e;
+                const isNorth = handleDir.n;
+                const isSouth = handleDir.s;
 
                 const dx = coords.x - resizing.startX;
                 const dy = coords.y - resizing.startY;
@@ -327,7 +324,7 @@ export function Canvas({
                 // 🆕 Shift 비례 리사이즈 연산 (원 비율 고정 및 기타 쉐이프 비율 유지)
                 if (e.shiftKey) {
                     const ratio = element.type === "ellipse" ? 1 : resizing.elStartWidth / resizing.elStartHeight;
-
+                    
                     // 가로 길이를 기준 크기로 설정하여 세로 길이 동기화
                     newHeight = newWidth / ratio;
 
@@ -420,7 +417,7 @@ export function Canvas({
                 return;
             }
 
-            // 드래그 처리 — React 우회, Ghost DOM 직접 조작
+            // 드래그 처리 — requestAnimationFrame 스케줄링을 활용한 실시간 위치 갱신
             if (!dragging) return;
 
             const dx = coords.x - dragging.startX;
@@ -453,14 +450,7 @@ export function Canvas({
             if (snap.snappedX !== undefined) newX = snap.snappedX;
             if (snap.snappedY !== undefined) newY = snap.snappedY;
 
-            // Ghost DOM 직접 조작 (React 우회 — 60fps 보장)
-            const ghost = ghostRef.current;
-            if (ghost) {
-                ghost.style.display = "";
-                ghost.style.transform = `translate(${newX * scale}px, ${newY * scale}px) rotate(${element.rotation}deg)`;
-            }
-
-            // 스냅 가이드라인 DOM 직접 조작 (React 우회)
+            // 스냅 가이드라인 DOM 직접 조작 (React 우회하여 성능 확보)
             if (snapVLinesRef.current) {
                 snapVLinesRef.current.innerHTML = snap.activeVertical
                     .map((x, i) => `<div style="position:absolute;left:${x * scale}px;top:0;bottom:0;width:1px;background:#FF00FF;z-index:10" data-snap-v="${i}"></div>`)
@@ -472,22 +462,46 @@ export function Canvas({
                     .join("");
             }
 
-            // 최종 위치를 ref에 기록 (mouseUp에서 커밋)
-            dragEndPosRef.current = { x: Math.round(newX), y: Math.round(newY) };
+            // requestAnimationFrame을 이용한 실시간 프레임 단위 쓰로틀링 업데이트 (Debounce 오작동 제거)
+            const targetX = Math.round(newX);
+            const targetY = Math.round(newY);
+
+            nextUpdateRef.current = { id: dragging.id, x: targetX, y: targetY };
+
+            if (!isUpdatingRef.current) {
+                isUpdatingRef.current = true;
+                rafRef.current = requestAnimationFrame(() => {
+                    if (nextUpdateRef.current) {
+                        onUpdate(nextUpdateRef.current.id, {
+                            x: nextUpdateRef.current.x,
+                            y: nextUpdateRef.current.y,
+                        });
+                        nextUpdateRef.current = null;
+                    }
+                    isUpdatingRef.current = false;
+                });
+            }
         },
         [dragging, resizing, frameResizing, getCanvasCoords, zones, canvasWidth, canvasHeight, elements, scale]
     );
 
     // 드래그/리사이즈 종료
     const handleMouseUp = useCallback(() => {
-        // Drag Ghost: 최종 위치를 Store에 1회 커밋 (여기서만 React 리렌더)
-        if (dragging && dragEndPosRef.current) {
-            onUpdate(dragging.id, dragEndPosRef.current);
+        if (rafRef.current) {
+            cancelAnimationFrame(rafRef.current);
+            rafRef.current = null;
         }
-        // Ghost 숨기기
-        if (ghostRef.current) {
-            ghostRef.current.style.display = "none";
+
+        // 마지막 대기 좌표가 있다면 최종 커밋하여 데이터 정합성 보장
+        if (nextUpdateRef.current) {
+            onUpdate(nextUpdateRef.current.id, {
+                x: nextUpdateRef.current.x,
+                y: nextUpdateRef.current.y,
+            });
+            nextUpdateRef.current = null;
         }
+        isUpdatingRef.current = false;
+
         // 스냅 가이드라인 DOM 정리
         if (snapVLinesRef.current) snapVLinesRef.current.innerHTML = "";
         if (snapHLinesRef.current) snapHLinesRef.current.innerHTML = "";
@@ -495,21 +509,32 @@ export function Canvas({
         setDragging(null);
         setResizing(null);
         setFrameResizing(null);
-        setDragGhost(null);
         setSnapGuides({ vertical: [], horizontal: [] });
-    }, [dragging, onUpdate]);
+    }, [onUpdate]);
+
+    // 최신 드래그 핸들러를 참조하기 위한 Ref 동기화 (매 프레임 window 리스너 재등록 방지)
+    const handleMouseMoveRef = useRef(handleMouseMove);
+    const handleMouseUpRef = useRef(handleMouseUp);
+
+    useEffect(() => {
+        handleMouseMoveRef.current = handleMouseMove;
+    }, [handleMouseMove]);
+
+    useEffect(() => {
+        handleMouseUpRef.current = handleMouseUp;
+    }, [handleMouseUp]);
 
     // window 레벨 이벤트 리스너 — 리사이즈 핸들(HTML div)에서 시작된 드래그가
-    // SVG onMouseMove에 도달하지 못하는 문제를 해결
+    // SVG onMouseMove에 도달하지 못하거나 마우스를 빠르게 움직여 캔버스를 벗어나는 이탈 문제 해결
     useEffect(() => {
         const isActive = !!(dragging || resizing || frameResizing);
         if (!isActive) return;
 
         const onMouseMove = (e: globalThis.MouseEvent) => {
-            handleMouseMove(e as unknown as MouseEvent);
+            handleMouseMoveRef.current(e as unknown as MouseEvent);
         };
         const onMouseUp = () => {
-            handleMouseUp();
+            handleMouseUpRef.current();
         };
 
         window.addEventListener("mousemove", onMouseMove);
@@ -518,7 +543,7 @@ export function Canvas({
             window.removeEventListener("mousemove", onMouseMove);
             window.removeEventListener("mouseup", onMouseUp);
         };
-    }, [dragging, resizing, frameResizing, handleMouseMove, handleMouseUp]);
+    }, [dragging, resizing, frameResizing]);
 
     // 빈 영역 클릭 시 선택 해제 + 편집 모드 종료
     const handleCanvasClick = useCallback(
@@ -1318,6 +1343,11 @@ export function Canvas({
                 onMouseMove={handleMouseMove}
                 onMouseUp={handleMouseUp}
                 onDragStart={(e) => e.preventDefault()}
+                style={{
+                    userSelect: "none",
+                    WebkitUserSelect: "none",
+                }}
+            >
                 {/* 배경 - 클릭 시 선택 해제 */}
                 <rect
                     x={0}
@@ -1359,15 +1389,13 @@ export function Canvas({
                 {sortedElements.map(renderElement)}
             </svg>
 
-            {/* Layer 2: 상호작용 전용 HTML 레이어 (선택 박스, 리사이즈 핸들, Drag Ghost) */}
+            {/* Layer 2: 상호작용 전용 HTML 레이어 (선택 박스, 리사이즈 핸들) */}
             <InteractionLayer
                 elements={elements}
                 selectedIds={selectedIds}
                 zoom={scale}
                 canvasWidth={canvasWidth}
                 canvasHeight={canvasHeight}
-                dragGhost={dragGhost}
-                ghostRef={ghostRef}
                 snapVLinesRef={snapVLinesRef}
                 snapHLinesRef={snapHLinesRef}
                 onResizeStart={(e, id, handle) => {

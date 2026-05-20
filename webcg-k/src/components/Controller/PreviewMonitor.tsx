@@ -20,9 +20,14 @@ import { AnimatedGraphicRenderer } from "../AnimatedGraphicRenderer";
 import { CompositorLayer } from "../Compositor/CompositorLayer";
 import type { OverlayStateItem } from "../../hooks/useOverlayStore";
 import type { PluginAction } from "../../lib/webcgkSrcdoc";
+import { normalizeBroadcastSourceData } from "../../lib/broadcastSourceData";
+import { BroadcastHtmlOverlay } from "../Renderer/BroadcastHtmlOverlay";
+import { RendererWhiteboard } from "../Renderer/RendererWhiteboard";
 // ■ AiCharacterLayer는 렌더러(render.tsx)에서만 표시 (PGM/PVW 미리보기에서 제외)
 import { VideoInputLayer } from "./VideoInputLayer";
 import { loadVideoInputConfig } from "../../services/videoInputService";
+
+const WB_PROGRAM_PREFIX = "wb-pgm-";
 
 // Track ID로 z-index 계산 (Track 1이 가장 높음)
 function getZIndexFromTrack(trackId: number, _maxTracks?: number): number {
@@ -50,7 +55,7 @@ interface LayerState {
 	animationPhase: "none" | "fading-in" | "fading-out" | "stable";
 }
 
-export function PreviewMonitor({ sessionId, videoRef, previewOverlays, onPluginAction, isScrubbing = false }: {
+export function PreviewMonitor({ sessionId: _sessionId, videoRef, previewOverlays, onPluginAction, isScrubbing = false }: {
 	sessionId?: string;
 	/** 외부에서 전달받은 ref — VideoInputLayer의 <video>에 연결 (클린 영상 캡쳐용) */
 	videoRef?: React.RefObject<HTMLVideoElement | null>;
@@ -93,7 +98,11 @@ export function PreviewMonitor({ sessionId, videoRef, previewOverlays, onPluginA
 	// 현재 위치의 블록 IDs
 	const activeBlockIds = useMemo(() => {
 		const activeBlocks = getBlocksAtPosition(blocks, playheadPosition);
-		return new Set(activeBlocks.map((b) => b.id));
+		return new Set(
+			activeBlocks
+				.filter((block) => !block.id.startsWith(WB_PROGRAM_PREFIX))
+				.map((block) => block.id),
+		);
 	}, [blocks, playheadPosition]);
 
 	// 레이어 상태 관리
@@ -300,12 +309,9 @@ function GraphicLayer({
 				? `previewFadeOut ${fadeDuration}ms ease-in forwards`
 				: "none";
 
-	// sourceData가 있으면 실제 그래픽 렌더링
-	const isTemplate = block.sourceData?.elements?.length > 0;
-	const isImage = block.sourceType === "image" && block.sourceData?.imageUrl;
-	const hasGraphicData = isTemplate || isImage;
+	const source = normalizeBroadcastSourceData(block.sourceType, block.sourceData);
 
-	const needsDomRenderer = isTemplate && block.sourceData?.elements?.some(
+	const needsDomRenderer = source.kind === "template" && source.elements.some(
 		(el: any) => el.animation || el.type === "html_plugin"
 	);
 
@@ -317,38 +323,42 @@ function GraphicLayer({
 				animation: animationStyle,
 			}}
 		>
-			{hasGraphicData ? (
-				isTemplate ? (
+			{source.kind === "whiteboard" ? (
+				<RendererWhiteboard whiteboardId={source.whiteboardId} phase="idle" />
+			) : source.kind === "overlay" ? (
+				<BroadcastHtmlOverlay payload={source.overlay} title={block.name} />
+			) : source.kind === "template" || source.kind === "image" ? (
+				source.kind === "template" ? (
 					// 실제 그래픽 렌더링
 					needsDomRenderer ? (
 						<AnimatedGraphicRenderer
-							elements={block.sourceData.elements}
-							canvasWidth={block.sourceData.canvasWidth || 1920}
-							canvasHeight={block.sourceData.canvasHeight || 1080}
+							elements={source.elements}
+							canvasWidth={source.canvasWidth}
+							canvasHeight={source.canvasHeight}
 							phase="idle"
 							style={{ width: "100%", height: "100%" }}
 						/>
 					) : (
 						<GraphicPreviewRenderer
-							elements={block.sourceData.elements}
-							canvasWidth={block.sourceData.canvasWidth || 1920}
-							canvasHeight={block.sourceData.canvasHeight || 1080}
+							elements={source.elements}
+							canvasWidth={source.canvasWidth}
+							canvasHeight={source.canvasHeight}
 							style={{ width: "100%", height: "100%" }}
 						/>
 					)
 				) : (
 					// 순수 이미지 에셋 렌더링
 					<img
-						src={block.sourceData.imageUrl}
-						alt={block.sourceData.imageName || block.name}
+						src={source.imageUrl}
+						alt={source.imageName || block.name}
 						style={
-							block.sourceData.imageX !== undefined && block.sourceData.imageY !== undefined
+							source.imageX !== undefined && source.imageY !== undefined
 								? {
 										position: "absolute",
-										left: `${(block.sourceData.imageX / 1920) * 100}%`,
-										top: `${(block.sourceData.imageY / 1080) * 100}%`,
-										width: block.sourceData.imageW ? `${(block.sourceData.imageW / 1920) * 100}%` : "100%",
-										height: block.sourceData.imageH ? `${(block.sourceData.imageH / 1080) * 100}%` : "100%",
+										left: `${(source.imageX / 1920) * 100}%`,
+										top: `${(source.imageY / 1080) * 100}%`,
+										width: source.imageW ? `${(source.imageW / 1920) * 100}%` : "100%",
+										height: source.imageH ? `${(source.imageH / 1080) * 100}%` : "100%",
 										objectFit: "contain",
 										pointerEvents: "none",
 								  }

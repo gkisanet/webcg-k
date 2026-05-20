@@ -18,6 +18,9 @@
  *   - Heartbeat = 환자 심박 모니터 — 끊기면 경보
  */
 
+import type { RealtimeChannel } from "@supabase/supabase-js";
+import { sendRealtimeBroadcast } from "./realtimeBroadcast";
+
 // ─── Heartbeat 메시지 타입 ─────────────────────────────────
 
 export interface HeartbeatPayload {
@@ -88,7 +91,7 @@ export function getOrCreateRendererId(): string {
  * @returns 중지 함수 (cleanup용)
  */
 export function startHeartbeat(
-	channel: { send: (payload: any) => void },
+	channel: RealtimeChannel,
 	getCurrentItemId: () => string | null,
 	intervalMs = 1000,
 ): () => void {
@@ -110,10 +113,8 @@ export function startHeartbeat(
 		};
 
 		try {
-			channel.send({
-				type: "broadcast",
-				event: "heartbeat",
-				payload,
+			void sendRealtimeBroadcast(channel, "heartbeat", payload as unknown as Record<string, unknown>, {
+				restFallback: false,
 			});
 		} catch {
 			// 채널 끊긴 상태 — 다음 인터벌에서 재시도
@@ -135,7 +136,7 @@ export function startHeartbeat(
  * 수신한 playout 이벤트에 대해 ACK 응답 발행
  */
 export function sendAck(
-	channel: { send: (payload: any) => void },
+	channel: RealtimeChannel,
 	seqNum: number,
 	status: AckPayload["status"],
 	errorMessage?: string,
@@ -143,10 +144,8 @@ export function sendAck(
 	const ack: AckPayload = { seqNum, status, errorMessage };
 
 	try {
-		channel.send({
-			type: "broadcast",
-			event: "ack",
-			payload: ack,
+		void sendRealtimeBroadcast(channel, "ack", ack as unknown as Record<string, unknown>, {
+			restFallback: true,
 		});
 	} catch {
 		console.warn("[ACK] 응답 발신 실패");

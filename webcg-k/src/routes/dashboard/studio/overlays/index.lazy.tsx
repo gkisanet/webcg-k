@@ -6,21 +6,38 @@
 
 import { createLazyFileRoute, useNavigate } from "@tanstack/react-router";
 import {
+	CheckSquare,
 	Clock,
 	Edit2,
+	Folder,
+	FolderPlus,
 	Globe,
 	Layers,
 	Loader2,
+	MoveRight,
 	Plus,
 	Sparkles,
+	Square,
 	Trash2,
 	X,
 	Save,
+	Settings,
 } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "../../../../lib/auth";
 import { fetchOverlayTemplates, saveOverlayMeta, updateOverlayGraphics, deleteOverlayTemplate } from "../../../../services/dashboardService";
+import { updateOverlayTemplateVisibility } from "../../../../services/overlayApiService";
+import { VisibilityToggle } from "../../../../components/Common/VisibilityToggle";
+import {
+	createOverlayFolder,
+	deleteOverlayFolder,
+	fetchOverlayFolders,
+	filterOverlayTemplatesByFolder,
+	moveOverlayTemplatesToFolder,
+	type OverlayFolderRecord,
+	type OverlayFolderSelection,
+} from "../../../../services/overlayFolderService";
 import { OverlayEditor } from "../../../../components/Overlay/OverlayEditor";
 import { GraphicPreviewRenderer } from "../../../../components/GraphicPreviewRenderer";
 import type { GraphicElement } from "../../../../components/GraphicPreviewRenderer";
@@ -46,26 +63,41 @@ interface OverlayTemplate {
 	refresh_interval: number | null;
 	animation_config: any;
 	is_public: boolean;
+	visibility?: "private" | "workspace" | "public";
 	source_type?: string;
 	plugin_type?: string; // "html" | undefined
 	source_code?: { html: string; css: string; js: string }; // HTML 플러그인 코드
 	replicant_defaults?: Record<string, unknown>; // 썸네일에 디폴트 텍스트 주입용
 	zone_bounds?: { x: number; y: number; width: number; height: number };
-	category?: string; // "cg_panel" | "widget"
+	category?: string; // "cg_panel" | "widget" | "ai_cuesheet_draft"
+	folder_id?: string | null;
+	ai_metadata?: {
+		folder?: string;
+		gallery_policy?: string;
+		lifecycle?: string;
+		program_title?: string;
+		scene_order?: number;
+		graphic_type?: string;
+	} | null;
 	created_at: string;
 	updated_at: string;
 }
 
-// 애니메이션 타입 상수
 const ANIMATION_TYPES = ["fade", "slide", "scale", "none"] as const;
 
 // ─── 메인 컴포넌트 ───────────────────────────────────────────────
 
 function OverlayPage() {
-	const { user } = useAuth();
+	const { user, activeWorkspaceId } = useAuth();
 	const navigate = useNavigate();
 	const queryClient = useQueryClient();
-	const [selectedCategory, setSelectedCategory] = useState<"cg_panel" | "widget">("cg_panel");
+	const [selectedFolderId, setSelectedFolderId] = useState<OverlayFolderSelection>("all");
+	const [selectedTemplateIds, setSelectedTemplateIds] = useState<Set<string>>(new Set());
+	const [showFolderModal, setShowFolderModal] = useState(false);
+	const [newFolderName, setNewFolderName] = useState("");
+	const [isCreatingFolder, setIsCreatingFolder] = useState(false);
+	const [moveTargetFolderId, setMoveTargetFolderId] = useState<string>("unfiled");
+	const [isMovingSelection, setIsMovingSelection] = useState(false);
 
 	const { data: allTemplates = [], isLoading: loading } = useQuery({
 		queryKey: ["overlay_templates"],
@@ -73,10 +105,31 @@ function OverlayPage() {
 		enabled: !!user,
 	})
 
-	const templates = allTemplates.filter((t) => (t.category || "cg_panel") === selectedCategory);
+	const { data: folders = [], isLoading: foldersLoading } = useQuery({
+		queryKey: ["overlay_folders"],
+		queryFn: fetchOverlayFolders,
+		enabled: !!user,
+	});
+
+	const templates = useMemo(
+		() => filterOverlayTemplatesByFolder(allTemplates, selectedFolderId),
+		[allTemplates, selectedFolderId],
+	);
+	const folderCounts = useMemo(() => {
+		const counts: Record<string, number> = {
+			all: allTemplates.length,
+			unfiled: allTemplates.filter((template) => !template.folder_id).length,
+		};
+		for (const folder of folders) {
+			counts[folder.id] = allTemplates.filter((template) => template.folder_id === folder.id).length;
+		}
+		return counts;
+	}, [allTemplates, folders]);
+	const selectedIds = useMemo(() => Array.from(selectedTemplateIds), [selectedTemplateIds]);
+	const selectedCount = selectedTemplateIds.size;
 
 	// 메타 편집 모달 상태
-	const [editingTemplate, _setEditingTemplate] = useState<OverlayTemplate | null>(null);
+	const [editingTemplate, setEditingTemplate] = useState<OverlayTemplate | null>(null);
 	const [showCreateModal, setShowCreateModal] = useState(false);
 	const [saving, setSaving] = useState(false);
 
@@ -108,6 +161,22 @@ function OverlayPage() {
 	const handleCreateNew = () => {
 		navigate({ to: "/dashboard/studio/overlays/editor/$pluginId" as any, params: { pluginId: "new" } as any });
 	}
+
+
+	const handleEditMeta = (template: OverlayTemplate) => {
+		setEditingTemplate(template);
+		setFormData({
+			name: template.name,
+			description: template.description || "",
+			layer: template.layer,
+			is_public: template.is_public,
+			animation_in_type: template.animation_config?.in?.type || "fade",
+			animation_in_duration: template.animation_config?.in?.duration || 500,
+			animation_out_type: template.animation_config?.out?.type || "fade",
+			animation_out_duration: template.animation_config?.out?.duration || 300,
+		});
+		setShowCreateModal(true);
+	};
 
 
 	// 메타 저장
@@ -146,12 +215,97 @@ function OverlayPage() {
 		try {
 			await deleteOverlayTemplate(id);
 			setDeleteConfirm(null);
+			setSelectedTemplateIds((prev) => {
+				const next = new Set(prev);
+				next.delete(id);
+				return next;
+			});
 			queryClient.invalidateQueries({ queryKey: ["overlay_templates"] });
 		} catch (err) {
 			console.error("Delete overlay error:", err);
 			alert("삭제 실패");
 		}
 	}
+
+	const toggleTemplateSelection = useCallback((id: string) => {
+		setSelectedTemplateIds((prev) => {
+			const next = new Set(prev);
+			if (next.has(id)) next.delete(id);
+			else next.add(id);
+			return next;
+		});
+	}, []);
+
+	const clearSelection = useCallback(() => {
+		setSelectedTemplateIds(new Set());
+	}, []);
+
+	const handleCreateFolder = async () => {
+		if (!user) return;
+		setIsCreatingFolder(true);
+		try {
+			const folder = await createOverlayFolder({
+				name: newFolderName,
+				ownerId: user.id,
+				workspaceId: activeWorkspaceId,
+			});
+			setNewFolderName("");
+			setShowFolderModal(false);
+			setSelectedFolderId(folder.id);
+			setMoveTargetFolderId(folder.id);
+			queryClient.invalidateQueries({ queryKey: ["overlay_folders"] });
+		} catch (err) {
+			console.error("Create overlay folder error:", err);
+			alert(err instanceof Error ? err.message : "폴더 생성 실패");
+		} finally {
+			setIsCreatingFolder(false);
+		}
+	};
+
+	const handleDeleteFolder = async () => {
+		if (selectedFolderId === "all" || selectedFolderId === "unfiled") return;
+		const targetFolder = folders.find((f) => f.id === selectedFolderId);
+		if (!targetFolder) return;
+
+		// 1. 시스템 중요 폴더 삭제 원천 방어 (시니어 예외 대비)
+		if (targetFolder.is_system) {
+			alert("시스템 폴더는 삭제할 수 없습니다.");
+			return;
+		}
+
+		// 2. 비파괴 자산 보존 명시 안내를 포함한 2차 컨펌
+		const message = `"${targetFolder.name}" 폴더를 삭제하시겠습니까?\n\n※ 폴더 내의 모든 오버레이는 지워지지 않고 자동으로 '미분류' 보존 구역으로 안전하게 이동됩니다.`;
+		if (!window.confirm(message)) return;
+
+		try {
+			await deleteOverlayFolder(selectedFolderId);
+			// 삭제 완료 후 전체 목록으로 안전하게 상태 리셋
+			setSelectedFolderId("all");
+			queryClient.invalidateQueries({ queryKey: ["overlay_folders"] });
+			queryClient.invalidateQueries({ queryKey: ["overlay_templates"] });
+		} catch (err) {
+			console.error("Delete folder error:", err);
+			alert("폴더 삭제에 실패했습니다.");
+		}
+	};
+
+	const handleMoveSelection = async () => {
+		if (selectedIds.length === 0) return;
+		setIsMovingSelection(true);
+		try {
+			await moveOverlayTemplatesToFolder(
+				selectedIds,
+				moveTargetFolderId === "unfiled" ? null : moveTargetFolderId,
+			);
+			clearSelection();
+			queryClient.invalidateQueries({ queryKey: ["overlay_templates"] });
+		} catch (err) {
+			console.error("Move overlay folder error:", err);
+			alert("폴더 이동 실패");
+		} finally {
+			setIsMovingSelection(false);
+		}
+	};
 
 	// 그래픽 편집기 저장
 	const handleEditorSave = useCallback(
@@ -205,21 +359,102 @@ function OverlayPage() {
 				</div>
 			</div>
 
-            {/* 카테고리 필터 */}
-            <div className="dash-filter-group">
-                <button 
-                    className={`dash-filter-btn ${selectedCategory === "cg_panel" ? "active" : ""}`}
-                    onClick={() => setSelectedCategory("cg_panel")}
-                >
-                    📺 방송용 자막 (CG)
-                </button>
-                <button 
-                    className={`dash-filter-btn ${selectedCategory === "widget" ? "active" : ""}`}
-                    onClick={() => setSelectedCategory("widget")}
-                >
-                    ⚙️ 기능성 위젯
-                </button>
-            </div>
+			<div className="overlay-folder-toolbar">
+				<div className="overlay-folder-tabs" aria-label="오버레이 폴더">
+					<button
+						className={`overlay-folder-tab ${selectedFolderId === "all" ? "active" : ""}`}
+						onClick={() => setSelectedFolderId("all")}
+					>
+						<Layers size={14} />
+						<span>전체</span>
+						<span>{folderCounts.all}</span>
+					</button>
+					<button
+						className={`overlay-folder-tab ${selectedFolderId === "unfiled" ? "active" : ""}`}
+						onClick={() => setSelectedFolderId("unfiled")}
+					>
+						<Folder size={14} />
+						<span>미분류</span>
+						<span>{folderCounts.unfiled}</span>
+					</button>
+					{folders.map((folder: OverlayFolderRecord) => (
+						<button
+							key={folder.id}
+							className={`overlay-folder-tab ${selectedFolderId === folder.id ? "active" : ""}`}
+							onClick={() => setSelectedFolderId(folder.id)}
+						>
+							<Folder size={14} />
+							<span>{folder.name}</span>
+							<span>{folderCounts[folder.id] ?? 0}</span>
+						</button>
+					))}
+					{foldersLoading && (
+						<span className="overlay-folder-loading">
+							<Loader2 size={14} className="animate-spin" />
+						</span>
+					)}
+					<button
+						className="overlay-folder-tab add-folder-tab-btn"
+						onClick={() => setShowFolderModal(true)}
+						title="새 폴더 생성"
+					>
+						<Plus size={13} />
+						<span>새 폴더</span>
+					</button>
+				</div>
+
+				{selectedCount > 0 ? (
+					<div className="overlay-selection-inline-tools">
+						<div className="overlay-selection-count">{selectedCount}개 선택됨</div>
+						<select
+							value={moveTargetFolderId}
+							onChange={(event) => setMoveTargetFolderId(event.target.value)}
+							className="overlay-selection-select"
+						>
+							<option value="unfiled">미분류로 이동</option>
+							{folders.map((folder) => (
+								<option key={folder.id} value={folder.id}>
+									{folder.name}
+								</option>
+							))}
+						</select>
+						<button
+							className="overlay-selection-btn-new-folder"
+							onClick={() => setShowFolderModal(true)}
+							title="새 폴더 생성"
+							type="button"
+						>
+							<FolderPlus size={13} />
+						</button>
+						<button
+							className="dash-btn accent"
+							onClick={handleMoveSelection}
+							disabled={isMovingSelection}
+						>
+							{isMovingSelection ? <Loader2 size={14} className="animate-spin" /> : <MoveRight size={14} />}
+							이동
+						</button>
+						<button className="dash-btn" onClick={clearSelection}>
+							선택 해제
+						</button>
+					</div>
+				) : (
+					<div className="overlay-folder-inline-actions" style={{ display: "flex", gap: "6px" }}>
+						{selectedFolderId !== "all" &&
+							selectedFolderId !== "unfiled" &&
+							!folders.find((f) => f.id === selectedFolderId)?.is_system && (
+								<button
+									className="overlay-btn-delete-folder"
+									onClick={handleDeleteFolder}
+									title="현재 폴더 삭제"
+								>
+									<Trash2 size={13} />
+									<span>폴더 삭제</span>
+								</button>
+							)}
+					</div>
+				)}
+			</div>
             {/* 카드 그리드 또는 빈 상태 */}
             {templates.length === 0 ? (
 				<div className="overlay-empty-state">
@@ -244,12 +479,17 @@ function OverlayPage() {
 						const hasGraphics = elements.length > 0;
 						const animIn = template.animation_config?.in;
 						const animOut = template.animation_config?.out;
+						const isSelected = selectedTemplateIds.has(template.id);
 
 						return (
                             <div
 								key={template.id}
-								className="overlay-card"
+								className={`overlay-card ${isSelected ? "selected" : ""}`}
 								onClick={() => {
+									if (selectedCount > 0) {
+										toggleTemplateSelection(template.id);
+										return;
+									}
 									if (hasGraphics) setEditorTarget(template);
 								}}
 								onMouseEnter={() => setHoveredCardId(template.id)}
@@ -275,19 +515,33 @@ function OverlayPage() {
 											<Layers size={24} />
 											<span>프리뷰 없음</span>
 										</div>
-									)}
+										)}
 
 									{/* 뱃지 */}
+									<button
+										type="button"
+										className={`overlay-card-select ${isSelected ? "active" : ""}`}
+										onClick={(e) => {
+											e.stopPropagation();
+											toggleTemplateSelection(template.id);
+										}}
+										title={isSelected ? "선택 해제" : "선택"}
+									>
+										{isSelected ? <CheckSquare size={16} /> : <Square size={16} />}
+									</button>
 									<span className="overlay-card-layer-badge">
 										Layer {template.layer}
 									</span>
 									{template.plugin_type === "html" && (
 										<span className="overlay-card-html-badge">{'</>'} HTML</span>
 									)}
-									{template.source_type === "ai" && (
-										<span className="overlay-card-ai-badge">✨ AI</span>
-									)}
-								</div>
+										{template.source_type === "ai" && (
+											<span className="overlay-card-ai-badge">✨ AI</span>
+										)}
+										{template.category === "ai_cuesheet_draft" && (
+											<span className="overlay-card-ai-badge">AI 큐시트</span>
+										)}
+									</div>
                                 {/* 카드 바디 */}
                                 <div className="overlay-card-body">
 									<div className="overlay-card-name">
@@ -317,6 +571,16 @@ function OverlayPage() {
 												API 연동
 											</span>
 										)}
+										{template.ai_metadata?.graphic_type && (
+											<span className="overlay-card-tag">
+												{template.ai_metadata.graphic_type}
+											</span>
+										)}
+										{template.ai_metadata?.program_title && (
+											<span className="overlay-card-tag">
+												{template.ai_metadata.program_title}
+											</span>
+										)}
 										{template.is_public && (
 											<span className="overlay-card-tag public-tag">
 												공개
@@ -330,42 +594,68 @@ function OverlayPage() {
 										<Clock size={10} />
 										{formatDateWithTime(template.created_at)}
 									</div>
-									{isOwner(template.owner_id) && (
-										<div className="overlay-card-actions">
-											<button
-												className="btn-overlay-action"
-												onClick={(e) => {
-													e.stopPropagation()
-													navigate({ to: "/dashboard/studio/overlays/editor/$pluginId" as any, params: { pluginId: template.id } as any });
-												}}
-												title="코드 에디터"
-											>
-												<Edit2 size={12} />
-											</button>
-											{hasGraphics && (
+									<div className="overlay-card-actions" style={{ display: "flex", alignItems: "center", gap: 6 }}>
+										<VisibilityToggle
+											visibility={template.visibility || "workspace"}
+											onToggle={async (nextVis) => {
+												try {
+													await updateOverlayTemplateVisibility(template.id, nextVis as any);
+													queryClient.invalidateQueries({ queryKey: ["overlay_templates"] });
+												} catch (err) {
+													console.error("공유 설정 변경 실패:", err);
+													alert("공유 설정 변경에 실패했습니다.");
+												}
+											}}
+											size={14}
+											className={!isOwner(template.owner_id) ? "pointer-events-none opacity-60" : ""}
+										/>
+										{isOwner(template.owner_id) && (
+											<>
 												<button
 													className="btn-overlay-action"
 													onClick={(e) => {
 														e.stopPropagation()
-														setEditorTarget(template)
+														navigate({ to: "/dashboard/studio/overlays/editor/$pluginId" as any, params: { pluginId: template.id } as any });
 													}}
-													title="그래픽 편집"
+													title="코드 에디터"
 												>
-													<Save size={12} />
+													<Edit2 size={12} />
 												</button>
-											)}
-											<button
-												className="btn-overlay-action delete"
-												onClick={(e) => {
-													e.stopPropagation()
-													setDeleteConfirm(template.id)
-												}}
-												title="삭제"
-											>
-												<Trash2 size={12} />
-											</button>
-										</div>
-									)}
+												<button
+													className="btn-overlay-action"
+													onClick={(e) => {
+														e.stopPropagation()
+														handleEditMeta(template)
+													}}
+													title="설정 및 메타 편집"
+												>
+													<Settings size={12} />
+												</button>
+												{hasGraphics && (
+													<button
+														className="btn-overlay-action"
+														onClick={(e) => {
+															e.stopPropagation()
+															setEditorTarget(template)
+														}}
+														title="그래픽 편집"
+													>
+														<Save size={12} />
+													</button>
+												)}
+												<button
+													className="btn-overlay-action delete"
+													onClick={(e) => {
+														e.stopPropagation()
+														setDeleteConfirm(template.id)
+													}}
+													title="삭제"
+												>
+													<Trash2 size={12} />
+												</button>
+											</>
+										)}
+									</div>
 								</div>
                                 {/* 삭제 확인 오버레이 */}
                                 {deleteConfirm === template.id && (
@@ -396,6 +686,66 @@ function OverlayPage() {
                             </div>
                         )
 					})}
+				</div>
+			)}
+			{showFolderModal && (
+				<div
+					className="overlay-editor-backdrop"
+					onClick={() => setShowFolderModal(false)}
+				>
+					<div
+						className="overlay-folder-modal"
+						onClick={(e) => e.stopPropagation()}
+					>
+						<div className="overlay-editor-header">
+							<h3>
+								<FolderPlus size={16} />
+								새 폴더
+							</h3>
+							<button
+								className="overlay-editor-close"
+								onClick={() => setShowFolderModal(false)}
+							>
+								<X size={16} />
+							</button>
+						</div>
+						<div className="overlay-folder-modal-body">
+							<div className="csm-field">
+								<label>폴더 이름</label>
+								<input
+									value={newFolderName}
+									onChange={(e) => setNewFolderName(e.target.value)}
+									onKeyDown={(e) => {
+										if (e.key === "Enter" && newFolderName.trim()) {
+											void handleCreateFolder();
+										}
+									}}
+									placeholder="예: 선거 방송 패키지"
+									autoFocus
+								/>
+							</div>
+						</div>
+						<div className="overlay-editor-footer">
+							<button
+								className="btn-modal-cancel"
+								onClick={() => setShowFolderModal(false)}
+								disabled={isCreatingFolder}
+							>
+								취소
+							</button>
+							<button
+								className="btn-modal-save"
+								onClick={handleCreateFolder}
+								disabled={isCreatingFolder || !newFolderName.trim()}
+							>
+								{isCreatingFolder ? (
+									<><Loader2 size={14} className="wizard-loading-spinner" style={{ width: 14, height: 14 }} /> 생성 중...</>
+								) : (
+									<><FolderPlus size={14} /> 생성</>
+								)}
+							</button>
+						</div>
+					</div>
 				</div>
 			)}
             {/* 메타 편집 모달 */}

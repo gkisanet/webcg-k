@@ -76,7 +76,7 @@ function StatusBadge({ status }: { status: SessionStatus }) {
 }
 
 function BroadcastPage() {
-	const { user } = useAuth();
+	const { user, activeWorkspaceId } = useAuth();
 	const navigate = useNavigate();
 	const { t } = useTranslation(["broadcast", "common"]);
 	const { copyToClipboard: clipboardCopy } = useClipboard();
@@ -108,7 +108,7 @@ function BroadcastPage() {
 	const { data: pendingCuesheets = [] } = useQuery({
 		queryKey: ["cuesheets_pending"],
 		queryFn: async () => {
-			const cuesheets = await fetchCuesheets();
+			const cuesheets = await fetchCuesheets(activeWorkspaceId!);
 			return cuesheets.filter((cs: NrcsCuesheet) => {
 				const st = cs.source_type || "manual";
 				return (st === "nrcs" || st === "csv") &&
@@ -248,34 +248,19 @@ function BroadcastPage() {
 			</div>
 
 			{/* 검색/필터 바 */}
-			<div
-				style={{
-					display: "flex", alignItems: "center", gap: "0.75rem", flexWrap: "wrap",
-					padding: "0.875rem 1rem",
-					background: "var(--app-bg-alt)", border: "1px solid var(--border-subtle)",
-					borderRadius: "8px", marginBottom: "1rem",
-				}}
-			>
+			<div className="dash-filter-panel">
 				{/* 텍스트 검색 */}
-				<div style={{
-					display: "flex", alignItems: "center", gap: "0.5rem",
-					padding: "0.375rem 0.75rem", background: "var(--app-bg-muted)",
-					borderRadius: "6px", flex: 1, minWidth: "200px", maxWidth: "320px",
-				}}>
-					<Search size={14} style={{ color: "var(--text-tertiary)", flexShrink: 0 }} />
+				<div className="dash-filter-search">
+					<Search size={14} className="dash-filter-icon" />
 					<input
+						className="dash-filter-input"
 						type="text"
 						placeholder={t("broadcast:searchPlaceholder")}
 						value={searchQuery}
 						onChange={(e) => setSearchQuery(e.target.value)}
-						style={{
-							background: "transparent", border: "none", outline: "none",
-							color: "var(--text-primary)", fontSize: "0.8125rem", width: "100%",
-						}}
 					/>
 					{searchQuery && (
-						<button type="button" onClick={() => setSearchQuery("")}
-							style={{ background: "none", border: "none", cursor: "pointer", padding: "2px", color: "var(--text-tertiary)" }}>
+						<button type="button" className="dash-filter-clear" onClick={() => setSearchQuery("")}>
 							<X size={12} />
 						</button>
 					)}
@@ -283,13 +268,9 @@ function BroadcastPage() {
 
 				{/* 상태 필터 */}
 				<select
+					className="dash-filter-select"
 					value={statusFilter}
 					onChange={(e) => setStatusFilter(e.target.value as SessionStatus | "all")}
-					style={{
-						padding: "0.375rem 0.75rem", fontSize: "0.8125rem",
-						background: "var(--app-bg-muted)", border: "1px solid var(--border-subtle)",
-						borderRadius: "6px", color: "var(--text-primary)", cursor: "pointer",
-					}}
 				>
 					<option value="all">{t("broadcast:filter.allStatus")}</option>
 					<option value="draft">{t("broadcast:filter.draft")}</option>
@@ -300,34 +281,22 @@ function BroadcastPage() {
 				</select>
 
 				{/* 날짜 범위 */}
-				<div style={{ display: "flex", alignItems: "center", gap: "0.375rem" }}>
-					<Calendar size={14} style={{ color: "var(--text-tertiary)" }} />
-					<input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)}
-						style={{
-							padding: "0.375rem 0.5rem", fontSize: "0.75rem",
-							background: "var(--app-bg-muted)", border: "1px solid var(--border-subtle)",
-							borderRadius: "6px", color: "var(--text-primary)",
-						}}
-					/>
-					<span style={{ color: "var(--text-tertiary)", fontSize: "0.75rem" }}>~</span>
-					<input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)}
-						style={{
-							padding: "0.375rem 0.5rem", fontSize: "0.75rem",
-							background: "var(--app-bg-muted)", border: "1px solid var(--border-subtle)",
-							borderRadius: "6px", color: "var(--text-primary)",
-						}}
-					/>
+				<div className="dash-filter-date-range">
+					<Calendar size={14} className="dash-filter-icon" />
+					<input className="dash-filter-date" type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} />
+					<span className="dash-filter-separator">~</span>
+					<input className="dash-filter-date" type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} />
 				</div>
 
 				{/* 결과 수 */}
-				<span style={{ fontSize: "0.75rem", color: "var(--text-tertiary)", marginLeft: "auto" }}>
+				<span className="dash-filter-meta">
 					{t("common:projects", { count: filteredSessions.length })}
 				</span>
 			</div>
 
 			{/* 프로젝트 테이블 */}
-			<div className="card">
-				<div className="card-body" style={{ padding: 0 }}>
+			<div className="dash-surface">
+				<div style={{ padding: 0 }}>
 					{loading ? (
 						<div className="dash-loading">
 							<Loader2 className="animate-spin" size={24} />
@@ -352,8 +321,8 @@ function BroadcastPage() {
 						}}>
 							<thead>
 								<tr style={{
-									borderBottom: "1px solid var(--border-subtle)",
-									background: "var(--app-bg-muted)",
+									borderBottom: "1px solid rgba(255, 255, 255, 0.05)",
+									background: "rgba(255, 255, 255, 0.025)",
 								}}>
 									<th style={{ ...thStyle, width: "40%" }}>{t("broadcast:table.projectName")}</th>
 									<th style={{ ...thStyle, width: "10%" }}>{t("broadcast:table.status")}</th>
@@ -576,10 +545,7 @@ function BroadcastPage() {
 			)}
 
 			{/* 사용 가이드 */}
-			<div style={{
-				marginTop: "1.5rem", padding: "1.25rem",
-				background: "var(--app-bg-muted)", borderRadius: "8px", border: "1px solid var(--border-subtle)",
-			}}>
+			<div className="dash-surface" style={{ marginTop: "1.5rem", padding: "1.25rem" }}>
 				<div style={{ fontWeight: 600, color: "var(--text-primary)", marginBottom: "0.75rem" }}>
 					{t("broadcast:guide.title")}
 				</div>
@@ -645,7 +611,7 @@ function RenderUrlCard({ label, url, copyKey, copied, onCopy }: {
 // 테이블 스타일 상수
 const thStyle: React.CSSProperties = {
 	padding: "0.625rem 1rem", textAlign: "left", fontWeight: 600,
-	fontSize: "0.75rem", color: "var(--text-secondary)",
+	fontSize: "0.75rem", color: "var(--text-tertiary)",
 };
 
 const tdStyle: React.CSSProperties = {
@@ -653,8 +619,18 @@ const tdStyle: React.CSSProperties = {
 };
 
 const kbdStyle: React.CSSProperties = {
-	padding: "0.125rem 0.375rem", background: "var(--app-bg-alt)",
-	borderRadius: "4px", fontSize: "0.75rem",
+	display: "inline-flex",
+	alignItems: "center",
+	justifyContent: "center",
+	padding: "0.125rem 0.375rem",
+	background: "var(--app-bg-alt)",
+	border: "1px solid var(--border-default)",
+	borderRadius: "4px",
+	fontSize: "0.75rem",
+	fontFamily: "'JetBrains Mono', monospace",
+	lineHeight: 1,
+	boxShadow: "0 1px 0 var(--border-subtle)",
+	minWidth: "1.25rem",
 };
 
 // 글로벌 CSS: 송출 중 펄스 애니메이션

@@ -44,11 +44,9 @@ function getInitials(email: string): string {
 
 interface UserAvatarsProps {
 	users: ConnectedUser[];
-	onPermissionClick?: () => void;
-	isOwner?: boolean;
 }
 
-export function UserAvatars({ users, onPermissionClick, isOwner }: UserAvatarsProps) {
+export function UserAvatars({ users }: UserAvatarsProps) {
 	// Primary operator = lastBroadcastAt이 가장 최신인 사용자
 	const primaryOperator = useMemo(() => {
 		const broadcasters = users.filter(u => u.lastBroadcastAt);
@@ -188,29 +186,6 @@ export function UserAvatars({ users, onPermissionClick, isOwner }: UserAvatarsPr
 					</div>
 				)}
 			</div>
-
-			{/* 권한 설정 버튼 (세션 소유자만) */}
-			{isOwner && onPermissionClick && (
-				<button
-					type="button"
-					onClick={onPermissionClick}
-					style={{
-						padding: "0.25rem 0.5rem",
-						background: "var(--app-bg-muted)",
-						border: "1px solid var(--border-default)",
-						borderRadius: "4px",
-						fontSize: "0.6875rem",
-						color: "var(--text-secondary)",
-						cursor: "pointer",
-						display: "flex",
-						alignItems: "center",
-						gap: "0.25rem",
-					}}
-					title="접속자 권한 설정"
-				>
-					권한 설정
-				</button>
-			)}
 		</div>
 	);
 }

@@ -138,7 +138,8 @@ export function wizardReducer(state: CuesheetWizardState, action: WizardAction):
       const scenes = state.parseResult.cuesheet.scenes.map((s, si) => {
         if (si !== action.sceneIdx) return s;
         const newSlot: TextSlot = {
-          semantic_role: "subtitle", value: "", importance: 3,
+          id: `scene-${s.order}-slot-${s.text_slots.length + 1}`,
+          semantic_role: "subtitle", value: "", source_value: "", display_value: "", importance: 3,
           zone_hint: s.text_slots[0]?.zone_hint ?? "bottom_bar",
           style_hint: "normal",
         };
@@ -173,10 +174,11 @@ export function wizardReducer(state: CuesheetWizardState, action: WizardAction):
       );
       const newScene: SceneContent = {
         order: maxOrder + 1,
+        graphic_type: "explainer_caption",
         trigger: "새 장면",
         graphic_intent: "",
         duration: 15,
-        text_slots: [{ semantic_role: "subtitle", value: "", importance: 3, zone_hint: "bottom_bar", style_hint: "normal" }],
+        text_slots: [{ id: `scene-${maxOrder + 1}-slot-1`, semantic_role: "subtitle", value: "", source_value: "", display_value: "", importance: 3, zone_hint: "bottom_bar", style_hint: "normal" }],
       };
       const scenes = [...state.parseResult.cuesheet.scenes, newScene];
       const cuesheet = { ...state.parseResult.cuesheet, scenes };

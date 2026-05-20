@@ -118,10 +118,17 @@ export function useOverlayStore(sessionId: string | undefined) {
         [overlays],
     );
 
-    /** PVW에 표시할 것: animation_state="preview" OR is_active=true */
+    /**
+     * PVW에 표시할 것: preview cue만.
+     *
+     * Why not include is_active?
+     * 상태를 가진 HTML 오버레이(타이머, WAAPI/CSS animation)는 PVW/PGM/render가
+     * 각각 별도 iframe runtime을 실행하므로 시간이 흐를수록 drift가 생긴다.
+     * PGM으로 TAKE된 오버레이는 PVW에서 숨겨 중복 runtime이 보이지 않게 한다.
+     */
     const previewOverlays = useMemo(
         () => overlays.filter((o) =>
-            o.animation_state === "preview" || o.is_active
+            o.animation_state === "preview" && !o.is_active
         ),
         [overlays],
     );

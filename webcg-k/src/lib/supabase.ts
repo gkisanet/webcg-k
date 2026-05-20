@@ -5,6 +5,7 @@
 
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "./database.types";
+import { sendRealtimeBroadcast } from "./realtimeBroadcast";
 
 // Supabase Docker 로컬 개발 환경 설정
 const supabaseUrl =
@@ -64,12 +65,13 @@ export async function sendBroadcastCommand(
 	channel: ReturnType<typeof supabase.channel>,
 	command: Omit<BroadcastCommand, "timestamp">,
 ) {
-	return channel.send({
-		type: "broadcast",
-		event: "command",
-		payload: {
+	return sendRealtimeBroadcast(
+		channel,
+		"command",
+		{
 			...command,
 			timestamp: Date.now(),
 		},
-	});
+		{ restFallback: true },
+	);
 }

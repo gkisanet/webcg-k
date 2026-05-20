@@ -4,9 +4,11 @@
  * ■ Step 1: 시스템 프롬프트 복사 (manual) / 소스 자료 입력 (api)
  * ■ Step 2: JSON ↔ GUI 토글 — 씬별 콘텐츠 검토
  * ■ Step 3: 씬별 AI 그래픽 생성 — PluginEditor 스타일
+ * ■ Step 4: 런다운 생성/편집 handoff
+ * ■ Step 5: PVW/PGM/render 송출 검증
  *
  * 상태 관리: useReducer (wizardReducer.ts)
- * 컴포넌트: StepSystemPrompt, StepSourceInput, StepContentReview, StepGraphicGenerate
+ * 컴포넌트: StepSystemPrompt, StepSourceInput, StepContentReview, StepGraphicGenerate, StepRundownEdit, StepRenderVerify
  */
 
 import { createLazyFileRoute, useNavigate, useSearch } from "@tanstack/react-router";
@@ -25,18 +27,30 @@ import {
   type HallucinationCheck,
 } from "@/services/aiCuesheetService";
 import {
-  fetchSessions, deleteSession, getSession, autoSaveWizardState,
+  fetchSessions, deleteSession, getSession, autoSaveWizardState, updateSession,
 } from "@/services/aiCuesheetSessionService";
 import { supabase } from "@/lib/supabase";
 import { StepSystemPrompt } from "@/components/ai-cuesheet/StepSystemPrompt";
 import { StepSourceInput } from "@/components/ai-cuesheet/StepSourceInput";
 import { StepContentReview } from "@/components/ai-cuesheet/StepContentReview";
 import { StepGraphicGenerate } from "@/components/ai-cuesheet/StepGraphicGenerate";
+import { StepRundownEdit } from "@/components/ai-cuesheet/StepRundownEdit";
+import { StepRenderVerify } from "@/components/ai-cuesheet/StepRenderVerify";
 import {
   wizardReducer,
   createInitialState,
-  type WizardAction,
 } from "@/components/ai-cuesheet/wizardReducer";
+import {
+  analyzeAiCuesheetPublishReadiness,
+  buildPartialPublishMessage,
+  buildRundownOverlayInserts,
+} from "@/lib/aiCuesheetPublish";
+import {
+  clearLocalWizardSnapshot,
+  getRestorableNewSessionSnapshot,
+  readLocalWizardSnapshot,
+  writeLocalWizardSnapshot,
+} from "@/lib/aiCuesheetLocalSnapshot";
 import type {
   CuesheetWizardStep,
   CuesheetWizardState,
@@ -183,8 +197,8 @@ function AiCuesheetSessionListView() {
 // Wizard View — Thin Orchestrator
 // ═══════════════════════════════════════════════════════════════════
 
-const WIZARD_STEPS_MANUAL: CuesheetWizardStep[] = ["system-prompt", "content-review", "graphic-generate"];
-const WIZARD_STEPS_API: CuesheetWizardStep[] = ["source-input", "content-review", "graphic-generate"];
+const WORKFLOW_STEPS_MANUAL: CuesheetWizardStep[] = ["system-prompt", "content-review", "graphic-generate", "rundown-edit", "render-verify"];
+const WORKFLOW_STEPS_API: CuesheetWizardStep[] = ["source-input", "content-review", "graphic-generate", "rundown-edit", "render-verify"];
 
 function AiCuesheetWizardView() {
   const { t } = useTranslation("dashboard");
@@ -197,17 +211,32 @@ function AiCuesheetWizardView() {
     createInitialState(m, sp),
   );
 
-  const steps = mode === "manual" ? WIZARD_STEPS_MANUAL : WIZARD_STEPS_API;
+  const workflowSteps = mode === "manual" ? WORKFLOW_STEPS_MANUAL : WORKFLOW_STEPS_API;
 
   // Feedback state (not in reducer — ephemeral UI state)
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [toastMessage, setToastMessage] = useState<{ text: string; type: "error" | "success" } | null>(null);
   const [isGeneratingCuesheet, setIsGeneratingCuesheet] = useState(false);
+  const [isPublishingRundown, setIsPublishingRundown] = useState(false);
+  const [publishedRundownId, setPublishedRundownId] = useState<string | null>(null);
 
   const showToast = useCallback((text: string, type: "error" | "success" = "error") => {
     setToastMessage({ text, type });
     setTimeout(() => setToastMessage(null), 4000);
   }, []);
+
+  // ─── Local snapshot restore (reload/back safety before DB session exists) ───
+
+  useEffect(() => {
+    if (initialSessionId || isNew !== "1") return;
+    const snapshot = getRestorableNewSessionSnapshot(readLocalWizardSnapshot());
+    if (!snapshot) return;
+
+    dispatch({ type: "RESTORE_SESSION", data: snapshot });
+    setMode(snapshot.mode);
+    setSaveStatus("saved");
+    showToast("이전 AI 큐시트 작업 스냅샷을 복원했습니다.", "success");
+  }, [initialSessionId, isNew, showToast]);
 
   // ─── Session resume ────────────────────────────────────────
 
@@ -243,7 +272,12 @@ function AiCuesheetWizardView() {
           if (s.generated_html) {
             dispatch({
               type: "UPDATE_GRAPHIC_STATE", sceneIdx: s.scene_order - 1,
-              patch: { status: "done", generatedHtml: s.generated_html, generatedCss: s.generated_css ?? undefined },
+              patch: {
+                status: "done",
+                generatedHtml: s.generated_html,
+                generatedCss: s.generated_css ?? undefined,
+                overlayTemplateId: s.overlay_template_id ?? undefined,
+              },
             });
           }
         });
@@ -257,17 +291,22 @@ function AiCuesheetWizardView() {
 
   // ─── Debounced auto-save (문제 2) ──────────────────────────
 
-  const saveTimerRef = useRef<ReturnType<typeof setTimeout>>();
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const hasUnsavedRef = useRef(false);
 
   // graphicStates 변경 감지 → generation 완료 시 즉시 저장
   const prevDoneCountRef = useRef(0);
 
   useEffect(() => {
+    if (!state.sourceMaterial.trim() && !state.rawJson.trim() && !state.parseResult?.cuesheet) return;
+    writeLocalWizardSnapshot(state);
+  }, [state]);
+
+  useEffect(() => {
     if (!state.parseResult?.cuesheet || !state.sessionId) return;
 
     hasUnsavedRef.current = true;
-    clearTimeout(saveTimerRef.current);
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
 
     // graphic 생성 완료 시 즉시 저장 (페이지 이탈 대비)
     const doneCount = state.graphicStates.filter((g) => g.status === "done").length;
@@ -288,7 +327,7 @@ function AiCuesheetWizardView() {
       }
     }, delay);
 
-    return () => clearTimeout(saveTimerRef.current);
+    return () => { if (saveTimerRef.current) clearTimeout(saveTimerRef.current); };
   }, [state.parseResult, state.rawJson, state.graphicStates, state.sessionId]);
 
   // ─── beforeunload guard (문제 2) ───────────────────────────
@@ -333,12 +372,37 @@ function AiCuesheetWizardView() {
 
   const handleGenerateCuesheet = async () => {
     setIsGeneratingCuesheet(true);
+    hasUnsavedRef.current = true;
+    writeLocalWizardSnapshot(state);
+
     try {
       const result = await generateCuesheetFromSource(state.sourceMaterial);
+      const rawJson = JSON.stringify(result.cuesheet, null, 2);
+      const nextStep: CuesheetWizardStep = result.cuesheet ? "content-review" : state.step;
+      const nextState: CuesheetWizardState = {
+        ...state,
+        parseResult: result,
+        rawJson,
+        step: nextStep,
+        visitedSteps: result.cuesheet
+          ? [...state.visitedSteps, nextStep].filter((v, i, a) => a.indexOf(v) === i)
+          : state.visitedSteps,
+      };
+
+      writeLocalWizardSnapshot(nextState);
       dispatch({ type: "SET_PARSE_RESULT", result });
-      dispatch({ type: "SET_RAW_JSON", value: JSON.stringify(result.cuesheet, null, 2) });
+      dispatch({ type: "SET_RAW_JSON", value: rawJson });
+
       if (result.cuesheet) {
-        await goToStep("content-review");
+        setSaveStatus("saving");
+        const sid = await autoSaveWizardState(state.sessionId, nextState);
+        const savedState = { ...nextState, sessionId: sid };
+        writeLocalWizardSnapshot(savedState);
+        if (sid !== state.sessionId) dispatch({ type: "SET_SESSION_ID", id: sid });
+        dispatch({ type: "VISIT_STEP", step: "content-review" });
+        dispatch({ type: "SET_STEP", step: "content-review" });
+        setSaveStatus("saved");
+        hasUnsavedRef.current = false;
       }
     } catch (err: any) {
       showToast(`생성 실패: ${err.message}`, "error");
@@ -373,6 +437,78 @@ function AiCuesheetWizardView() {
     dispatch({ type: "INIT_GRAPHIC_STATES", sceneCount: state.parseResult.cuesheet.scenes.length });
     goToStep("graphic-generate");
   };
+
+  const publishGeneratedScenesToRundown = useCallback(async (): Promise<string | null> => {
+    if (!state.sessionId) return null;
+
+    const scenes = state.parseResult?.cuesheet?.scenes ?? [];
+    const programTitle = state.parseResult?.cuesheet?.program_title ?? "AI 큐시트";
+    const readiness = analyzeAiCuesheetPublishReadiness(scenes, state.graphicStates);
+
+    if (readiness.readyScenes === 0) {
+      showToast("발행 가능한 그래픽이 없습니다. 먼저 장면 그래픽을 생성하고 저장하세요.", "error");
+      return null;
+    }
+
+    if (readiness.requiresPartialConfirmation && !window.confirm(buildPartialPublishMessage(readiness))) {
+      return null;
+    }
+
+    setIsPublishingRundown(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) { showToast("로그인이 필요합니다.", "error"); return null; }
+
+      const { data: projects } = await supabase
+        .from("projects").select("id").eq("owner_id", user.id).limit(1);
+      let projectId = (projects as any)?.[0]?.id;
+      if (!projectId) {
+        const { data: newProject, error: projErr } = await supabase
+          .from("projects").insert({ name: "내 프로젝트", owner_id: user.id, settings: {} } as any)
+          .select("id").single();
+        if (projErr) throw projErr;
+        projectId = (newProject as any).id;
+      }
+
+      const { data: rundown, error: rErr } = await supabase
+        .from("rundowns").insert({
+          project_id: projectId, title: programTitle,
+          description: `AI 큐시트 자동 생성 — ${new Date().toLocaleDateString()}`,
+          created_by: user.id,
+        }).select("id").single();
+      if (rErr) throw rErr;
+      const rundownId = (rundown as any).id;
+
+      const inserts = buildRundownOverlayInserts({
+        scenes,
+        graphicStates: state.graphicStates,
+        rundownId,
+        programTitle,
+      });
+
+      const { error: itemsErr } = await supabase.from("rundown_items").insert(inserts as any);
+      if (itemsErr) throw itemsErr;
+
+      await updateSession(state.sessionId, { status: "completed" });
+      setPublishedRundownId(rundownId);
+      clearLocalWizardSnapshot();
+
+      const partialSuffix = readiness.canPublishAll ? "" : ` (${readiness.totalScenes - readiness.readyScenes}개 제외)`;
+      showToast(`${inserts.length}개 장면이 런다운에 발행되었습니다${partialSuffix}.`, "success");
+      await goToStep("render-verify");
+      return rundownId;
+    } catch (err: any) {
+      showToast(`발행 실패: ${err.message}`, "error");
+      return null;
+    } finally {
+      setIsPublishingRundown(false);
+    }
+  }, [goToStep, showToast, state]);
+
+  const currentReadiness = analyzeAiCuesheetPublishReadiness(
+    state.parseResult?.cuesheet?.scenes ?? [],
+    state.graphicStates,
+  );
 
   // ─── Render ───────────────────────────────────────────────
 
@@ -437,14 +573,15 @@ function AiCuesheetWizardView() {
 
       {/* Step Indicator */}
       <StepIndicator
-        steps={steps}
+        steps={workflowSteps}
         currentStep={state.step}
-        visitedSteps={new Set(state.visitedSteps)}
         labels={{
           "system-prompt": t("aiCuesheet.steps.system", "System Prompt"),
-          "source-input": t("aiCuesheet.steps.source", "Source Input"),
-          "content-review": t("aiCuesheet.steps.review", "Content Review"),
+          "source-input": t("aiCuesheet.steps.source", "자료 입력"),
+          "content-review": t("aiCuesheet.steps.review", "콘텐츠 검토"),
           "graphic-generate": "Graphics",
+          "rundown-edit": "런다운 편집",
+          "render-verify": "송출 검증",
         }}
       />
 
@@ -480,6 +617,7 @@ function AiCuesheetWizardView() {
           <StepGraphicGenerate
             scenes={state.parseResult?.cuesheet?.scenes ?? []}
             programTitle={state.parseResult?.cuesheet?.program_title ?? ""}
+            sessionId={state.sessionId}
             graphicStates={state.graphicStates}
             onUpdateGraphicState={(sceneIdx, patch) =>
               dispatch({ type: "UPDATE_GRAPHIC_STATE", sceneIdx, patch })
@@ -489,66 +627,23 @@ function AiCuesheetWizardView() {
               dispatch({ type: "EXTRACT_THEME", id, theme })
             }
             onBack={() => goToStep("content-review")}
-            onComplete={async () => {
-              if (!state.sessionId) return;
-              try {
-                // 1. Get user
-                const { data: { user } } = await supabase.auth.getUser();
-                if (!user) { showToast("로그인이 필요합니다.", "error"); return; }
-
-                // 2. Get or create project
-                const { data: projects } = await supabase
-                  .from("projects").select("id").eq("owner_id", user.id).limit(1);
-                let projectId = (projects as any)?.[0]?.id;
-                if (!projectId) {
-                  const { data: newProject, error: projErr } = await supabase
-                    .from("projects").insert({ name: "내 프로젝트", owner_id: user.id, settings: {} } as any)
-                    .select("id").single();
-                  if (projErr) throw projErr;
-                  projectId = (newProject as any).id;
-                }
-
-                // 3. Create rundown
-                const programTitle = state.parseResult?.cuesheet?.program_title ?? "AI 큐시트";
-                const { data: rundown, error: rErr } = await supabase
-                  .from("rundowns").insert({
-                    project_id: projectId, title: programTitle,
-                    description: `AI 큐시트 자동 생성 — ${new Date().toLocaleDateString()}`,
-                    created_by: user.id,
-                  }).select("id").single();
-                if (rErr) throw rErr;
-                const rundownId = (rundown as any).id;
-
-                // 4. Add generated scenes as rundown_items
-                const doneStates = state.graphicStates.filter((g) => g.status === "done" && g.overlayTemplateId);
-                const scenes = state.parseResult?.cuesheet?.scenes ?? [];
-                const inserts = doneStates.map((gs, i) => {
-                  const scene = scenes[gs.sceneIndex];
-                  return {
-                    rundown_id: rundownId,
-                    source_type: "overlay",
-                    source_id: gs.overlayTemplateId,
-                    source_name: scene?.trigger ?? `Scene ${gs.sceneIndex + 1}`,
-                    data: { scene_data: scene, program_title: programTitle },
-                    item_order: i + 1,
-                    duration: scene?.duration ?? 15,
-                  };
-                });
-
-                if (inserts.length > 0) {
-                  const { error: itemsErr } = await supabase.from("rundown_items").insert(inserts as any);
-                  if (itemsErr) throw itemsErr;
-                }
-
-                // 5. Mark session completed
-                await updateSession(state.sessionId, { status: "completed" });
-
-                // 6. Navigate to rundown
-                showToast(`${inserts.length}개 장면이 런다운에 발행되었습니다.`, "success");
-                setTimeout(() => navigate({ to: `/dashboard/rundowns/${rundownId}` }), 1000);
-              } catch (err: any) {
-                showToast(`발행 실패: ${err.message}`, "error");
-              }
+            onComplete={() => goToStep("rundown-edit")}
+          />
+        )}
+        {state.step === "rundown-edit" && (
+          <StepRundownEdit
+            readiness={currentReadiness}
+            isPublishing={isPublishingRundown}
+            onBack={() => goToStep("graphic-generate")}
+            onPublish={() => { void publishGeneratedScenesToRundown(); }}
+          />
+        )}
+        {state.step === "render-verify" && (
+          <StepRenderVerify
+            rundownId={publishedRundownId}
+            onBack={() => goToStep("rundown-edit")}
+            onOpenRundown={() => {
+              if (publishedRundownId) navigate({ to: `/dashboard/rundowns/${publishedRundownId}` });
             }}
           />
         )}
@@ -562,18 +657,19 @@ function AiCuesheetWizardView() {
 // ═══════════════════════════════════════════════════════════════════
 
 function StepIndicator({
-  steps, currentStep, visitedSteps, labels,
+  steps, currentStep, labels,
 }: {
   steps: CuesheetWizardStep[];
   currentStep: CuesheetWizardStep;
-  visitedSteps: Set<CuesheetWizardStep>;
   labels: Record<CuesheetWizardStep, string>;
 }) {
+  const currentIndex = Math.max(0, steps.indexOf(currentStep));
+
   return (
-    <div className="flex items-center gap-1 shrink-0">
+    <div className="flex items-center gap-1 shrink-0 overflow-x-auto max-w-full">
       {steps.map((s, i) => {
-        const isCurrent = s === currentStep;
-        const isPast = steps.indexOf(currentStep) > i;
+        const isCurrent = i === currentIndex;
+        const isPast = currentIndex > i;
 
         return (
           <div key={s} className="flex items-center gap-1">

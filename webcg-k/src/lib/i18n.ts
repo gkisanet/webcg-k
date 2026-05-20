@@ -32,6 +32,7 @@ import koTemplates from "../locales/ko/templates.json";
 import koFonts from "../locales/ko/fonts.json";
 import koImages from "../locales/ko/images.json";
 import koRundowns from "../locales/ko/rundowns.json";
+import koWhiteboards from "../locales/ko/whiteboards.json";
 
 // ─── 영어 번역 ──────────────────────────────────────────
 import enCommon from "../locales/en/common.json";
@@ -44,6 +45,7 @@ import enTemplates from "../locales/en/templates.json";
 import enFonts from "../locales/en/fonts.json";
 import enImages from "../locales/en/images.json";
 import enRundowns from "../locales/en/rundowns.json";
+import enWhiteboards from "../locales/en/whiteboards.json";
 
 i18n
 	.use(initReactI18next)
@@ -61,6 +63,7 @@ i18n
 				fonts: koFonts,
 				images: koImages,
 				rundowns: koRundowns,
+				whiteboards: koWhiteboards,
 			},
 			en: {
 				common: enCommon,
@@ -73,6 +76,7 @@ i18n
 				fonts: enFonts,
 				images: enImages,
 				rundowns: enRundowns,
+				whiteboards: enWhiteboards,
 			},
 		},
 
@@ -83,7 +87,7 @@ i18n
 
 		// 3. Namespace 설정
 		defaultNS: "common",
-		ns: ["common", "dashboard", "broadcast", "admin", "datasources", "graphics", "templates", "fonts", "images", "rundowns"],
+		ns: ["common", "dashboard", "broadcast", "admin", "datasources", "graphics", "templates", "fonts", "images", "rundowns", "whiteboards"],
 
 		// 4. 보간(Interpolation) — React가 XSS 방어를 하므로 이중 이스케이프 불필요
 		interpolation: {

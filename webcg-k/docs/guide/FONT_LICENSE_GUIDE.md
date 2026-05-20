@@ -1,220 +1,220 @@
-# WebCG-K Font Management & Bundling Guide
+# WebCG-K 폰트 관리 및 번들링 가이드
 
-> **Date**: 2026-02-19  
-> **Scope**: Management, bundling, and licensing guidelines for fonts utilized within broadcast graphics playouts.  
-> **Target**: Comprehensive and practical breakdown for both developers and operators.
-
----
-
-## 📋 Table of Contents
-
-1. [What is Font Bundling?](#1-what-is-font-bundling)
-2. [Bundled Fonts Registry](#2-bundled-fonts-registry)
-3. [Step-by-Step Font Bundling Guide](#3-step-by-step-font-bundling-guide)
-4. [Acquisition & Downstream Setup](#4-acquisition--downstream-setup)
-5. [Writing @font-face Definitions](#5-writing-font-face-definitions)
-6. [Registering Fonts in fontRegistry.ts](#6-registering-fonts-in-fontregistryts)
-7. [Font License Matrix](#7-font-license-matrix)
-8. [Workflow for Paid Commercial Fonts](#8-workflow-for-paid-commercial-fonts)
-9. [Offline Font Optimization (Subsetting)](#9-offline-font-optimization-subsetting)
-10. [Major Font Foundries & Registries](#10-major-font-foundries--registries)
+> **작성일**: 2026-02-19  
+> **범위**: 방송 그래픽 시스템에서 사용되는 폰트의 관리, 번들링, 라이선스 지침  
+> **대상**: 폰트 관리가 처음인 분도 따라할 수 있도록 작성
 
 ---
 
-## 1. What is Font Bundling?
+## 📋 목차
 
-**"Font Bundling"** refers to storing font asset files directly within the local workspace directory, rather than fetching them from external CDNs at runtime.
+1. [번들링이란?](#1-번들링이란)
+2. [현재 프로젝트에 번들링된 폰트 목록](#2-현재-프로젝트에-번들링된-폰트-목록)
+3. [폰트 번들링 절차 (처음부터 끝까지)](#3-폰트-번들링-절차-처음부터-끝까지)
+4. [각 폰트별 입수 경로 및 설치 방법](#4-각-폰트별-입수-경로-및-설치-방법)
+5. [@font-face 등록 방법](#5-font-face-등록-방법)
+6. [fontRegistry에 폰트 등록하기](#6-fontregistry에-폰트-등록하기)
+7. [라이선스 유형별 적용 가능 여부](#7-라이선스-유형별-적용-가능-여부)
+8. [구매 폰트 도입 절차](#8-구매-폰트-도입-절차)
+9. [오프라인 폰트 변환 (서브셋팅)](#9-오프라인-폰트-변환-서브셋팅)
+10. [주요 폰트 파운드리 정보](#10-주요-폰트-파운드리-정보)
 
-### Why Bundle Fonts?
+---
 
-Typical public web applications fetch assets dynamically from public content delivery networks (CDNs) like Google Fonts:
+## 1. 번들링이란?
+
+**"폰트 번들링"**이란, 웹 페이지에서 사용할 폰트 파일을 **프로젝트 안에 직접 넣어두는 것**을 말합니다.
+
+### 왜 번들링이 필요한가?
+
+일반적인 웹사이트는 Google Fonts 같은 **외부 서버(CDN)**에서 폰트를 받아옵니다:
 
 ```html
-<!-- ❌ CDN Playout Pathway — Requires active Internet connectivity -->
+<!-- ❌ CDN 방식 — 인터넷이 필요 -->
 <link href="https://fonts.googleapis.com/css2?family=Inter" rel="stylesheet">
 ```
 
-However, the WebCG-K broadcast environment operates under strict **internal intranet networks (air-gapped environments)**. 
-Without public Internet access, CDN requests fail, reverting on-screen text to standard default system typography (e.g., Arial, Times New Roman), which ruins designed templates.
+하지만 우리 프로젝트는 **사내망(에어갭) 환경**에서 동작해야 합니다. 인터넷이 없으면 폰트를 받아올 수 없어서 글자가 기본 시스템 폰트(돋움, 굴림 등)로 표시됩니다.
 
-By keeping copy-on-write assets saved within local assets folders, we ensure stable rendering regardless of network states:
+그래서 폰트 파일을 프로젝트 폴더에 **직접 넣어두고**, CSS에서 그 파일을 참조하는 방식을 사용합니다:
 
 ```css
-/* ✅ Bundled Playout Pathway — Zero network queries required */
+/* ✅ 번들링 방식 — 인터넷 불필요 */
 @font-face {
   font-family: "Inter";
   src: url("/fonts/inter/Inter-Regular.woff2") format("woff2");
 }
 ```
 
-### Font Format Specifications
+### 폰트 파일 형식
 
-| Format | Extension | Attributes |
+| 형식 | 확장자 | 특징 |
 |------|--------|------|
-| **WOFF2** | `.woff2` | 🏆 **Optimal Choice**. Employs high-performance Brotli compression; natively supported by all modern Chromium engines. |
-| **WOFF** | `.woff` | Fallback option if WOFF2 assets are unavailable. File sizes are typically 20-30% larger than WOFF2. |
-| **TTF** | `.ttf` | Raw uncompressed assets. Vector masters. Avoid using TTF assets on rendering layers due to overhead. |
-| **OTF** | `.otf` | Similar to TTF but supports advanced OpenType curves. Avoid deploying OTF files on rendering layers due to file size. |
+| **WOFF2** | `.woff2` | 🏆 **최우선 사용**. 가장 높은 압축률(Brotli), 모든 최신 브라우저 지원 |
+| **WOFF** | `.woff` | WOFF2를 구할 수 없을 때 대안. WOFF2보다 용량이 20~30% 더 큼 |
+| **TTF** | `.ttf` | 무압축. 원본 폰트 파일 형식. 웹에서는 가급적 사용하지 않음 |
+| **OTF** | `.otf` | TTF와 비슷하지만 OpenType 기능 지원. 역시 웹에서는 비권장 |
 
 > [!TIP]
-> **Prioritize WOFF2 assets.** 
-> Smaller file sizes lead to faster viewport loads. If a font is only available in WOFF format, use WOFF, but try to avoid raw TTF and OTF formats on playout overlays.
+> **항상 WOFF2를 최우선으로** 사용하세요. 용량이 작아 페이지 로딩이 빠릅니다.  
+> WOFF2를 구할 수 없으면 WOFF를 사용합니다.
 
 ---
 
-## 2. Bundled Fonts Registry
+## 2. 현재 프로젝트에 번들링된 폰트 목록
 
-### 🇰🇷 Korean Fonts (7 Styles)
+### 🇰🇷 한글 폰트 (7종)
 
-| Style | Purpose | License | Weights | Format | Avg. File Size |
+| 폰트 | 용도 | 라이선스 | 굵기(Weight) | 형식 | 파일 크기/개 |
 |------|------|---------|-------------|------|-------------|
-| **Pretendard** | UI Default (Korean) | SIL OFL | 400, 500, 600, 700 | WOFF2 | ~260 KB |
-| **Spoqa Han Sans Neo** | Data and Tickers | SIL OFL | 400, 500, 700 | WOFF2 | ~175 KB |
-| **SUIT** | High-contrast Modern UI | SIL OFL | 100 to 900 (9 Steps) | WOFF2 | ~165 KB |
-| **Noto Sans KR** | General Typography | SIL OFL | 400, 500, 600, 700 | WOFF2 | ~540 KB |
-| **Gmarket Sans** | CG Titles / Subtitles | Free (Commercial) | 300, 500, 700 | WOFF | ~590 KB |
-| **Nanum Square Neo** | News Infographics | SIL OFL | 300, 400, 700, 800, 900 | WOFF2 | ~370 KB |
-| **S-Core Dream** | Heading Gothic | Free (Commercial) | 300 to 900 (7 Steps) | WOFF | ~355 KB |
+| **Pretendard** | UI 기본 (한글) | OFL | 400, 500, 600, 700 | WOFF2 | ~260KB |
+| **Spoqa Han Sans Neo** | 데이터/숫자 화면 | OFL | 400, 500, 700 | WOFF2 | ~175KB |
+| **SUIT** | 세련된 UI | OFL | 100~900 (9단계) | WOFF2 | ~165KB |
+| **Noto Sans KR** | 범용 본고딕 | OFL | 400, 500, 600, 700 | WOFF2 | ~540KB |
+| **Gmarket Sans** | CG 타이틀/자막 | 무료(상업용) | 300, 500, 700 | WOFF | ~590KB |
+| **Nanum Square Neo** | 뉴스/인포그래픽 | OFL | 300, 400, 700, 800, 900 | WOFF2 | ~370KB |
+| **에스코어 드림 (S-Core Dream)** | 제목용 고딕 | 무료(상업용) | 300~900 (7단계) | WOFF | ~355KB |
 
-### 🇺🇸 English Fonts (7 Styles)
+### 🇺🇸 영문 폰트 (5종 + 기존 2종)
 
-| Style | Purpose | License | Weights | Format | Avg. File Size |
+| 폰트 | 용도 | 라이선스 | 굵기(Weight) | 형식 | 파일 크기/개 |
 |------|------|---------|-------------|------|-------------|
-| **Inter** | UI Default (English) | SIL OFL | 400, 500, 600, 700 | WOFF2 | ~23 KB |
-| **JetBrains Mono** | Code & Variables | Apache 2.0 | 400, 700 | WOFF2 | ~20 KB |
-| **Roboto** | Standard Sans-Serif | Apache 2.0 | 400, 500, 700 | WOFF2 | ~20 KB |
-| **Roboto Condensed** | High-density Tickers | Apache 2.0 | 400, 700 | WOFF2 | ~20 KB |
-| **Montserrat** | Editorial Titles | SIL OFL | 400, 500, 600, 700 | WOFF2 | ~18 KB |
-| **Oswald** | Sports Tickers | SIL OFL | 400, 500, 600, 700 | WOFF2 | ~12 KB |
-| **Poppins** | Rounded Typography | SIL OFL | 400, 500, 600, 700 | WOFF2 | ~7 KB |
+| **Inter** | UI 기본 (영문) | OFL | 400, 500, 600, 700 | WOFF2 | ~23KB |
+| **JetBrains Mono** | 코드/모노스페이스 | Apache 2.0 | 400, 700 | WOFF2 | ~20KB |
+| **Roboto** | 구글 기본 | Apache 2.0 | 400, 500, 700 | WOFF2 | ~20KB |
+| **Roboto Condensed** | 좁은 공간용 | Apache 2.0 | 400, 700 | WOFF2 | ~20KB |
+| **Montserrat** | 세련된 타이틀 | OFL | 400, 500, 600, 700 | WOFF2 | ~18KB |
+| **Oswald** | 스포츠/뉴스 티커 | OFL | 400, 500, 600, 700 | WOFF2 | ~12KB |
+| **Poppins** | 둥근 친근한 느낌 | OFL | 400, 500, 600, 700 | WOFF2 | ~7KB |
 
-### 📊 Directory Assets Map
+### 📊 파일 위치
 
-All bundled font assets are located in the following path:
+모든 번들 폰트는 아래 경로에 위치합니다:
 
 ```
 webcg-k/public/fonts/
-├── inter/                    ➔ UI Default English
-├── pretendard/               ➔ UI Default Korean
-├── jetbrains-mono/           ➔ Monospace editor assets
-├── spoqa-han-sans-neo/       ➔ Data and numbers
-├── suit/                     ➔ High-contrast Modern UI
-├── noto-sans-kr/             ➔ General typography
-├── gmarket-sans/             ➔ Title graphics
-├── nanum-square-neo/         ➔ News and labels
-├── scdream/                  ➔ Heading Gothic
-├── roboto/                   ➔ Standard Sans-Serif
-├── roboto-condensed/         ➔ High-density tickers
-├── montserrat/               ➔ Editorial titles
-├── oswald/                   ➔ Sports tickers
-└── poppins/                  ➔ Rounded friendly typography
+├── inter/                    ← UI 기본 영문
+├── pretendard/               ← UI 기본 한글
+├── jetbrains-mono/           ← 코드 전용
+├── spoqa-han-sans-neo/       ← 데이터/숫자
+├── suit/                     ← 세련된 UI
+├── noto-sans-kr/             ← 범용 본고딕
+├── gmarket-sans/             ← CG 타이틀
+├── nanum-square-neo/         ← 뉴스/인포그래픽
+├── scdream/                  ← 제목용 고딕
+├── roboto/                   ← 구글 기본
+├── roboto-condensed/         ← 좁은 공간용
+├── montserrat/               ← 세련된 타이틀
+├── oswald/                   ← 스포츠/티커
+└── poppins/                  ← 둥근 친근한
 ```
 
 ---
 
-## 3. Step-by-Step Font Bundling Guide
+## 3. 폰트 번들링 절차 (처음부터 끝까지)
 
-Follow this **4-stage process** to add new fonts to the WebCG-K workspace:
+새로운 폰트를 프로젝트에 추가하려면 아래 **4단계**를 따릅니다.
 
-### Process Flow
+### 전체 흐름도
 
 ```
-[Stage 1] Acquire WOFF2 asset files
-            │
-            ▼
-[Stage 2] Save files in public/fonts/ directories
-            │
-            ▼
-[Stage 3] Write @font-face declarations in CSS
-            │
-            ▼
-[Stage 4] Add the font configuration to fontRegistry.ts
+[1단계] 폰트 파일 구하기 (WOFF2)
+          ↓
+[2단계] public/fonts/ 폴더에 파일 배치
+          ↓
+[3단계] CSS에 @font-face 등록
+          ↓
+[4단계] fontRegistry.ts에 시스템 폰트로 등록
 ```
 
-### Stage 1: Acquire the Font Files
+### 1단계: 폰트 파일 구하기
 
-You can acquire font assets using one of three methods:
+폰트 파일을 구하는 방법은 크게 3가지입니다:
 
-#### Method A: Extracting from npm Packages (Recommended)
+#### 방법 A: npm 패키지에서 추출 (가장 편리)
 
 ```bash
-# 1. Install target package
+# 1. 패키지 설치
 npm install --save-dev @fontsource/montserrat
 
-# 2. Locate the output WOFF2 files
+# 2. 설치된 파일 경로 확인
 find node_modules/@fontsource/montserrat/files -name "*latin-400*normal*woff2"
-# ➔ node_modules/@fontsource/montserrat/files/montserrat-latin-400-normal.woff2
+#    → node_modules/@fontsource/montserrat/files/montserrat-latin-400-normal.woff2
 
-# 3. Copy files to public/fonts/ directories
+# 3. public/fonts/로 복사
 mkdir -p public/fonts/montserrat
 cp node_modules/@fontsource/montserrat/files/montserrat-latin-400-normal.woff2 \
    public/fonts/montserrat/Montserrat-Regular.woff2
 ```
 
 > [!NOTE]
-> The `@fontsource` library publishes Google Fonts as npm packages. 
-> For English fonts, copy only the `latin` subset; for Korean fonts, target the `korean` subset.
+> **`@fontsource`** 패키지는 Google Fonts에 있는 거의 모든 폰트를 npm으로 제공합니다.  
+> 영문 폰트는 `latin` subset만 복사하면 됩니다. (한글 폰트는 `korean` subset)
 
-#### Method B: Downloading GitHub Release ZIPs
+#### 방법 B: GitHub 릴리즈에서 다운로드 (한글 폰트)
 
 ```bash
-# Example: Fetching SUIT fonts from a GitHub release
+# 예: SUIT 폰트 (GitHub 릴리즈 → ZIP 파일)
 curl -sL -o /tmp/suit.zip \
   "https://github.com/sun-typeface/SUIT/releases/latest/download/SUIT-woff2.zip"
 
-# Unpack ZIP and copy WOFF2 files
+# ZIP 해제 후 필요한 파일만 복사
 python3 -c "import zipfile; zipfile.ZipFile('/tmp/suit.zip').extractall('/tmp/suit')"
 cp /tmp/suit/*.woff2 public/fonts/suit/
 ```
 
-#### Method C: Downloading from CDN Endpoints
+#### 방법 C: CDN URL에서 직접 다운로드 (눈누/네이버)
 
 ```bash
-# Fetching S-Core Dream from Noonnu CDN
+# 예: 에스코어 드림 (눈누 CDN)
 curl -o public/fonts/scdream/SCDream5-Medium.woff \
   "https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_six@1.2/S-CoreDream-5Medium.woff"
 
-# Fetching Nanum Square Neo from Naver CDN
+# 예: Nanum Square Neo (네이버 CDN)
 curl -o public/fonts/nanum-square-neo/NanumSquareNeo-Regular.woff2 \
   "https://hangeul.pstatic.net/hangeul_static/webfont/NanumSquareNeo/NanumSquareNeoTTF-bRg.woff2"
 ```
 
-### Stage 2: Save the Files
+> [!TIP]
+> **눈누(noonnu.cc)** 에서 한글 폰트를 검색하면, `@font-face` CSS 코드와 함께 CDN URL을 제공합니다.  
+> 그 URL에서 직접 WOFF/WOFF2 파일을 다운로드할 수 있습니다.
 
-Save the files in `public/fonts/[font-name]/` directories.
+### 2단계: 파일 배치
+
+다운로드한 파일을 `public/fonts/[폰트이름]/` 폴더에 넣습니다.
 
 ```bash
-mkdir -p public/fonts/new-font-family
-cp target-file.woff2 public/fonts/new-font-family/
+mkdir -p public/fonts/새폰트이름
+cp 다운로드한파일.woff2 public/fonts/새폰트이름/
 ```
 
-**Recommended Naming Conventions:**
+**파일명 규칙** (권장):
 ```
-[FontName]-[WeightName].woff2
-Examples: Montserrat-Regular.woff2     ➔ Weight 400
-          Montserrat-Medium.woff2      ➔ Weight 500
-          Montserrat-SemiBold.woff2    ➔ Weight 600
-          Montserrat-Bold.woff2        ➔ Weight 700
+폰트이름-Weight.woff2
+예: Montserrat-Regular.woff2     ← Weight 400
+    Montserrat-Medium.woff2      ← Weight 500
+    Montserrat-SemiBold.woff2    ← Weight 600
+    Montserrat-Bold.woff2        ← Weight 700
 ```
 
-### Stage 3: Write `@font-face` Definitions in CSS
+### 3단계: CSS에 @font-face 등록
 
-Add the `@font-face` blocks to `src/styles.css`:
+`src/fonts.css` 파일에 아래 형식으로 추가합니다:
 
 ```css
 /* ────────────────────────────────────────────────
- * Montserrat — Elegant Editorial Sans-Serif
- * License: SIL Open Font License (OFL)
+ * Montserrat — 세련된 타이틀용 산세리프
+ * 라이선스: OFL (SIL Open Font License)
  * ──────────────────────────────────────────────── */
 
 /* Montserrat Regular (400) */
 @font-face {
-  font-family: "Montserrat";         /* ① Name reference used in CSS layouts */
-  font-style: normal;                /* ② Font-style: normal or italic */
-  font-weight: 400;                  /* ③ Numeric scale: 100 to 900 */
-  font-display: swap;                /* ④ swap avoids FOUT (Flash of Unstyled Text) */
+  font-family: "Montserrat";         /* ① CSS에서 사용할 이름 */
+  font-style: normal;                /* ② normal 또는 italic */
+  font-weight: 400;                  /* ③ 숫자 100~900 */
+  font-display: swap;                /* ④ 폰트 로딩 전 시스템 폰트로 표시 */
   src: url("/fonts/montserrat/Montserrat-Regular.woff2") format("woff2");
-  /*    ⑤ Relative filepath resolved from public/  ⑥ Format wrapper */
+  /*    ⑤ 파일 경로 (public/ 기준 상대경로)    ⑥ 파일 형식 */
 }
 
 /* Montserrat Bold (700) */
@@ -227,172 +227,173 @@ Add the `@font-face` blocks to `src/styles.css`:
 }
 ```
 
-#### Properties Breakdown
+**각 항목 설명:**
 
-| Index | CSS Property | Description |
+| 번호 | 속성 | 설명 |
 |------|------|------|
-| ① | `font-family` | The font family name referenced in CSS properties. Under the same family name, different weights are grouped together. |
-| ② | `font-style` | `normal` or `italic`. |
-| ③ | `font-weight` | Numeric scales from 100 (Thin) to 900 (Black). Standard values: 400 (Regular), 500 (Medium), 700 (Bold). |
-| ④ | `font-display` | Setting to `swap` instructs Chromium to render fallback system fonts until target web fonts load, keeping text visible. |
-| ⑤ | `src: url(...)` | Absolute font path relative to the `public/` directory root (`/`). |
-| ⑥ | `format(...)` | Declares file types (`"woff2"` or `"woff"`) so browsers can verify compatibility before downloading. |
+| ① | `font-family` | CSS에서 이 폰트를 부를 때 쓰는 이름. 같은 이름이면 같은 폰트 패밀리로 묶임 |
+| ② | `font-style` | `normal` (일반) 또는 `italic` (기울임) |
+| ③ | `font-weight` | 100(Thin) ~ 900(Black). 400=Regular, 500=Medium, 700=Bold |
+| ④ | `font-display` | `swap` = 폰트 로딩 전에 시스템 폰트로 먼저 텍스트를 보여줌 (깜빡임 방지) |
+| ⑤ | `src: url(...)` | 폰트 파일의 경로. `public/` 폴더가 루트(`/`)가 됨 |
+| ⑥ | `format(...)` | `"woff2"` 또는 `"woff"` — 브라우저에게 파일 형식을 알려줌 |
 
 > [!IMPORTANT]
-> To optimize Korean fonts, declare `unicode-range` selectors in the `@font-face` definitions. 
-> This restricts font downloads to pages rendering Korean characters, improving load speeds.
+> **한글 폰트**는 `unicode-range`를 추가하면 성능이 개선됩니다.  
+> 영문 입력 시에는 한글 폰트 파일을 다운로드하지 않아 로딩이 빨라집니다.
 >
 > ```css
 > @font-face {
 >   font-family: "Pretendard";
 >   font-weight: 400;
 >   src: url("/fonts/pretendard/Pretendard-Regular.subset.woff2") format("woff2");
->   unicode-range: U+AC00-D7A3, U+3130-318F; /* Korean syllables and Jamo */
+>   unicode-range: U+AC00-D7A3, U+3130-318F;  /* 한글 완성형 + 자모 */
 > }
 > ```
 
-### Stage 4: Register in `fontRegistry.ts`
+### 4단계: fontRegistry에 등록
 
-Add the font metadata to the `SYSTEM_FONTS` array in `src/lib/fontRegistry.ts`:
+`src/lib/fontRegistry.ts`의 `SYSTEM_FONTS` 배열에 폰트 정보를 추가합니다:
 
 ```typescript
 {
-  family: "Montserrat",         // CSS font-family name (must match Stage 3)
-  label: "Montserrat",          // Display name shown in UI dropdowns
-  weights: [400, 500, 600, 700],// Array of registered weights
-  category: "broadcast",        // Category: "system" | "broadcast" | "custom"
-  license: "OFL",               // Font license type
-  previewText: "ABCDE 12345",   // Preview text string
-}
+  family: "Montserrat",         // CSS font-family 이름 (3단계 ①과 동일)
+  label: "Montserrat",          // 폰트 관리 UI에 표시될 이름
+  weights: [400, 500, 600, 700],// 등록한 weight 목록
+  category: "broadcast",        // "system" | "broadcast" | "custom"
+  license: "OFL",               // 라이선스 유형
+  previewText: "ABCDE 12345",  // 미리보기 텍스트
+},
 ```
 
-#### Category Definitions
+**카테고리(category) 구분:**
 
-| Category | Description | Target Fonts |
+| 값 | 의미 | 대상 |
 |---|---|---|
-| `system` | Core application UI elements | Inter, Pretendard, JetBrains Mono |
-| `broadcast` | Broadcast graphics and overlays | Gmarket Sans, Oswald (for titles, subtitles, and tickers) |
-| `custom` | User-uploaded assets | Dynamic font assets uploaded by operators in the admin dashboard |
+| `system` | UI 시스템 폰트 | Inter, Pretendard, JetBrains Mono |
+| `broadcast` | 방송 그래픽용 | Gmarket Sans, Oswald 등 제목/자막용 |
+| `custom` | 사용자 업로드 | 대시보드에서 업로드한 폰트 |
 
 ---
 
-## 4. Acquisition & Downstream Setup
+## 4. 각 폰트별 입수 경로 및 설치 방법
 
-### Korean Fonts Setup
+### 한글 폰트
 
-| Font Name | Acquisition | Primary Source URL |
+| 폰트 | 입수 방법 | 출처 URL |
 |------|----------|----------|
-| **Pretendard** | npm: `pretendard` | [GitHub Releases](https://github.com/orioncactus/pretendard) |
-| **Spoqa Han Sans Neo** | npm: `spoqa-han-sans` (Extract WOFF2 Subsets) | [GitHub Source](https://github.com/spoqa/spoqa-han-sans) |
-| **SUIT** | Fetch releases ZIP | [GitHub Releases](https://github.com/sun-typeface/SUIT) |
-| **Noto Sans KR** | npm: `@fontsource/noto-sans-kr` or [Google Web Fonts Helper](https://gwfh.mranftl.com/) | [Google Fonts spec](https://fonts.google.com/noto/specimen/Noto+Sans+KR) |
-| **Gmarket Sans** | Download assets from Noonnu | [Noonnu Portal](https://noonnu.cc/font_page/366) |
-| **Nanum Square Neo** | Download Naver CDN files | [Naver Hangeul spec](https://hangeul.naver.com/font) |
-| **S-Core Dream** | Download assets from Noonnu | [Noonnu Portal](https://noonnu.cc/font_page/6) |
+| Pretendard | npm: `pretendard` | [GitHub](https://github.com/orioncactus/pretendard) |
+| Spoqa Han Sans Neo | npm: `spoqa-han-sans` (Subset 사용) | [GitHub](https://github.com/spoqa/spoqa-han-sans) |
+| SUIT | GitHub 릴리즈 ZIP 다운로드 | [GitHub](https://github.com/sun-typeface/SUIT) |
+| Noto Sans KR | npm: `@fontsource/noto-sans-kr` 또는 [gwfh](https://gwfh.mranftl.com/) | [Google Fonts](https://fonts.google.com/noto/specimen/Noto+Sans+KR) |
+| Gmarket Sans | 눈누 CDN 다운로드 | [눈누](https://noonnu.cc/font_page/366) |
+| Nanum Square Neo | 네이버 CDN 다운로드 | [네이버 한글](https://hangeul.naver.com/font) |
+| S-Core Dream | 눈누 CDN 다운로드 | [눈누](https://noonnu.cc/font_page/6) |
 
-### English Fonts Setup
+### 영문 폰트
 
-| Font Name | Acquisition | npm Package |
+| 폰트 | 입수 방법 | npm 패키지명 |
 |------|----------|-------------|
-| **Inter** | npm: `@fontsource/inter` | `@fontsource/inter` |
-| **Roboto** | npm: `@fontsource/roboto` | `@fontsource/roboto` |
-| **Roboto Condensed** | npm: `@fontsource/roboto-condensed` | `@fontsource/roboto-condensed` |
-| **Montserrat** | npm: `@fontsource/montserrat` | `@fontsource/montserrat` |
-| **Oswald** | npm: `@fontsource/oswald` | `@fontsource/oswald` |
-| **Poppins** | npm: `@fontsource/poppins` | `@fontsource/poppins` |
+| Inter | npm: `@fontsource/inter` | `@fontsource/inter` |
+| Roboto | npm: `@fontsource/roboto` | `@fontsource/roboto` |
+| Roboto Condensed | npm: `@fontsource/roboto-condensed` | `@fontsource/roboto-condensed` |
+| Montserrat | npm: `@fontsource/montserrat` | `@fontsource/montserrat` |
+| Oswald | npm: `@fontsource/oswald` | `@fontsource/oswald` |
+| Poppins | npm: `@fontsource/poppins` | `@fontsource/poppins` |
 
 > [!TIP]
-> **Average Font File Sizes**:  
-> - **English WOFF2**: 7 to 23 KB per weight (highly optimized).
-> - **Korean WOFF2 Subsets**: 160 to 550 KB per weight (larger due to the larger character set).
-> - **Korean WOFF (Uncompressed)**: 350 to 615 KB per weight (about twice the size of WOFF2).
+> **폰트 파일 용량 참고**:  
+> - 영문 폰트 WOFF2: 7~23KB/weight (매우 가벼움)  
+> - 한글 폰트 WOFF2 서브셋: 160~550KB/weight (글자 수가 많아 더 큼)  
+> - 한글 폰트 WOFF(비압축): 350~615KB/weight (WOFF2보다 약 2배)
 
 ---
 
-## 5. Writing `@font-face` Definitions
+## 5. @font-face 등록 방법
 
-Declare corresponding numeric font weights according to standard scales:
+`src/fonts.css`에 등록하는 전체 예시입니다.  
+Weight에 해당하는 숫자값 참고표:
 
-| Font Weight (Value) | Label | Description |
-|------|------|-------------|
-| 100 | Thin | Hairline style |
-| 200 | ExtraLight | Ultra-light weight |
-| 300 | Light | Light weight |
-| **400** | **Regular** | **Standard body text** |
-| **500** | **Medium** | **Medium weight** |
-| **600** | **SemiBold** | **Medium-bold weight** |
-| **700** | **Bold** | **Standard bold headings** |
-| 800 | ExtraBold / Heavy | Ultra-bold weight |
-| 900 | Black | Heaviest weight |
-
----
-
-## 6. Registering Fonts in `fontRegistry.ts`
-
-Adding a font to the `SYSTEM_FONTS` array in `src/lib/fontRegistry.ts` automatically lists it in the graphic editor's font selectors.
-
-Declaring `@font-face` blocks in CSS only enables them in code; they will not display in the editor's UI selectors until they are registered in `fontRegistry.ts`.
+| 숫자 | 이름 | 설명 |
+|------|------|------|
+| 100 | Thin | 가장 얇은 |
+| 200 | ExtraLight | 매우 얇은 |
+| 300 | Light | 가벼운 |
+| **400** | **Regular** | **기본 굵기** |
+| **500** | **Medium** | **약간 굵은** |
+| **600** | **SemiBold** | **중간 굵은** |
+| **700** | **Bold** | **굵은** |
+| 800 | ExtraBold / Heavy | 매우 굵은 |
+| 900 | Black | 가장 굵은 |
 
 ---
 
-## 7. Font License Matrix
+## 6. fontRegistry에 폰트 등록하기
 
-| License Type | Scope | `@font-face` Support | Package Embedding | Playout Suitability |
+`src/lib/fontRegistry.ts`의 `SYSTEM_FONTS` 배열에 추가하면, 대시보드 "폰트" 메뉴와 그래픽 편집기의 폰트 선택 목록에 자동으로 표시됩니다.
+
+등록하지 않아도 CSS에 `@font-face`만 있으면 **코드에서는** 사용 가능하지만, **UI 목록에는 나타나지 않습니다**.
+
+---
+
+## 7. 라이선스 유형별 적용 가능 여부
+
+| 라이선스 | 설명 | `@font-face` 사용 | 프로젝트 포함 | WebCG-K 적용 |
 |---|---|---|---|---|
-| **SIL Open Font License (OFL)** | Free to distribute, modify, and bundle commercially. | ✅ Allowed | ✅ Allowed | ✅ **Highly Recommended** |
-| **Apache 2.0** | Free to use and distribute for all use cases. | ✅ Allowed | ✅ Allowed | ✅ **Highly Recommended** |
-| **Webfont License** | Explicit authorization to host fonts on web servers. | ✅ Allowed | ✅ Allowed | ✅ **Suitable** (Check pageview/domain limits) |
-| **App Embedding License** | Explicit authorization to bundle fonts inside applications. | ✅ Allowed | ✅ Allowed | ✅ **Suitable** (Check installation count limits) |
-| **Desktop License** | Restricts usage to local workstations. | ❌ Forbidden | ❌ Forbidden | ❌ **Strictly Prohibited** |
-| **Personal Use Only** | Restricts usage to non-commercial projects. | ❌ Forbidden | ❌ Forbidden | ❌ **Strictly Prohibited** |
+| **OFL (SIL Open Font License)** | 무료, 재배포/수정 가능 | ✅ | ✅ | ✅ 적극 권장 |
+| **Apache 2.0** | 무료, 모든 용도 허용 | ✅ | ✅ | ✅ 적극 권장 |
+| **웹 라이선스 (Webfont)** | 서버 호스팅 허용 | ✅ | ✅ | ✅ 가능 (도메인/PV 제한 확인) |
+| **앱 임베드 라이선스** | 앱 내 임베딩 허용 | ✅ | ✅ | ✅ 가능 (수량 제한 확인) |
+| **데스크탑 라이선스** | PC 설치 전용 | ❌ | ❌ | ❌ **사용 불가** |
+| **개인 사용 전용** | 비상업 용도만 | ❌ | ❌ | ❌ **사용 불가** |
 
 > [!CAUTION]
-> **Desktop licenses only authorize using the font on local computers (e.g. inside Microsoft Word or Photoshop).**
-> Deploying desktop-only fonts in web applications via `@font-face` **violates licensing terms**. 
-> Commercial paid fonts require explicit Webfont or App Embedding licenses.
+> **데스크탑 라이선스**는 PC에 설치해서 사용하는 용도입니다.  
+> `@font-face`로 웹앱에 포함하면 **라이선스 위반**입니다.  
+> 반드시 **웹 라이선스** 또는 **앱 임베드 라이선스**를 별도 구매해야 합니다.
 
 ---
 
-## 8. Workflow for Paid Commercial Fonts
+## 8. 구매 폰트 도입 절차
 
 ```
-1. License Evaluation
-   └─ Ensure you have "Webfont" or "App Embedding" licenses.
-   └─ Verify domain restrictions, monthly pageview limits, and seat counts.
-   └─ Desktop-only licenses ❌ cannot be deployed in web applications.
+1. 라이선스 확인
+   └─ "웹 라이선스" 또는 "앱 임베드 라이선스"인지 확인
+   └─ 도메인 제한, PV 제한, 동시 사용자 수 제한 확인
+   └─ 데스크탑 전용이면 ❌ 웹앱 사용 불가
 
-2. Font Compression (WOFF2 Optimization)
-   └─ Convert raw OTF/TTF masters to compressed WOFF2 formats (using python tools).
-   └─ Apply subsetting: extract only standard Korean syllables (2,350 characters), basic ASCII, and punctuation.
-   └─ Target: reduces file sizes to ~50-100 KB per weight (a 70-80% file size reduction).
+2. 폰트 파일 변환 (WOFF2 최적화)
+   └─ OTF/TTF → WOFF2 변환 (fonttools + brotli)
+   └─ 서브셋팅: 한글 완성형(2,350자) + ASCII + 특수문자만 추출
+   └─ 결과: ~50~100KB/weight (원본 대비 70~80% 감소)
 
-3. Upload Assets
-   └─ Admin Dashboard ➔ Fonts ➔ Upload Font asset files.
-   └─ Define the family name, UI labels, weight levels, and license terms.
-   └─ Document acquisition invoices, seat volumes, and renewal dates in metadata fields.
+3. 업로드
+   └─ 대시보드 → 폰트 → "폰트 업로드" 버튼
+   └─ 패밀리 이름, 표시 이름, weight, 라이선스 유형 입력
+   └─ 라이선스 메모에 구매처/수량/만료일 기재
 
-4. Playout Deployment
-   └─ Uploaded fonts automatically display in graphic editor selectors.
-   └─ Playout renderers generate dynamic @font-face rules at runtime.
+4. 사용
+   └─ 그래픽 편집기에서 폰트 선택 시 자동 표시
+   └─ 렌더러에서 동적 @font-face로 자동 적용
 ```
 
 ---
 
-## 9. Offline Font Optimization (Subsetting)
+## 9. 오프라인 폰트 변환 (서브셋팅)
 
-Because air-gapped workspaces lack access to online font converters, use a Python script to optimize fonts offline:
+사내망 환경에서는 인터넷 도구를 사용할 수 없으므로, Python 기반 오프라인 변환을 사용합니다:
 
 ```bash
-# Install fonttools and brotli (required once)
+# 설치 (최초 1회)
 pip install fonttools brotli
 
-# Extract Korean syllables, basic ASCII, and CJK punctuation to output WOFF2 subsets
+# 한글 완성형 + ASCII + 특수문자 추출 → WOFF2 변환
 pyftsubset NotoSansKR-Regular.otf \
     --unicodes="U+0020-007E,U+AC00-D7A3,U+3130-318F,U+2000-206F,U+3000-303F" \
     --flavor=woff2 \
     --output-file=NotoSansKR-Regular.subset.woff2
 
-# Optimize multiple weights using a loop
+# Weight별 반복
 for weight in Regular Medium Bold; do
     pyftsubset "NotoSansKR-${weight}.otf" \
         --unicodes="U+0020-007E,U+AC00-D7A3,U+3130-318F,U+2000-206F,U+3000-303F" \
@@ -401,44 +402,42 @@ for weight in Regular Medium Bold; do
 done
 ```
 
-#### Unicode Ranges Explained
+**유니코드 범위 설명:**
 
-| Range | Characters Included |
+| 범위 | 의미 |
 |------|------|
-| `U+0020-007E` | Basic Latin ASCII (English characters, numbers, and basic symbols) |
-| `U+AC00-D7A3` | Korean syllables (11,172 characters) |
-| `U+3130-318F` | Korean Jamo (consonants and vowels) |
-| `U+2000-206F` | Common punctuation marks (e.g. em-dashes, ellipses) |
-| `U+3000-303F` | CJK punctuation and symbols |
+| `U+0020-007E` | 기본 ASCII (영문, 숫자, 특수문자) |
+| `U+AC00-D7A3` | 한글 완성형 11,172자 (가~힣) |
+| `U+3130-318F` | 한글 자모 (ㄱ~ㅎ, ㅏ~ㅣ) |
+| `U+2000-206F` | 일반 구두점 (—, …, ' 등) |
+| `U+3000-303F` | CJK 기호 (、。「」 등) |
 
 ---
 
-## 10. Major Font Foundries & Registries
+## 10. 주요 폰트 파운드리 정보
 
-| Foundry | Webfont License Model | Web Portal |
+| 파운드리 | 웹 라이선스 | 구매 링크 |
 |---|---|---|
-| **Sandoll Cloud** | Monthly/annual subscription including webfont endpoints. | [sandoll.co.kr](https://www.sandoll.co.kr/) |
-| **Yoon Design** | Dedicated Webfont licensing options. | [yoondesign.com](https://yoondesign.com/) |
-| **Morisawa (FontPlus)** | Webfont hosting services. | [fontplus.jp](https://fontplus.jp/) |
-| **Adobe Fonts** | Included in Creative Cloud subscriptions (⚠️ hosting files locally is prohibited). | [fonts.adobe.com](https://fonts.adobe.com/) |
-| **Gilmhang (Pretendard)** | Free under SIL Open Font License. | [cactus.tistory.com](https://cactus.tistory.com/) |
-| **Noonnu** | Registry portal for free Korean commercial fonts. | [noonnu.cc](https://noonnu.cc/) |
-| **Naver Hangeul** | Free Nanum font family directory. | [hangeul.naver.com](https://hangeul.naver.com/) |
+| **산돌구름** | 월정액 구독, 웹폰트 포함 | sandoll.co.kr |
+| **윤디자인** | 웹 라이선스 별도 구매 | yoondesign.com |
+| **모리사와 (폰트플러스)** | 웹폰트 전용 서비스 | fontplus.jp |
+| **어도비 (Adobe Fonts)** | CC 구독 포함 (서버 호스팅 불가 ⚠️) | fonts.adobe.com |
+| **길형진 (Pretendard 등)** | OFL 무료 | cactus.tistory.com |
+| **눈누 (Noonnu)** | 한국 무료 폰트 검색 포털 | noonnu.cc |
+| **네이버 한글** | 나눔 시리즈 무료 | hangeul.naver.com |
 
 > [!WARNING]
-> **Adobe Fonts (Typekit) only allows loading fonts through their own CDN endpoints.**
-> Downloading and hosting Adobe Font files on your own server **violates their license agreement**. 
-> As a result, Adobe Fonts cannot be used in air-gapped environments.
+> **Adobe Fonts**는 자체 CDN 서비스만 허용하며, 폰트 파일을 다운로드하여 자체 서버에 호스팅하는 것은 **라이선스 위반**입니다. 사내망에서는 사용 불가합니다.
 
 ---
 
-## Playout Font Compliance Checklist
+## 라이선스 관리 체크리스트
 
 ```
-□ Verify the license permits hosting web fonts before deploying them in the workspace.
-□ Save all license metadata (LICENSE.txt, invoices, receipts) in public directories.
-□ Configure the correct license type when uploading fonts through the admin panel.
-□ Document renewal dates and terms for commercial paid fonts.
-□ Run final license audits before deploying code updates to production environments.
-□ Confirm usage terms for fonts with unknown licenses before distributing them commercially.
+□ 폰트 도입 전 라이선스 유형 확인 (웹 라이선스인지?)
+□ 라이선스 증빙 파일(LICENSE.txt, 구매 영수증) 보관
+□ 폰트 업로드 시 라이선스 유형 정확히 선택
+□ Commercial 폰트의 만료일/갱신일 관리
+□ 프로젝트 배포 시 라이선스 위반 여부 최종 확인
+□ Unknown 라이선스 폰트는 상용 배포 전 반드시 확인
 ```

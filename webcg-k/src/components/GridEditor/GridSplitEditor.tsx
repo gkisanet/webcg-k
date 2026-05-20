@@ -4,6 +4,7 @@
  */
 
 import { useState, useRef, useCallback, useEffect, MouseEvent } from "react";
+import { Scissors, Ruler } from "lucide-react";
 
 // 분할선 타입
 export interface SplitLine {
@@ -14,6 +15,7 @@ export interface SplitLine {
     end: number; // 끝점 (0~100)
     parentId: string | null; // 부모 영역 ID
 }
+
 
 // 영역 타입 (분할선으로 정의된 구역)
 export interface Zone {
@@ -167,6 +169,7 @@ export function GridSplitEditor({
     backgroundOpacity = 0.35,
 }: GridSplitEditorProps) {
     const containerRef = useRef<HTMLDivElement>(null);
+    const guideBtnRef = useRef<HTMLDivElement>(null);
     const [mousePos, setMousePos] = useState<{ x: number; y: number } | null>(null);
     const [isShiftPressed, setIsShiftPressed] = useState(false);
     const [selectedSplitId, setSelectedSplitId] = useState<string | null>(null);
@@ -184,6 +187,7 @@ export function GridSplitEditor({
     // 🎨 그리드 가이드 선택기 팝오버 상태
     const [showGridSelector, setShowGridSelector] = useState(false);
     const [hoverGuide, setHoverGuide] = useState<{cols: number; rows: number} | null>(null);
+    const [guidePopoverStyle, setGuidePopoverStyle] = useState<{top: number; left: number}>({ top: 0, left: 0 });
 
     // 가이드 파싱
     const guideMatch = gridGuide.trim().match(/^(\d+)[xX](\d+)$/);
@@ -262,6 +266,28 @@ export function GridSplitEditor({
             window.removeEventListener("keyup", handleKeyUp);
         };
     }, [selectedSplitId, splits, handleSplitsChange, undo, redo]);
+
+    // 가이드 팝오버 위치 계산 — .grid-split-info의 overflow-x:auto가
+    // CSS spec에 따라 overflow-y:auto로 계산되어 팝오버를 클리핑하므로,
+    // 팝오버를 .grid-split-editor 레벨로 탈출시켜 위치시킨다.
+    useEffect(() => {
+        if (!showGridSelector || !guideBtnRef.current) return;
+        const updatePos = () => {
+            const btn = guideBtnRef.current;
+            if (!btn) return;
+            const btnRect = btn.getBoundingClientRect();
+            const editor = btn.closest('.grid-split-editor');
+            if (!editor) return;
+            const editorRect = editor.getBoundingClientRect();
+            setGuidePopoverStyle({
+                top: btnRect.bottom - editorRect.top + 4,
+                left: btnRect.left - editorRect.left + 12, // 0.75rem offset matches original paddingLeft
+            });
+        };
+        updatePos();
+        window.addEventListener('resize', updatePos);
+        return () => window.removeEventListener('resize', updatePos);
+    }, [showGridSelector]);
 
     // 마우스 위치를 퍼센트로 변환
     // ■ Why 가장자리 스냅?
@@ -473,21 +499,21 @@ export function GridSplitEditor({
                         onClick={() => setToolMode("split")}
                         title="구분선 나누기 (클릭하여 선 추가)"
                     >
-                        ✂️ 나누기
+                        <Scissors size={14} /> 나누기
                     </button>
                     <button
                         className={`tool-btn ${toolMode === "select" ? "active" : ""}`}
                         onClick={() => { setToolMode("select"); setSelectedSplitId(null); }}
                         title="영역 선택 (사이즈 확인)"
                     >
-                        📐 사이즈
+                        <Ruler size={14} /> 사이즈
                     </button>
                 </div>
                 <span className="info-item">
                     {canvasWidth} × {canvasHeight}px
                 </span>
                 {/* 🎨 창의적 그리드 가이드 선택기 (팝오버 형태) */}
-                <div style={{ position: 'relative', display: 'flex', alignItems: 'center', borderLeft: '1px solid var(--border-subtle)', paddingLeft: '0.75rem', marginLeft: '0.25rem' }}>
+                <div ref={guideBtnRef} style={{ display: 'flex', alignItems: 'center', borderLeft: '1px solid var(--border-subtle)', paddingLeft: '0.75rem', marginLeft: '0.25rem' }}>
                     <button
                         type="button"
                         onClick={() => setShowGridSelector(!showGridSelector)}
@@ -506,66 +532,6 @@ export function GridSplitEditor({
                         </span>
                         <span style={{ fontSize: '0.6rem' }}>{showGridSelector ? '▲' : '▼'}</span>
                     </button>
-
-                    {showGridSelector && (
-                        <div 
-                            style={{
-                                position: 'absolute', top: '100%', left: '0.75rem', marginTop: '0.25rem',
-                                background: 'var(--app-bg-alt)', border: '1px solid var(--border-default)', borderRadius: '6px',
-                                padding: '0.75rem', zIndex: 100, boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
-                                display: 'flex', flexDirection: 'column', gap: '0.5rem'
-                            }}
-                        >
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-primary)' }}>
-                                    {hoverGuide ? `${hoverGuide.cols} × ${hoverGuide.rows}` : (guideCols > 1 || guideRows > 1 ? `${guideCols} × ${guideRows}` : "가이드 없음")}
-                                </span>
-                                <button 
-                                    type="button" 
-                                    onClick={() => { setGridGuide(""); setShowGridSelector(false); }}
-                                    style={{ fontSize: '0.65rem', background: 'transparent', border: 'none', color: 'var(--accent-danger)', cursor: 'pointer', padding: '0 0.25rem' }}
-                                >
-                                    초기화
-                                </button>
-                            </div>
-                            
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }} onMouseLeave={() => setHoverGuide(null)}>
-                                {Array.from({ length: 8 }).map((_, rIndex) => {
-                                    const r = rIndex + 1;
-                                    return (
-                                        <div key={r} style={{ display: 'flex', gap: '2px' }}>
-                                            {Array.from({ length: 8 }).map((_, cIndex) => {
-                                                const c = cIndex + 1;
-                                                // 하이라이트 조건
-                                                const isHighlighted = hoverGuide 
-                                                    ? (c <= hoverGuide.cols && r <= hoverGuide.rows)
-                                                    : (c <= guideCols && r <= guideRows && (guideCols > 1 || guideRows > 1));
-
-                                                return (
-                                                    <div 
-                                                        key={`${r}-${c}`}
-                                                        onMouseEnter={() => setHoverGuide({cols: c, rows: r})}
-                                                        onClick={() => {
-                                                            setGridGuide(c === 1 && r === 1 ? "" : `${c}x${r}`);
-                                                            setShowGridSelector(false);
-                                                        }}
-                                                        style={{
-                                                            width: '18px', height: '18px', borderRadius: '3px',
-                                                            background: isHighlighted ? 'var(--accent-primary)' : 'var(--app-bg)',
-                                                            border: isHighlighted ? '1px solid rgba(255,255,255,0.4)' : '1px solid var(--border-default)',
-                                                            cursor: 'pointer', transition: 'background 0.05s, transform 0.05s',
-                                                            transform: isHighlighted ? 'scale(1.05)' : 'scale(1)',
-                                                            zIndex: isHighlighted ? 2 : 1
-                                                        }}
-                                                    />
-                                                );
-                                            })}
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        </div>
-                    )}
                 </div>
                 {mousePos && (
                     <span className="info-item highlight">
@@ -594,6 +560,75 @@ export function GridSplitEditor({
                     Ctrl+Z: 실행취소 | Ctrl+Shift+Z: 다시실행 ({historyIndex}/{history.length - 1})
                 </span>
             </div>
+
+            {/* 가이드 선택기 팝오버 — .grid-split-info 바깥(grid-split-editor 직속)에 렌더링하여
+                overflow-x:auto의 CSS spec 부작용(overflow-y:auto 강제)을 회피한다. */}
+            {showGridSelector && (
+                <div
+                    style={{
+                        position: 'absolute',
+                        top: guidePopoverStyle.top,
+                        left: guidePopoverStyle.left,
+                        background: 'var(--app-bg-alt)',
+                        border: '1px solid var(--border-default)',
+                        borderRadius: '6px',
+                        padding: '0.75rem',
+                        zIndex: 100,
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '0.5rem'
+                    }}
+                >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+                            {hoverGuide ? `${hoverGuide.cols} × ${hoverGuide.rows}` : (guideCols > 1 || guideRows > 1 ? `${guideCols} × ${guideRows}` : "가이드 없음")}
+                        </span>
+                        <button
+                            type="button"
+                            onClick={() => { setGridGuide(""); setShowGridSelector(false); }}
+                            style={{ fontSize: '0.65rem', background: 'transparent', border: 'none', color: 'var(--accent-danger)', cursor: 'pointer', padding: '0 0.25rem' }}
+                        >
+                            초기화
+                        </button>
+                    </div>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }} onMouseLeave={() => setHoverGuide(null)}>
+                        {Array.from({ length: 8 }).map((_, rIndex) => {
+                            const r = rIndex + 1;
+                            return (
+                                <div key={r} style={{ display: 'flex', gap: '2px' }}>
+                                    {Array.from({ length: 8 }).map((_, cIndex) => {
+                                        const c = cIndex + 1;
+                                        const isHighlighted = hoverGuide
+                                            ? (c <= hoverGuide.cols && r <= hoverGuide.rows)
+                                            : (c <= guideCols && r <= guideRows && (guideCols > 1 || guideRows > 1));
+
+                                        return (
+                                            <div
+                                                key={`${r}-${c}`}
+                                                onMouseEnter={() => setHoverGuide({ cols: c, rows: r })}
+                                                onClick={() => {
+                                                    setGridGuide(c === 1 && r === 1 ? "" : `${c}x${r}`);
+                                                    setShowGridSelector(false);
+                                                }}
+                                                style={{
+                                                    width: '18px', height: '18px', borderRadius: '3px',
+                                                    background: isHighlighted ? 'var(--accent-primary)' : 'var(--app-bg)',
+                                                    border: isHighlighted ? '1px solid rgba(255,255,255,0.4)' : '1px solid var(--border-default)',
+                                                    cursor: 'pointer', transition: 'background 0.05s, transform 0.05s',
+                                                    transform: isHighlighted ? 'scale(1.05)' : 'scale(1)',
+                                                    zIndex: isHighlighted ? 2 : 1
+                                                }}
+                                            />
+                                        );
+                                    })}
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+            )}
 
             {/* 캔버스 컨테이너 */}
             <div

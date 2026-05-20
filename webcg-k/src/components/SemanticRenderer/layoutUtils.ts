@@ -90,20 +90,6 @@ export function gapToCSS(g: GapSize): string {
 // ─── Layout Weight → Container CSS ──────────────────────────────
 // layout_weight는 컨테이너 전체의 시각적 무게 중심을 제어.
 
-const WEIGHT_STYLE: Record<LayoutWeight, React.CSSProperties> = {
-  balanced: {},
-  "heavy-headline": {
-    // headline_primary의 font-size를 1.4x로 키우고, 다른 노드는 opacity 낮춤
-    // NodeRenderer에서 importance 기반으로 적용
-  },
-  "heavy-visual": {
-    // 아이콘/배지가 있는 노드 강조, 텍스트는 작게
-  },
-  "skewed-overlap": {
-    // flex-row + negative margin → 텍스트 오버랩
-  },
-};
-
 /** layout_weight → 컨테이너에 적용할 추가 CSS. NodeRenderer가 참조 */
 export function layoutWeightStyle(weight: LayoutWeight | undefined): React.CSSProperties {
   if (!weight || weight === "balanced") return {};

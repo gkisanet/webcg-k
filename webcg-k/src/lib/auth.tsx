@@ -4,7 +4,7 @@
  */
 
 import type { Session, User } from "@supabase/supabase-js";
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import { supabase } from "./supabase";
 
 // 사용자 역할 타입 정의 (5종)
@@ -91,8 +91,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 			if (data) {
 				console.log("[Auth] ✅ Profile loaded successfully:", data);
 				const p = data as unknown as UserProfile;
-				setProfile(p);
-				setActiveWorkspaceId(p.active_workspace_id ?? null);
+				const resolvedWorkspaceId = await resolveActiveWorkspaceForSingleMembership(
+					userObj.id,
+					p.active_workspace_id,
+				);
+				const nextProfile = resolvedWorkspaceId !== p.active_workspace_id
+					? { ...p, active_workspace_id: resolvedWorkspaceId }
+					: p;
+				setProfile(nextProfile);
+				setActiveWorkspaceId(resolvedWorkspaceId);
 			} else {
 				console.warn("[Auth] ⚠️ No data and no error — signing out");
 				await forceSignOut();
@@ -101,6 +108,42 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 			console.error("[Auth] ❌ Exception in fetchProfile:", error);
 			await forceSignOut();
 		}
+	};
+
+	const resolveActiveWorkspaceForSingleMembership = async (
+		userId: string,
+		currentWorkspaceId: string | null,
+	): Promise<string | null> => {
+		const { data: memberships, error } = await supabase
+			.from("workspace_members")
+			.select("workspace_id")
+			.eq("user_id", userId);
+
+		if (error) {
+			console.error("[Auth] Failed to resolve workspace membership:", error);
+			return currentWorkspaceId;
+		}
+
+		if ((memberships?.length ?? 0) !== 1) {
+			return currentWorkspaceId;
+		}
+
+		const onlyWorkspaceId = (memberships?.[0] as { workspace_id: string }).workspace_id;
+		if (currentWorkspaceId === onlyWorkspaceId) {
+			return currentWorkspaceId;
+		}
+
+		const { error: updateError } = await supabase
+			.from("profiles")
+			.update({ active_workspace_id: onlyWorkspaceId } as any)
+			.eq("id", userId);
+
+		if (updateError) {
+			console.error("[Auth] Failed to auto-select single workspace:", updateError);
+			return currentWorkspaceId;
+		}
+
+		return onlyWorkspaceId;
 	};
 
 	useEffect(() => {
@@ -144,6 +187,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 				fetchProfile(session.user);
 			} else if (event === "SIGNED_OUT") {
 				setProfile(null);
+				setActiveWorkspaceId(null);
 			}
 			setLoading(false);
 		});
@@ -154,7 +198,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 		};
 	}, []);
 
-	const setActiveWorkspace = async (workspaceId: string) => {
+	const setActiveWorkspace = useCallback(async (workspaceId: string) => {
 		if (!user?.id) return;
 		const { error } = await supabase
 			.from("profiles")
@@ -164,7 +208,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 			setActiveWorkspaceId(workspaceId);
 			setProfile((prev) => prev ? { ...prev, active_workspace_id: workspaceId } : prev);
 		}
-	};
+	}, [user?.id]);
 
 	const signIn = async (email: string, password: string) => {
 		const { error } = await supabase.auth.signInWithPassword({
@@ -199,6 +243,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 		setUser(null);
 		setProfile(null);
 		setSession(null);
+		setActiveWorkspaceId(null);
 		setLoading(false);
 		// URL 파라미터 정리 후 로그인 페이지로 이동
 		window.location.href = "/login";

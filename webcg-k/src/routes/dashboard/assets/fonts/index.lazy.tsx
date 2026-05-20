@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "../../../../lib/auth";
 import {
   fetchFonts,
@@ -87,6 +88,7 @@ const LICENSE_COLORS: Record<string, string> = {
 // ─── 메인 컴포넌트 ────────────────────────────────────────────────
 
 function FontsPage() {
+  const { t } = useTranslation("fonts");
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
@@ -170,7 +172,7 @@ function FontsPage() {
     } catch (err) {
       console.error("Font upload error:", err);
       alert(
-        `업로드 실패: ${err instanceof Error ? err.message : "알 수 없는 오류"}`,
+        `${t("alerts.uploadFailed")}: ${err instanceof Error ? err.message : t("alerts.unknownError")}`,
       );
     } finally {
       setUploading(false);
@@ -186,7 +188,7 @@ function FontsPage() {
       setDeleteConfirm(null);
     } catch (err) {
       console.error("Font delete error:", err);
-      alert("삭제 실패");
+      alert(t("alerts.deleteFailed"));
     }
   };
 
@@ -215,15 +217,15 @@ function FontsPage() {
             <div className="dash-page-title-icon">
               <Type size={18} />
             </div>
-            폰트 관리
+            {t("pageTitle")}
           </div>
           <div className="dash-page-subtitle">
-            시스템 번들 {SYSTEM_FONTS.length}종 + 사용자 업로드 폰트
+            {t("pageSubtitle", { count: SYSTEM_FONTS.length })}
           </div>
         </div>
         <div className="dash-page-actions">
           <button className="dash-btn primary" onClick={openUploadModal}>
-            <Upload size={16} /> 폰트 업로드
+            <Upload size={16} /> {t("upload")}
           </button>
         </div>
       </div>
@@ -234,7 +236,7 @@ function FontsPage() {
           className={`dash-filter-btn ${selectedCategory === null ? "active" : ""}`}
           onClick={() => setSelectedCategory(null)}
         >
-          전체
+          {t("all")}
         </button>
         {categories.map((cat) => (
           <button
@@ -243,10 +245,10 @@ function FontsPage() {
             onClick={() => setSelectedCategory(cat)}
           >
             {cat === "system"
-              ? "시스템"
+              ? t("categories.system")
               : cat === "broadcast"
-                ? "방송용"
-                : "커스텀"}
+                ? t("categories.broadcast")
+                : t("categories.custom")}
           </button>
         ))}
         {/* 한글 전용 필터 */}
@@ -255,7 +257,7 @@ function FontsPage() {
           onClick={() => setSelectedCategory("korean")}
           style={{ gap: "0.25rem" }}
         >
-          🇰🇷 한글
+          {t("isKorean")}
         </button>
       </div>
 
@@ -264,10 +266,10 @@ function FontsPage() {
         <>
           <div className="dash-card-name" style={{ fontSize: 15, marginBottom: 12 }}>
             <Shield size={16} />
-            시스템 번들 폰트 ({SYSTEM_FONTS.filter(f => {
+            {t("systemBundleTitle", { count: SYSTEM_FONTS.filter(f => {
               if (selectedCategory === "korean") return f.isKorean;
               return selectedCategory === null || f.category === selectedCategory;
-            }).length}종)
+            }).length })}
           </div>
 
           <div className="dash-cards-grid" style={{ marginBottom: 24 }}>
@@ -295,7 +297,7 @@ function FontsPage() {
         <>
           <div className="dash-card-name" style={{ fontSize: 15, marginBottom: 12, marginTop: 8 }}>
             <Upload size={16} />
-            업로드된 폰트 ({fontFamilies.length}개 패밀리)
+            {t("uploadedFontsTitle", { count: fontFamilies.length })}
           </div>
 
           <div className="dash-cards-grid" style={{ marginBottom: 24 }}>
@@ -318,12 +320,12 @@ function FontsPage() {
           <div className="dash-empty-icon">
             <Type size={48} />
           </div>
-          <div className="dash-empty-title">업로드된 폰트가 없습니다</div>
+          <div className="dash-empty-title">{t("noFonts")}</div>
           <div className="dash-empty-desc">
-            "폰트 업로드" 버튼으로 WOFF2/OTF/TTF 파일을 추가하세요
+            {t("uploadEmptyDesc")}
           </div>
           <button className="dash-btn primary" onClick={openUploadModal}>
-            <Upload size={16} /> 폰트 업로드
+            <Upload size={16} /> {t("upload")}
           </button>
         </div>
       ) : null}
@@ -349,7 +351,7 @@ function FontsPage() {
           }}
         >
           <AlertTriangle size={16} style={{ color: "#f59e0b" }} />
-          라이선스 안내
+          {t("licenseGuide")}
         </h3>
         <div
           style={{
@@ -382,7 +384,7 @@ function FontsPage() {
                   background: color,
                 }}
               />
-              {label}
+              {t(`licenseColors.${label}`, label)}
             </span>
           ))}
         </div>
@@ -394,8 +396,7 @@ function FontsPage() {
             lineHeight: 1.5,
           }}
         >
-          데스크탑 라이선스 폰트는 @font-face 사용이 불가합니다. 웹
-          라이선스 또는 OFL/Apache 폰트만 업로드하세요.
+          {t("licenseWarning")}
         </p>
       </div>
 
@@ -445,7 +446,7 @@ function FontsPage() {
                 }}
               >
                 <Upload size={20} />
-                폰트 업로드
+                {t("modal.title")}
               </h3>
               <button
                 type="button"
@@ -471,7 +472,7 @@ function FontsPage() {
             >
               {/* 패밀리 이름 */}
               <label style={labelStyle}>
-                폰트 패밀리 이름 *
+                {t("modal.familyName")}
                 <input
                   type="text"
                   value={uploadModal.familyName}
@@ -481,14 +482,14 @@ function FontsPage() {
                       familyName: e.target.value,
                     }))
                   }
-                  placeholder="예: Noto Sans KR"
+                  placeholder={t("modal.familyNamePlaceholder")}
                   style={inputStyle}
                 />
               </label>
 
               {/* 표시 이름 */}
               <label style={labelStyle}>
-                표시 이름
+                {t("modal.displayName")}
                 <input
                   type="text"
                   value={uploadModal.displayName}
@@ -498,7 +499,7 @@ function FontsPage() {
                       displayName: e.target.value,
                     }))
                   }
-                  placeholder="예: 본고딕"
+                  placeholder={t("modal.displayNamePlaceholder")}
                   style={inputStyle}
                 />
               </label>
@@ -512,7 +513,7 @@ function FontsPage() {
                 }}
               >
                 <label style={labelStyle}>
-                  굵기 (Weight)
+                  {t("modal.weight")}
                   <select
                     value={uploadModal.weight}
                     onChange={(e) =>
@@ -532,7 +533,7 @@ function FontsPage() {
                 </label>
 
                 <label style={labelStyle}>
-                  스타일
+                  {t("modal.style")}
                   <select
                     value={uploadModal.style}
                     onChange={(e) =>
@@ -543,8 +544,8 @@ function FontsPage() {
                     }
                     style={inputStyle}
                   >
-                    <option value="normal">Normal</option>
-                    <option value="italic">Italic</option>
+                    <option value="normal">{t("modal.styleNormal")}</option>
+                    <option value="italic">{t("modal.styleItalic")}</option>
                   </select>
                 </label>
               </div>
@@ -558,7 +559,7 @@ function FontsPage() {
                 }}
               >
                 <label style={labelStyle}>
-                  카테고리
+                  {t("modal.category")}
                   <select
                     value={uploadModal.category}
                     onChange={(e) =>
@@ -569,13 +570,13 @@ function FontsPage() {
                     }
                     style={inputStyle}
                   >
-                    <option value="broadcast">방송용</option>
-                    <option value="custom">커스텀</option>
+                    <option value="broadcast">{t("categories.broadcast")}</option>
+                    <option value="custom">{t("categories.custom")}</option>
                   </select>
                 </label>
 
                 <label style={labelStyle}>
-                  라이선스
+                  {t("modal.license")}
                   <select
                     value={uploadModal.licenseType}
                     onChange={(e) =>
@@ -586,17 +587,17 @@ function FontsPage() {
                     }
                     style={inputStyle}
                   >
-                    <option value="OFL">OFL (무료)</option>
-                    <option value="Apache 2.0">Apache 2.0 (무료)</option>
-                    <option value="Commercial">상용 (구매)</option>
-                    <option value="unknown">확인 필요</option>
+                    <option value="OFL">{t("modal.licenseOfl")}</option>
+                    <option value="Apache 2.0">{t("modal.licenseApache")}</option>
+                    <option value="Commercial">{t("modal.licenseCommercial")}</option>
+                    <option value="unknown">{t("modal.licenseUnknown")}</option>
                   </select>
                 </label>
               </div>
 
               {/* 라이선스 메모 */}
               <label style={labelStyle}>
-                라이선스 메모
+                {t("modal.licenseNotes")}
                 <input
                   type="text"
                   value={uploadModal.licenseNotes}
@@ -606,14 +607,14 @@ function FontsPage() {
                       licenseNotes: e.target.value,
                     }))
                   }
-                  placeholder="구매처, 만료일 등"
+                  placeholder={t("modal.licenseNotesPlaceholder")}
                   style={inputStyle}
                 />
               </label>
 
               {/* 파일 선택 */}
               <label style={labelStyle}>
-                폰트 파일 *
+                {t("modal.fontFile")}
                 <input
                   ref={fileInputRef}
                   type="file"
@@ -635,7 +636,7 @@ function FontsPage() {
                     color: "var(--text-secondary)",
                   }}
                 >
-                  선택: {uploadModal.file.name} (
+                  {t("modal.selected")}: {uploadModal.file.name} (
                   {formatFileSize(uploadModal.file.size)})
                 </p>
               )}
@@ -657,7 +658,7 @@ function FontsPage() {
                 className="btn btn-secondary"
                 onClick={closeUploadModal}
               >
-                취소
+                {t("modal.cancel")}
               </button>
               <button
                 type="button"
@@ -680,7 +681,7 @@ function FontsPage() {
                 ) : (
                   <Check size={16} />
                 )}
-                {uploading ? "업로드 중..." : "업로드"}
+                {uploading ? t("modal.uploading") : t("modal.upload")}
               </button>
             </div>
           </div>
@@ -732,13 +733,14 @@ function SystemFontCard({
   activeWeightPreview: { family: string; weight: number } | null;
   onWeightPreviewChange: (val: { family: string; weight: number } | null) => void;
 }) {
+  const { t } = useTranslation("fonts");
   const licenseColor = LICENSE_COLORS[font.license] || LICENSE_COLORS.unknown;
   const categoryLabel =
     font.category === "system"
-      ? "시스템"
+      ? t("categories.system")
       : font.category === "broadcast"
-        ? "방송용"
-        : "커스텀";
+        ? t("categories.broadcast")
+        : t("categories.custom");
 
   // 이 카드에 활성화된 weight 미리보기가 있는지 확인
   const activeWeight =
@@ -785,7 +787,7 @@ function SystemFontCard({
               margin: 0,
             }}
           >
-            {font.label}
+            {t(`systemFonts.${font.family}.label`, font.label)}
           </h3>
           <p
             style={{
@@ -811,7 +813,7 @@ function SystemFontCard({
                 color: "#f97316",
               }}
             >
-              🇰🇷 한글
+              {t("isKorean")}
             </span>
           )}
           <span
@@ -855,7 +857,7 @@ function SystemFontCard({
           transition: "font-weight 0.2s ease",
         }}
       >
-        {font.previewText}
+        {t(`systemFonts.${font.family}.previewText`, font.previewText)}
       </div>
 
       {/* Weight 태그 — 클릭 가능한 버튼 */}
@@ -922,6 +924,7 @@ function UploadedFontCard({
   formatFileSize,
   getWeightLabel,
 }: UploadedFontCardProps) {
+  const { t } = useTranslation("fonts");
   const licenseColor =
     LICENSE_COLORS[family.variants[0]?.license_type] || LICENSE_COLORS.unknown;
 
@@ -952,7 +955,7 @@ function UploadedFontCard({
               margin: "0.25rem 0 0",
             }}
           >
-            {family.familyName} · {family.variants.length}개 variant
+            {family.familyName} · {t("variantsCount", { count: family.variants.length })}
           </p>
         </div>
         <span
@@ -980,7 +983,7 @@ function UploadedFontCard({
           lineHeight: 1.6,
         }}
       >
-        가나다라 ABCDE 12345
+        {t("sampleText")}
       </div>
 
       {/* Variant 목록 */}
@@ -1044,7 +1047,7 @@ function UploadedFontCard({
                         cursor: "pointer",
                       }}
                     >
-                      확인
+                      {t("confirm")}
                     </button>
                     <button
                       type="button"
@@ -1059,7 +1062,7 @@ function UploadedFontCard({
                         cursor: "pointer",
                       }}
                     >
-                      취소
+                      {t("cancel")}
                     </button>
                   </div>
                 ) : (

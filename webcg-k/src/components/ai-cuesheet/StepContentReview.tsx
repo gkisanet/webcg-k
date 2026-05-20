@@ -20,10 +20,6 @@ import type { WizardAction } from "@/components/ai-cuesheet/wizardReducer";
 
 // ─── Constants ────────────────────────────────────────────────────
 
-const ROLE_COLORS: Record<string, string> = Object.fromEntries(
-  SEMANTIC_ROLE_DEFS.map((d) => [d.role, d.color]),
-);
-
 const ZONES: ZoneHint[] = ["bottom_bar", "top_bar", "center", "left_third", "fullscreen"];
 const STYLES: StyleHint[] = ["emphasis", "normal", "muted"];
 
@@ -315,7 +311,7 @@ function SlotRow({
   hallCheck?: HallucinationCheck;
   contextMode: boolean;
 }) {
-  const { sanitized, warning } = sanitizeTextValue(slot.value);
+  const { warning } = sanitizeTextValue(slot.value);
   const isHallucination = hallCheck && hallCheck.confidence === 0;
   const isLowConfidence = hallCheck && hallCheck.confidence > 0 && hallCheck.confidence < 0.5;
 
@@ -348,7 +344,7 @@ function SlotRow({
           <div className="flex items-center gap-0.5">
             <input
               value={slot.value}
-              onChange={(e) => update({ value: e.target.value })}
+              onChange={(e) => update({ value: e.target.value, display_value: e.target.value })}
               className="flex-1 bg-transparent font-medium text-[var(--text-primary)] text-[11px] outline-none border-b border-transparent hover:border-[var(--border-primary)] focus:border-blue-500/50 px-0.5 py-0.5 min-w-0"
             />
             {warning && <span className="text-[10px] text-amber-400 shrink-0" title={warning}>⚠</span>}
@@ -427,15 +423,31 @@ function SlotRow({
       </tr>
 
       {/* Context row (문제 3) */}
-      {contextMode && slot.context && (
+      {contextMode && (slot.context || slot.source_value || slot.evidence_anchor) && (
         <tr className="border-b border-[var(--border-subtle)]/30 bg-purple-500/3">
-          <td colSpan={6} className="py-1.5 px-2">
+          <td colSpan={6} className="py-1.5 px-2 space-y-1">
+            {(slot.source_value || slot.evidence_anchor) && (
+              <div className="grid grid-cols-[72px_1fr] gap-x-2 gap-y-1 text-[10px] text-[var(--text-muted)]">
+                {slot.source_value && (
+                  <>
+                    <span className="text-[var(--text-tertiary)]">source</span>
+                    <span className="leading-relaxed">{slot.source_value}</span>
+                  </>
+                )}
+                {slot.evidence_anchor && (
+                  <>
+                    <span className="text-[var(--text-tertiary)]">evidence</span>
+                    <span className="leading-relaxed">{slot.evidence_anchor}</span>
+                  </>
+                )}
+              </div>
+            )}
             <textarea
-              value={slot.context}
+              value={slot.context ?? ""}
               onChange={(e) => update({ context: e.target.value })}
               className="w-full bg-transparent text-[10px] text-[var(--text-muted)] leading-relaxed outline-none resize-none border border-transparent hover:border-purple-500/20 focus:border-purple-500/40 rounded p-1"
               rows={2}
-              placeholder="부연설명 (PD 검토용, CG에 표시되지 않음)..."
+              placeholder="부연설명 (PD 검토용, 방송 그래픽에 표시되지 않음)..."
             />
           </td>
         </tr>

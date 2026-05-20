@@ -132,6 +132,7 @@ export type Database = {
           generated_css: string | null
           generated_html: string | null
           id: string
+          overlay_template_id: string | null
           scene_data: Json
           scene_order: number
           session_id: string
@@ -142,6 +143,7 @@ export type Database = {
           generated_css?: string | null
           generated_html?: string | null
           id?: string
+          overlay_template_id?: string | null
           scene_data?: Json
           scene_order: number
           session_id: string
@@ -152,12 +154,20 @@ export type Database = {
           generated_css?: string | null
           generated_html?: string | null
           id?: string
+          overlay_template_id?: string | null
           scene_data?: Json
           scene_order?: number
           session_id?: string
           trigger_note?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "ai_cuesheet_session_scenes_overlay_template_id_fkey"
+            columns: ["overlay_template_id"]
+            isOneToOne: false
+            referencedRelation: "overlay_templates"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "ai_cuesheet_session_scenes_session_id_fkey"
             columns: ["session_id"]
@@ -1125,6 +1135,8 @@ export type Database = {
           template_data: Json
           thumbnail_path: string | null
           updated_at: string | null
+          visibility: string
+          workspace_id: string | null
         }
         Insert: {
           created_at?: string | null
@@ -1137,6 +1149,8 @@ export type Database = {
           template_data?: Json
           thumbnail_path?: string | null
           updated_at?: string | null
+          visibility?: string
+          workspace_id?: string | null
         }
         Update: {
           created_at?: string | null
@@ -1149,6 +1163,8 @@ export type Database = {
           template_data?: Json
           thumbnail_path?: string | null
           updated_at?: string | null
+          visibility?: string
+          workspace_id?: string | null
         }
         Relationships: [
           {
@@ -1156,6 +1172,13 @@ export type Database = {
             columns: ["forked_from"]
             isOneToOne: false
             referencedRelation: "grid_templates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "grid_templates_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
             referencedColumns: ["id"]
           },
         ]
@@ -1523,6 +1546,7 @@ export type Database = {
           ai_metadata: Json | null
           ai_prompt: string | null
           animation_config: Json | null
+          blend_mode: string | null
           category: string | null
           created_at: string | null
           dashboard_schema: Json | null
@@ -1531,6 +1555,7 @@ export type Database = {
           graphic_data: Json
           grid_template_id: string | null
           id: string
+          folder_id: string | null
           is_public: boolean | null
           layer: number | null
           name: string
@@ -1543,6 +1568,7 @@ export type Database = {
           tags: string[] | null
           thumbnail: string | null
           updated_at: string | null
+          visibility: string
           workspace_id: string | null
           zone_bounds: Json | null
           zone_ids: string[] | null
@@ -1551,6 +1577,7 @@ export type Database = {
           ai_metadata?: Json | null
           ai_prompt?: string | null
           animation_config?: Json | null
+          blend_mode?: string | null
           category?: string | null
           created_at?: string | null
           dashboard_schema?: Json | null
@@ -1559,6 +1586,7 @@ export type Database = {
           graphic_data?: Json
           grid_template_id?: string | null
           id?: string
+          folder_id?: string | null
           is_public?: boolean | null
           layer?: number | null
           name: string
@@ -1571,6 +1599,7 @@ export type Database = {
           tags?: string[] | null
           thumbnail?: string | null
           updated_at?: string | null
+          visibility?: string
           workspace_id?: string | null
           zone_bounds?: Json | null
           zone_ids?: string[] | null
@@ -1579,6 +1608,7 @@ export type Database = {
           ai_metadata?: Json | null
           ai_prompt?: string | null
           animation_config?: Json | null
+          blend_mode?: string | null
           category?: string | null
           created_at?: string | null
           dashboard_schema?: Json | null
@@ -1587,6 +1617,7 @@ export type Database = {
           graphic_data?: Json
           grid_template_id?: string | null
           id?: string
+          folder_id?: string | null
           is_public?: boolean | null
           layer?: number | null
           name?: string
@@ -1599,11 +1630,19 @@ export type Database = {
           tags?: string[] | null
           thumbnail?: string | null
           updated_at?: string | null
+          visibility?: string
           workspace_id?: string | null
           zone_bounds?: Json | null
           zone_ids?: string[] | null
         }
         Relationships: [
+          {
+            foreignKeyName: "overlay_templates_folder_id_fkey"
+            columns: ["folder_id"]
+            isOneToOne: false
+            referencedRelation: "overlay_folders"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "overlay_templates_grid_template_id_fkey"
             columns: ["grid_template_id"]
@@ -1613,6 +1652,47 @@ export type Database = {
           },
           {
             foreignKeyName: "overlay_templates_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      overlay_folders: {
+        Row: {
+          color: string | null
+          created_at: string | null
+          id: string
+          is_system: boolean
+          name: string
+          owner_id: string | null
+          updated_at: string | null
+          workspace_id: string | null
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string | null
+          id?: string
+          is_system?: boolean
+          name: string
+          owner_id?: string | null
+          updated_at?: string | null
+          workspace_id?: string | null
+        }
+        Update: {
+          color?: string | null
+          created_at?: string | null
+          id?: string
+          is_system?: boolean
+          name?: string
+          owner_id?: string | null
+          updated_at?: string | null
+          workspace_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "overlay_folders_workspace_id_fkey"
             columns: ["workspace_id"]
             isOneToOne: false
             referencedRelation: "workspaces"
@@ -1944,6 +2024,7 @@ export type Database = {
           thumbnail_path: string | null
           timeline_preset: Json
           updated_at: string | null
+          visibility: string
           workspace_id: string | null
         }
         Insert: {
@@ -1956,6 +2037,7 @@ export type Database = {
           thumbnail_path?: string | null
           timeline_preset?: Json
           updated_at?: string | null
+          visibility?: string
           workspace_id?: string | null
         }
         Update: {
@@ -1968,11 +2050,69 @@ export type Database = {
           thumbnail_path?: string | null
           timeline_preset?: Json
           updated_at?: string | null
+          visibility?: string
           workspace_id?: string | null
         }
         Relationships: [
           {
             foreignKeyName: "templates_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      whiteboards: {
+        Row: {
+          created_at: string | null
+          document_state: Json
+          generation: number | null
+          id: string
+          name: string
+          owner_id: string | null
+          thumbnail_url: string | null
+          updated_at: string | null
+          visibility: string | null
+          workspace_id: string
+          yjs_state: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          document_state?: Json
+          generation?: number | null
+          id?: string
+          name: string
+          owner_id?: string | null
+          thumbnail_url?: string | null
+          updated_at?: string | null
+          visibility?: string | null
+          workspace_id: string
+          yjs_state?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          document_state?: Json
+          generation?: number | null
+          id?: string
+          name?: string
+          owner_id?: string | null
+          thumbnail_url?: string | null
+          updated_at?: string | null
+          visibility?: string | null
+          workspace_id?: string
+          yjs_state?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whiteboards_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "whiteboards_workspace_id_fkey"
             columns: ["workspace_id"]
             isOneToOne: false
             referencedRelation: "workspaces"
@@ -2208,4 +2348,3 @@ export const Constants = {
     Enums: {},
   },
 } as const
-

@@ -54,6 +54,7 @@ import {
     fetchDataSource,
     syncDataSourceToCuesheet,
 } from "@/services/cuesheetDataSourceService";
+import "../dashboard-common.css";
 
 export const Route = createFileRoute("/dashboard/cuesheets/$cuesheetId")({
     component: CuesheetDetailPage,
@@ -309,21 +310,15 @@ function CuesheetDetailPage() {
                 minHeight: 0, overflow: "hidden",
             }}>
                 {/* 좌측: 아이템 리스트 */}
-                <div style={{
-                    flex: "0 0 380px", display: "flex", flexDirection: "column",
-                    border: "1px solid var(--border-primary)", borderRadius: 10,
-                    background: "var(--app-bg-secondary)", overflow: "hidden",
-                }}>
-                    <div style={{
-                        padding: "10px 14px", borderBottom: "1px solid var(--border-primary)",
-                        fontSize: 12, fontWeight: 700, color: "var(--text-secondary)",
-                        display: "flex", alignItems: "center", gap: 6,
-                    }}>
+                <div className="dash-surface" style={{ flex: "0 0 380px" }}>
+                    <div className="dash-surface-header">
+                        <div className="dash-surface-header-title">
                         <FileText size={13} /> 아이템 목록
+                        </div>
                     </div>
-                    <div style={{ flex: 1, overflowY: "auto" }}>
+                    <div className="dash-surface-scroll">
                         {items.length === 0 ? (
-                            <div style={{ padding: 40, textAlign: "center", color: "var(--text-tertiary)", fontSize: 13 }}>
+                            <div className="dash-surface-empty" style={{ padding: 40, fontSize: 13 }}>
                                 아이템이 없습니다
                             </div>
                         ) : (
@@ -391,18 +386,11 @@ function CuesheetDetailPage() {
                 </div>
 
                 {/* 우측: 속성 패널 */}
-                <div style={{
-                    flex: 1, display: "flex", flexDirection: "column",
-                    border: "1px solid var(--border-primary)", borderRadius: 10,
-                    background: "var(--app-bg-secondary)", overflow: "hidden",
-                }}>
+                <div className="dash-surface" style={{ flex: 1 }}>
                     {selectedItem ? (
                         <>
                             {/* 패널 헤더 */}
-                            <div style={{
-                                padding: "10px 14px", borderBottom: "1px solid var(--border-primary)",
-                                display: "flex", justifyContent: "space-between", alignItems: "center",
-                            }}>
+                            <div className="dash-surface-header">
                                 <div>
                                     <span style={{ fontWeight: 700, fontSize: 13 }}>
                                         ✏️ {selectedItem.title || selectedItem.slug}
@@ -421,12 +409,9 @@ function CuesheetDetailPage() {
                             </div>
 
                             {/* CG 텍스트 편집 영역 */}
-                            <div style={{ flex: 1, overflowY: "auto", padding: 14, display: "flex", flexDirection: "column", gap: 16 }}>
+                            <div className="dash-surface-scroll" style={{ padding: 14, display: "flex", flexDirection: "column", gap: 16 }}>
                                 {localCgData.length === 0 ? (
-                                    <div style={{
-                                        padding: 40, textAlign: "center",
-                                        color: "var(--text-tertiary)", fontSize: 13,
-                                    }}>
+                                    <div className="dash-surface-empty" style={{ padding: 40, fontSize: 13 }}>
                                         CG 텍스트가 없습니다
                                     </div>
                                 ) : (
@@ -442,11 +427,7 @@ function CuesheetDetailPage() {
                             </div>
                         </>
                     ) : (
-                        <div style={{
-                            flex: 1, display: "flex", flexDirection: "column",
-                            alignItems: "center", justifyContent: "center",
-                            color: "var(--text-tertiary)", gap: 8,
-                        }}>
+                        <div className="dash-surface-empty" style={{ flex: 1 }}>
                             <FileText size={40} style={{ opacity: 0.2 }} />
                             <span style={{ fontSize: 13 }}>아이템을 선택하면 CG 텍스트를 편집할 수 있습니다</span>
                         </div>
@@ -602,17 +583,10 @@ function PreflightPanel({
     };
 
     return (
-        <div style={{
-            flex: "0 0 300px", display: "flex", flexDirection: "column",
-            border: "1px solid var(--border-primary)", borderRadius: 10,
-            background: "var(--app-bg-secondary)", overflow: "hidden",
-        }}>
+        <div className="dash-surface" style={{ flex: "0 0 300px" }}>
             {/* 헤더 */}
-            <div style={{
-                padding: "10px 14px", borderBottom: "1px solid var(--border-primary)",
-                display: "flex", justifyContent: "space-between", alignItems: "center",
-            }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 6, fontWeight: 700, fontSize: 12 }}>
+            <div className="dash-surface-header">
+                <div className="dash-surface-header-title">
                     <Shield size={13} style={{ color: "#60a5fa" }} />
                     프리플라이트 검증
                 </div>
@@ -642,18 +616,18 @@ function PreflightPanel({
             )}
 
             {/* 아이템별 검증 결과 */}
-            <div style={{ flex: 1, overflowY: "auto" }}>
+            <div className="dash-surface-scroll">
                 {loading ? (
-                    <div style={{ padding: 40, textAlign: "center", color: "var(--text-tertiary)" }}>
+                    <div className="dash-surface-empty" style={{ padding: 40 }}>
                         <Loader2 size={20} className="animate-spin" style={{ margin: "0 auto 8px" }} />
                         <div style={{ fontSize: 12 }}>검증 중...</div>
                     </div>
                 ) : !report ? (
-                    <div style={{ padding: 40, textAlign: "center", color: "var(--text-tertiary)", fontSize: 12 }}>
+                    <div className="dash-surface-empty" style={{ padding: 40, fontSize: 12 }}>
                         번들이 연결되지 않았습니다
                     </div>
                 ) : report.items.length === 0 ? (
-                    <div style={{ padding: 40, textAlign: "center", color: "var(--text-tertiary)", fontSize: 12 }}>
+                    <div className="dash-surface-empty" style={{ padding: 40, fontSize: 12 }}>
                         아이템이 없습니다
                     </div>
                 ) : (

@@ -5,6 +5,7 @@
  */
 import { useEffect, useRef, useState, useCallback } from "react";
 import { supabase } from "../lib/supabase";
+import { sendRealtimeBroadcast } from "../lib/realtimeBroadcast";
 import type { BroadcastSession, PlayheadState } from "../lib/types/broadcast";
 import {
   createHeartbeatMonitor,
@@ -21,6 +22,7 @@ export interface PlayoutPayload {
     trackId: number;
     color: string;
     transitionIn: string;
+    sourceType?: string;
     sourceData?: any;
   }[];
   fadeDuration?: number;
@@ -67,8 +69,63 @@ export function useSessionController(sessionId: string) {
 
   const broadcastChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
   const acknowledgedSeqNumsRef = useRef<Set<number>>(new Set());
+  const pendingAcksRef = useRef<Map<number, {
+    payload: PlayoutPayload;
+    attempts: number;
+    timer: ReturnType<typeof setTimeout> | null;
+  }>>(new Map());
   const heartbeatMonitorRef = useRef<ReturnType<typeof createHeartbeatMonitor> | null>(null);
   const loadedSessionRef = useRef<string | null>(null);
+
+  const sendPlayoutPayload = useCallback(async (payload: PlayoutPayload) => {
+    const channel = broadcastChannelRef.current;
+    if (!channel) return false;
+
+    try {
+      const result = await sendRealtimeBroadcast(channel, "playout", payload as unknown as Record<string, unknown>, {
+        restFallback: true,
+      });
+      return result === "ok";
+    } catch (err) {
+      console.error("[SessionController] Broadcast error:", err);
+      return false;
+    }
+  }, []);
+
+  const clearPendingAck = useCallback((seqNum: number) => {
+    const pending = pendingAcksRef.current.get(seqNum);
+    if (pending?.timer) clearTimeout(pending.timer);
+    pendingAcksRef.current.delete(seqNum);
+  }, []);
+
+  const scheduleAckRetry = useCallback((payload: PlayoutPayload, attempts = 0) => {
+    const seqNum = payload.seqNum;
+    if (!seqNum) return;
+
+    const existing = pendingAcksRef.current.get(seqNum);
+    if (existing?.timer) clearTimeout(existing.timer);
+
+    const timer = setTimeout(async () => {
+      if (acknowledgedSeqNumsRef.current.has(seqNum)) {
+        clearPendingAck(seqNum);
+        return;
+      }
+
+      if (attempts >= 2) {
+        console.warn(`[SessionController] ACK timeout seq=${seqNum} — retry exhausted`);
+        clearPendingAck(seqNum);
+        return;
+      }
+
+      console.warn(`[SessionController] ACK timeout seq=${seqNum} — retry ${attempts + 1}/2`);
+      const sent = await sendPlayoutPayload(payload);
+      if (sent) {
+        scheduleAckRetry(payload, attempts + 1);
+      }
+    }, 900);
+
+    pendingAcksRef.current.set(seqNum, { payload, attempts, timer });
+  }, [clearPendingAck, sendPlayoutPayload]);
 
   // ─── 1. 세션 + 세그먼트 데이터 로딩 ────────────────────────────────
 
@@ -157,7 +214,12 @@ export function useSessionController(sessionId: string) {
         const ack = payload.payload as AckPayload;
         if (ack.seqNum) {
           acknowledgedSeqNumsRef.current.add(ack.seqNum);
+          clearPendingAck(ack.seqNum);
         }
+      })
+      .on("broadcast", { event: "heartbeat" }, (payload) => {
+        const hb = payload.payload as HeartbeatPayload;
+        heartbeatMonitorRef.current?.handleHeartbeat(hb);
       })
       .subscribe((status) => {
         if (status === "SUBSCRIBED") {
@@ -171,8 +233,12 @@ export function useSessionController(sessionId: string) {
       broadcastChannelRef.current = null;
       setIsChannelReady(false);
       acknowledgedSeqNumsRef.current.clear();
+      for (const pending of pendingAcksRef.current.values()) {
+        if (pending.timer) clearTimeout(pending.timer);
+      }
+      pendingAcksRef.current.clear();
     };
-  }, [sessionId]);
+  }, [clearPendingAck, sessionId]);
 
   // ─── 3. Heartbeat 채널 ────────────────────────────────────────────
 
@@ -188,17 +254,9 @@ export function useSessionController(sessionId: string) {
     });
     heartbeatMonitorRef.current = monitor;
 
-    const hbChannel = supabase.channel(`heartbeat:${sessionId}`);
-    hbChannel
-      .on("broadcast", { event: "heartbeat" }, (payload) => {
-        const hb = payload.payload as HeartbeatPayload;
-        monitor.handleHeartbeat(hb);
-      })
-      .subscribe();
-
     return () => {
       monitor.stop();
-      hbChannel.unsubscribe();
+      heartbeatMonitorRef.current = null;
     };
   }, [sessionId]);
 
@@ -209,17 +267,12 @@ export function useSessionController(sessionId: string) {
       const channel = broadcastChannelRef.current;
       if (!channel) return;
 
-      try {
-        await channel.send({
-          type: "broadcast",
-          event: "playout",
-          payload,
-        });
-      } catch (err) {
-        console.error("[SessionController] Broadcast error:", err);
+      const sent = await sendPlayoutPayload(payload);
+      if (sent) {
+        scheduleAckRetry(payload);
       }
     },
-    [],
+    [scheduleAckRetry, sendPlayoutPayload],
   );
 
   const savePlayheadState = useCallback(
