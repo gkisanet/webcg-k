@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import {
 	Building2,
 	Calendar,
@@ -30,11 +31,12 @@ import { Input } from "@/components/ui/input";
 
 // ─── 역할 배지 ────────────────────────────────────────────────────
 const RoleBadge = ({ role }: { role: string }) => {
+	const { t } = useTranslation("admin");
 	const config: Record<string, { label: string; color: string; bg: string; icon: React.ReactNode }> = {
-		owner: { label: "소유자", color: "#eab308", bg: "rgba(234, 179, 8, 0.12)", icon: <Crown size={10} /> },
-		admin: { label: "관리자", color: "#8b5cf6", bg: "rgba(139, 92, 246, 0.12)", icon: <Shield size={10} /> },
-		member: { label: "멤버", color: "#3b82f6", bg: "rgba(59, 130, 246, 0.12)", icon: <Users size={10} /> },
-		viewer: { label: "뷰어", color: "#6b7280", bg: "rgba(107, 114, 128, 0.12)", icon: <User size={10} /> },
+		owner: { label: t("wsRoles.owner", "소유자"), color: "#eab308", bg: "rgba(234, 179, 8, 0.12)", icon: <Crown size={10} /> },
+		admin: { label: t("wsRoles.admin", "관리자"), color: "#8b5cf6", bg: "rgba(139, 92, 246, 0.12)", icon: <Shield size={10} /> },
+		member: { label: t("wsRoles.member", "멤버"), color: "#3b82f6", bg: "rgba(59, 130, 246, 0.12)", icon: <Users size={10} /> },
+		viewer: { label: t("wsRoles.viewer", "뷰어"), color: "#6b7280", bg: "rgba(107, 114, 128, 0.12)", icon: <User size={10} /> },
 	};
 
 	const c = config[role] || config.member;
@@ -64,6 +66,7 @@ const RoleBadge = ({ role }: { role: string }) => {
 
 export function AdminWorkspacesTab() {
 	const queryClient = useQueryClient();
+	const { t, i18n } = useTranslation("admin");
 
 	// 생성 모달
 	const [showCreate, setShowCreate] = useState(false);
@@ -155,7 +158,7 @@ export function AdminWorkspacesTab() {
 			setInviteError(null);
 		},
 		onError: (err: any) => {
-			setInviteError(err.message || "초대 실패");
+			setInviteError(err.message || t("workspacesTab.inviteFail", "초대 실패"));
 		},
 	});
 
@@ -197,22 +200,24 @@ export function AdminWorkspacesTab() {
 				<div className="admin-stat-card">
 					<div className="admin-stat-icon blue"><Building2 size={22} /></div>
 					<div className="admin-stat-content">
-						<div className="admin-stat-label">전체 워크스페이스</div>
+						<div className="admin-stat-label">{t("stats.totalWorkspaces", "전체 워크스페이스")}</div>
 						<div className="admin-stat-value">{stats.total}</div>
 					</div>
 				</div>
 				<div className="admin-stat-card">
 					<div className="admin-stat-icon purple"><Users size={22} /></div>
 					<div className="admin-stat-content">
-						<div className="admin-stat-label">총 멤버</div>
+						<div className="admin-stat-label">{t("stats.totalMembers", "총 멤버")}</div>
 						<div className="admin-stat-value">{stats.totalMembers}</div>
-						<div className="admin-stat-sub">평균 {stats.avgMembers}명 / 워크스페이스</div>
+						<div className="admin-stat-sub">
+							{t("stats.avgMembersPerWs", { count: stats.avgMembers, defaultValue: "평균 {{count}}명 / 워크스페이스" })}
+						</div>
 					</div>
 				</div>
 				<div className="admin-stat-card">
 					<div className="admin-stat-icon green"><Calendar size={22} /></div>
 					<div className="admin-stat-content">
-						<div className="admin-stat-label">최근 7일 생성</div>
+						<div className="admin-stat-label">{t("stats.recentWeekWs", "최근 7일 생성")}</div>
 						<div className="admin-stat-value">{stats.recentWeek}</div>
 					</div>
 				</div>
@@ -225,14 +230,14 @@ export function AdminWorkspacesTab() {
 					{/* 패널 헤더 */}
 					<div className="ws-panel-header">
 						<h3 className="admin-section-title" style={{ marginBottom: 0 }}>
-							<Building2 size={16} /> 워크스페이스 목록
+							<Building2 size={16} /> {t("workspacesTab.title", "워크스페이스 목록")}
 						</h3>
 						<Button
 							size="sm"
 							onClick={() => setShowCreate(true)}
 							className="flex items-center gap-1"
 						>
-							<Plus size={14} /> 생성
+							<Plus size={14} /> {t("workspacesTab.createBtn", "생성")}
 						</Button>
 					</div>
 
@@ -244,7 +249,7 @@ export function AdminWorkspacesTab() {
 						/>
 						<Input
 							type="text"
-							placeholder="이름, 설명, 소유자 검색..."
+							placeholder={t("workspacesTab.searchPlaceholder", "이름, 설명, 소유자 검색...")}
 							style={{ paddingLeft: 32, fontSize: 13 }}
 							value={filter}
 							onChange={(e) => setFilter(e.target.value)}
@@ -256,10 +261,10 @@ export function AdminWorkspacesTab() {
 						<table>
 							<thead>
 								<tr>
-									<th>워크스페이스</th>
-									<th style={{ width: 70 }}>멤버</th>
-									<th style={{ width: 110 }}>소유자</th>
-									<th style={{ width: 100 }}>생성일</th>
+									<th>{t("workspacesTab.thWorkspace", "워크스페이스")}</th>
+									<th style={{ width: 70 }}>{t("workspacesTab.thMembers", "멤버")}</th>
+									<th style={{ width: 110 }}>{t("workspacesTab.thOwner", "소유자")}</th>
+									<th style={{ width: 100 }}>{t("workspacesTab.thCreatedDate", "생성일")}</th>
 									<th style={{ width: 50 }}></th>
 								</tr>
 							</thead>
@@ -292,7 +297,7 @@ export function AdminWorkspacesTab() {
 										</td>
 										<td>
 											<span style={{ fontSize: 12, color: "var(--text-tertiary)" }}>
-												{new Date(ws.created_at).toLocaleDateString("ko-KR")}
+												{new Date(ws.created_at).toLocaleDateString(i18n.language === "ko" ? "ko-KR" : "en-US")}
 											</span>
 										</td>
 										<td>
@@ -300,7 +305,7 @@ export function AdminWorkspacesTab() {
 												type="button"
 												onClick={(e) => {
 													e.stopPropagation();
-													if (confirm(`"${ws.name}"을(를) 삭제하시겠습니까?`)) {
+													if (confirm(t("workspacesTab.deleteConfirm", { name: ws.name, defaultValue: `"${ws.name}"을(를) 삭제하시겠습니까?` }))) {
 														deleteMut.mutate(ws.id);
 													}
 												}}
@@ -314,7 +319,7 @@ export function AdminWorkspacesTab() {
 								{filteredWorkspaces.length === 0 && (
 									<tr>
 										<td colSpan={5} style={{ textAlign: "center", padding: 32, color: "var(--text-tertiary)" }}>
-											{filter ? "검색 결과가 없습니다." : "워크스페이스가 없습니다."}
+											{filter ? t("workspacesTab.noSearchResults", "검색 결과가 없습니다.") : t("workspacesTab.noWorkspaces", "워크스페이스가 없습니다.")}
 										</td>
 									</tr>
 								)}
@@ -335,7 +340,7 @@ export function AdminWorkspacesTab() {
 											type="text"
 											value={editName}
 											onChange={(e) => setEditName(e.target.value)}
-											placeholder="워크스페이스 이름"
+											placeholder={t("workspacesTab.workspaceName", "워크스페이스 이름")}
 											autoFocus
 											style={{ fontSize: 14 }}
 										/>
@@ -343,13 +348,13 @@ export function AdminWorkspacesTab() {
 											type="text"
 											value={editDesc}
 											onChange={(e) => setEditDesc(e.target.value)}
-											placeholder="설명 (선택)"
+											placeholder={t("workspacesTab.descriptionOptional", "설명 (선택)")}
 											style={{ fontSize: 13 }}
 										/>
 										<div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
-											<Button size="sm" variant="secondary" onClick={() => setIsEditing(false)}>취소</Button>
+											<Button size="sm" variant="secondary" onClick={() => setIsEditing(false)}>{t("workspacesTab.cancel", "취소")}</Button>
 											<Button size="sm" onClick={() => updateMut.mutate()} disabled={!editName.trim() || updateMut.isPending}>
-												<Check size={14} /> 저장
+												<Check size={14} /> {t("workspacesTab.save", "저장")}
 											</Button>
 										</div>
 									</div>
@@ -375,7 +380,7 @@ export function AdminWorkspacesTab() {
 														setEditDesc(selectedWs.description || "");
 														setIsEditing(true);
 													}}
-													title="수정"
+													title={t("workspacesTab.editWorkspace", "워크스페이스 수정")}
 												>
 													<Pencil size={13} />
 												</Button>
@@ -383,11 +388,11 @@ export function AdminWorkspacesTab() {
 													size="icon-xs"
 													variant="ghost"
 													onClick={() => {
-														if (confirm(`"${selectedWs.name}"을(를) 삭제하시겠습니까?`)) {
+														if (confirm(t("workspacesTab.deleteConfirm", { name: selectedWs.name, defaultValue: `"${selectedWs.name}"을(를) 삭제하시겠습니까?` }))) {
 															deleteMut.mutate(selectedWs.id);
 														}
 													}}
-													title="삭제"
+													title={t("workspacesTab.delete", { defaultValue: "삭제" })}
 													style={{ color: "#ef4444" }}
 												>
 													<Trash2 size={13} />
@@ -395,8 +400,8 @@ export function AdminWorkspacesTab() {
 											</div>
 										</div>
 										<div className="ws-meta-row">
-											<span><Users size={11} /> 멤버 {selectedWs.memberCount ?? 0}명</span>
-											<span><Calendar size={11} /> {new Date(selectedWs.created_at).toLocaleDateString("ko-KR")}</span>
+											<span><Users size={11} /> {t("workspacesTab.membersCount", { count: selectedWs.memberCount ?? 0, defaultValue: "멤버 ({{count}}명)" })}</span>
+											<span><Calendar size={11} /> {new Date(selectedWs.created_at).toLocaleDateString(i18n.language === "ko" ? "ko-KR" : "en-US")}</span>
 											<span><User size={11} /> {selectedWs.creatorName || "—"}</span>
 										</div>
 									</>
@@ -406,9 +411,9 @@ export function AdminWorkspacesTab() {
 							{/* 멤버 섹션 */}
 							<div className="ws-member-section">
 								<div className="ws-member-header">
-									<h4><Users size={14} /> 멤버 ({members.length}명)</h4>
+									<h4><Users size={14} /> {t("workspacesTab.membersCount", { count: members.length, defaultValue: "멤버 ({{count}}명)" })}</h4>
 									<Button size="sm" onClick={() => setShowInviteModal(true)} className="flex items-center gap-1">
-										<UserPlus size={14} /> 초대
+										<UserPlus size={14} /> {t("workspacesTab.invite", "초대")}
 									</Button>
 								</div>
 
@@ -416,8 +421,8 @@ export function AdminWorkspacesTab() {
 									<table>
 										<thead>
 											<tr>
-												<th>사용자</th>
-												<th style={{ width: 90 }}>역할</th>
+												<th>{t("usersTab.thUser", "사용자")}</th>
+												<th style={{ width: 90 }}>{t("workspacesTab.thRole", "역할")}</th>
 												<th style={{ width: 40 }}></th>
 											</tr>
 										</thead>
@@ -449,7 +454,7 @@ export function AdminWorkspacesTab() {
 											{members.length === 0 && (
 												<tr>
 													<td colSpan={3} style={{ textAlign: "center", padding: 24, color: "var(--text-tertiary)", fontSize: 13 }}>
-														멤버가 없습니다.
+														{t("workspacesTab.noMembers", "멤버가 없습니다.")}
 													</td>
 												</tr>
 											)}
@@ -461,7 +466,7 @@ export function AdminWorkspacesTab() {
 					) : (
 						<div className="ws-empty">
 							<Building2 size={40} style={{ opacity: 0.3 }} />
-							<p>왼쪽에서 워크스페이스를 선택하세요</p>
+							<p>{t("workspacesTab.selectWorkspaceHint", "왼쪽에서 워크스페이스를 선택하세요")}</p>
 						</div>
 					)}
 				</div>
@@ -472,19 +477,19 @@ export function AdminWorkspacesTab() {
 				<div className="admin-modal-overlay" onClick={() => setShowCreate(false)}>
 					<div className="admin-modal" onClick={(e) => e.stopPropagation()} style={{ width: "360px" }}>
 						<h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 16, display: "flex", alignItems: "center", gap: 8 }}>
-							<Plus size={18} /> 새 워크스페이스 생성
+							<Plus size={18} /> {t("workspacesTab.createTitle", "새 워크스페이스 생성")}
 						</h3>
 						<div className="input-group">
-							<label>이름 *</label>
-							<Input type="text" value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="워크스페이스 이름" autoFocus />
+							<label>{t("workspacesTab.workspaceName", "워크스페이스 이름")} *</label>
+							<Input type="text" value={newName} onChange={(e) => setNewName(e.target.value)} placeholder={t("workspacesTab.workspaceName", "워크스페이스 이름")} autoFocus />
 						</div>
 						<div className="input-group">
-							<label>설명</label>
-							<Input type="text" value={newDesc} onChange={(e) => setNewDesc(e.target.value)} placeholder="설명 (선택)" />
+							<label>{t("workspacesTab.description", "설명")}</label>
+							<Input type="text" value={newDesc} onChange={(e) => setNewDesc(e.target.value)} placeholder={t("workspacesTab.descriptionOptional", "설명 (선택)")} />
 						</div>
 						<div className="admin-modal-actions">
-							<Button variant="secondary" onClick={() => setShowCreate(false)}>취소</Button>
-							<Button onClick={() => createMut.mutate()} disabled={!newName.trim() || createMut.isPending}>생성</Button>
+							<Button variant="secondary" onClick={() => setShowCreate(false)}>{t("workspacesTab.cancel", "취소")}</Button>
+							<Button onClick={() => createMut.mutate()} disabled={!newName.trim() || createMut.isPending}>{t("workspacesTab.createBtn", "생성")}</Button>
 						</div>
 					</div>
 				</div>
@@ -497,10 +502,10 @@ export function AdminWorkspacesTab() {
 						<div style={{ padding: "1.25rem 1.5rem", borderBottom: "1px solid var(--border-default)", display: "flex", justifyContent: "space-between", alignItems: "flex-start", background: "var(--app-bg-muted)" }}>
 							<div>
 								<h3 style={{ fontSize: 18, fontWeight: 600, display: "flex", alignItems: "center", gap: 8, margin: 0, color: "var(--text-primary)" }}>
-									<UserPlus size={20} style={{ color: "var(--app-primary)" }} /> 새로운 멤버 초대
+									<UserPlus size={20} style={{ color: "var(--app-primary)" }} /> {t("workspacesTab.inviteTitle", "새로운 멤버 초대")}
 								</h3>
 								<p style={{ fontSize: 13, color: "var(--text-secondary)", marginTop: 8, marginBottom: 0 }}>
-									<strong style={{ color: "var(--text-primary)" }}>{selectedWs.name}</strong> 워크스페이스에 참여할 멤버를 검색하고 역할을 부여하세요.
+									{t("workspacesTab.inviteDesc", { name: selectedWs.name, defaultValue: `"${selectedWs.name}" 워크스페이스에 참여할 멤버를 검색하고 역할을 부여하세요.` })}
 								</p>
 							</div>
 							<button type="button" onClick={() => setShowInviteModal(false)} style={{ background: "transparent", border: "none", color: "var(--text-tertiary)", cursor: "pointer", padding: 4 }}>
@@ -511,16 +516,16 @@ export function AdminWorkspacesTab() {
 							<div style={{ display: "flex", gap: "0.75rem", alignItems: "center" }}>
 								<div style={{ flex: 1, position: "relative" }}>
 									<Search size={16} style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", color: "var(--text-tertiary)" }} />
-									<Input type="text" value={inviteQuery} onChange={(e) => handleSearch(e.target.value)} placeholder="이름 또는 이메일로 검색하세요..." autoFocus style={{ paddingLeft: 40, height: 44, fontSize: 14 }} />
+									<Input type="text" value={inviteQuery} onChange={(e) => handleSearch(e.target.value)} placeholder={t("workspacesTab.searchInvitePlaceholder", "이름 또는 이메일로 검색하세요...")} autoFocus style={{ paddingLeft: 40, height: 44, fontSize: 14 }} />
 								</div>
 								<select
 									value={inviteRole}
 									onChange={(e) => setInviteRole(e.target.value)}
 									style={{ height: 44, padding: "0 1rem", background: "var(--app-bg-muted)", border: "1px solid var(--border-default)", borderRadius: 6, color: "var(--text-primary)", fontSize: 14, fontWeight: 500, minWidth: 110 }}
 								>
-									<option value="admin">관리자</option>
-									<option value="member">멤버</option>
-									<option value="viewer">뷰어</option>
+									<option value="admin">{t("wsRoles.admin", "관리자")}</option>
+									<option value="member">{t("wsRoles.member", "멤버")}</option>
+									<option value="viewer">{t("wsRoles.viewer", "뷰어")}</option>
 								</select>
 							</div>
 							<div style={{ minHeight: "220px", maxHeight: "300px", overflowY: "auto", border: "1px solid var(--border-default)", borderRadius: 8, background: "var(--app-bg)" }}>
@@ -542,7 +547,7 @@ export function AdminWorkspacesTab() {
 													</div>
 												</div>
 												<Button size="sm" variant="outline" onClick={() => inviteMut.mutate(u.id)} disabled={inviteMut.isPending} style={{ fontSize: 13, height: 32 }}>
-													초대하기
+													{t("workspacesTab.inviteBtn", "초대하기")}
 												</Button>
 											</div>
 										))}
@@ -550,14 +555,14 @@ export function AdminWorkspacesTab() {
 								) : inviteQuery.length >= 2 ? (
 									<div style={{ height: "220px", display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 12, color: "var(--text-tertiary)" }}>
 										<User size={40} style={{ opacity: 0.5 }} />
-										<p style={{ fontSize: 14 }}>"{inviteQuery}" 검색 결과가 없습니다.</p>
+										<p style={{ fontSize: 14 }}>{t("workspacesTab.inviteNoResults", { query: inviteQuery, defaultValue: `"${inviteQuery}" 검색 결과가 없습니다.` })}</p>
 									</div>
 								) : (
 									<div style={{ height: "220px", display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 12, color: "var(--text-tertiary)", padding: "2rem" }}>
 										<Search size={40} style={{ opacity: 0.3 }} />
 										<p style={{ fontSize: 14, textAlign: "center", lineHeight: 1.6 }}>
-											초대할 사용자의 이름을 검색하세요.<br />
-											<span style={{ fontSize: 12, opacity: 0.7 }}>최소 2글자 이상 입력해야 합니다.</span>
+											{t("workspacesTab.inviteSearchHint", "초대할 사용자의 이름을 검색하세요.")}<br />
+											<span style={{ fontSize: 12, opacity: 0.7 }}>{t("workspacesTab.inviteSearchHintSub", "최소 2글자 이상 입력해야 합니다.")}</span>
 										</p>
 									</div>
 								)}

@@ -19,6 +19,7 @@ import { useState, useMemo, useCallback } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "../../../lib/auth";
 import type { UserRole } from "../../../lib/auth";
+import { useTranslation } from "react-i18next";
 import {
 	fetchProfilesWithMemberships,
 	changeRole as changeRoleService,
@@ -57,7 +58,9 @@ export const Route = createLazyFileRoute("/dashboard/admin/")({
 function AdminPage() {
 	const { profile, user } = useAuth();
 	const queryClient = useQueryClient();
+	const { t } = useTranslation("admin");
 	const [activeTab, setActiveTab] = useState<AdminTab>("users");
+
 
 	// ─── 사용자 관리 상태 (워크스페이스 멤버십 포함) ────────────────
 	const { data: profiles = [], isLoading: loading } = useQuery({
@@ -248,8 +251,8 @@ function AdminPage() {
 		return (
 			<div className="flex flex-col items-center justify-center h-full text-center" style={{ padding: 80 }}>
 				<Shield size={56} className="text-accent-destructive" style={{ marginBottom: 16, opacity: 0.5 }} />
-				<h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 8 }}>접근 권한이 없습니다</h2>
-				<p style={{ color: "var(--text-secondary)" }}>시스템 관리자만 접근할 수 있는 페이지입니다.</p>
+				<h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 8 }}>{t("noPermissionTitle")}</h2>
+				<p style={{ color: "var(--text-secondary)" }}>{t("noPermissionDesc")}</p>
 			</div>
 		)
 	}
@@ -261,8 +264,8 @@ function AdminPage() {
 			{/* 헤더 */}
 			<div className="page-header">
 				<div className="page-header-left">
-					<h1 className="page-title">관리자</h1>
-					<p className="page-description">시스템 사용자, AI 모델, API 키를 관리합니다</p>
+					<h1 className="page-title">{t("pageTitle")}</h1>
+					<p className="page-description">{t("pageDescription")}</p>
 				</div>
 			</div>
 
@@ -273,30 +276,30 @@ function AdminPage() {
 					onClick={() => setActiveTab("users")}
 				>
 					<Users size={15} />
-					사용자 관리
+					{t("tabs.users")}
 					<span className="tab-badge">{userStats.total}</span>
+				</button>
+				<button
+					className={`admin-tab ${activeTab === "workspaces" ? "active" : ""}`}
+					onClick={() => setActiveTab("workspaces")}
+				>
+					<Shield size={15} />
+					{t("tabs.workspaces")}
+					<span className="tab-badge">{workspaces.length}</span>
 				</button>
 				<button
 					className={`admin-tab ${activeTab === "ai" ? "active" : ""}`}
 					onClick={() => setActiveTab("ai")}
 				>
 					<Sparkles size={15} />
-					AI 관리
+					{t("tabs.ai")}
 				</button>
-			<button
-				className={`admin-tab ${activeTab === "workspaces" ? "active" : ""}`}
-				onClick={() => setActiveTab("workspaces")}
-			>
-				<Shield size={15} />
-				워크스페이스
-				<span className="tab-badge">{workspaces.length}</span>
-			</button>
 				<button
 					className={`admin-tab ${activeTab === "api-keys" ? "active" : ""}`}
 					onClick={() => setActiveTab("api-keys")}
 				>
 					<Key size={15} />
-					API 키
+					{t("tabs.apiKeys")}
 					<span className="tab-badge">{apiKeys.length}</span>
 				</button>
 			</div>
@@ -310,8 +313,13 @@ function AdminPage() {
 					setGlobalFilter={setGlobalFilter}
 					userId={user?.id}
 					changeRole={changeRole}
-                        workspaces={workspaces}
+					workspaces={workspaces}
 				/>
+			)}
+
+			{/* ─── 워크스페이스 탭 ── */}
+			{activeTab === "workspaces" && (
+				<AdminWorkspacesTab />
 			)}
 
 			{/* ─── AI 관리 탭 ── */}
@@ -333,13 +341,6 @@ function AdminPage() {
 				/>
 			)}
 
-			{/* ─── API 키 탭 ── */}
-
-			{/* ─── 워크스페이스 탭 ── */}
-			{activeTab === "workspaces" && (
-				<AdminWorkspacesTab />
-			)}
-
 			{activeTab === "api-keys" && (
 				<AdminApiKeysTab
 					apiKeys={apiKeys}
@@ -358,9 +359,9 @@ function AdminPage() {
 			{showModelModal && (
 				<div className="admin-modal-overlay" onClick={() => setShowModelModal(false)}>
 					<div className="admin-modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 520 }}>
-						<h3><Bot size={18} /> 모델 추가</h3>
+						<h3><Bot size={18} /> {t("aiTab.addModel")}</h3>
 						<div className="input-group">
-							<label>프로바이더 *</label>
+							<label>{t("aiTab.provider")} *</label>
 							<select value={modelForm.provider}
 								onChange={(e) => setModelForm((f) => ({ ...f, provider: e.target.value }))}>
 								{Object.entries(PROVIDERS).map(([key, meta]) => (
@@ -369,18 +370,18 @@ function AdminPage() {
 							</select>
 						</div>
 						<div className="input-group">
-							<label>모델 ID *</label>
+							<label>{t("aiTab.thModelName")} ID *</label>
 							<Input type="text" placeholder="예: gpt-4o-mini" value={modelForm.model_id}
 								onChange={(e) => setModelForm((f) => ({ ...f, model_id: e.target.value }))} />
 						</div>
 						<div className="input-group">
-							<label>표시 이름 *</label>
+							<label>{t("apiKeysTab.name")}</label>
 							<Input type="text" placeholder="예: GPT-4o Mini" value={modelForm.display_name}
 								onChange={(e) => setModelForm((f) => ({ ...f, display_name: e.target.value }))} />
 						</div>
 						<div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
 							<div className="input-group">
-								<label>티어</label>
+								<label>{t("aiTab.thTier")}</label>
 								<select value={modelForm.tier}
 									onChange={(e) => setModelForm((f) => ({ ...f, tier: e.target.value }))}>
 									<option value="free">Free</option>
@@ -388,25 +389,25 @@ function AdminPage() {
 								</select>
 							</div>
 							<div className="input-group">
-								<label>RPM 한도</label>
+								<label>{t("aiTab.thRpm")} Limit</label>
 								<Input type="number" value={modelForm.rpm_limit}
 									onChange={(e) => setModelForm((f) => ({ ...f, rpm_limit: parseInt(e.target.value) || 30 }))} />
 							</div>
 							<div className="input-group">
-								<label>RPD 한도</label>
+								<label>{t("aiTab.thRpd")} Limit</label>
 								<Input type="number" value={modelForm.rpd_limit}
 									onChange={(e) => setModelForm((f) => ({ ...f, rpd_limit: parseInt(e.target.value) || 1500 }))} />
 							</div>
 						</div>
 						<div className="input-group">
-							<label>설명</label>
-							<Input type="text" placeholder="모델 설명 (선택)" value={modelForm.description}
+							<label>{t("workspacesTab.description")}</label>
+							<Input type="text" placeholder={t("workspacesTab.descriptionOptional")} value={modelForm.description}
 								onChange={(e) => setModelForm((f) => ({ ...f, description: e.target.value }))} />
 						</div>
 						<div className="admin-modal-actions">
-							<Button variant="secondary" onClick={() => setShowModelModal(false)}>취소</Button>
+							<Button variant="secondary" onClick={() => setShowModelModal(false)}>{t("aiTab.cancel")}</Button>
 							<Button onClick={addModel}
-								disabled={!modelForm.model_id || !modelForm.display_name}>추가</Button>
+								disabled={!modelForm.model_id || !modelForm.display_name}>{t("aiTab.addModel")}</Button>
 						</div>
 					</div>
 				</div>

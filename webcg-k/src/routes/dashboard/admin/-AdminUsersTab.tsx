@@ -10,6 +10,7 @@
 
 import { useMemo, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import {
 	createColumnHelper,
 	flexRender,
@@ -90,6 +91,7 @@ function MembershipCell({
 	allWorkspaces: Workspace[];
 }) {
 	const queryClient = useQueryClient();
+	const { t } = useTranslation("admin");
 	const [adding, setAdding] = useState(false);
 	const [selectedWs, setSelectedWs] = useState("");
 	const DEFAULT_ROLE = "member";
@@ -134,7 +136,7 @@ function MembershipCell({
 						className="ws-add-select"
 						autoFocus
 					>
-						<option value="">워크스페이스 선택</option>
+						<option value="">{t("usersTab.selectWorkspace")}</option>
 						{available.map((ws) => (
 							<option key={ws.id} value={ws.id}>
 								{ws.name}
@@ -168,7 +170,7 @@ function MembershipCell({
 					type="button"
 					onClick={() => setAdding(true)}
 					className="ws-tag-add"
-					title="워크스페이스 추가"
+					title={t("usersTab.addWorkspace")}
 				>
 					<Plus size={10} />
 				</button>
@@ -192,6 +194,7 @@ export function AdminUsersTab({
 	changeRole,
 	workspaces,
 }: AdminUsersTabProps) {
+	const { t } = useTranslation("admin");
 	const userStats = useMemo(() => computeUserStats(profiles as any), [profiles]);
 
 	const columns = useMemo(
@@ -204,7 +207,7 @@ export function AdminUsersTab({
 						className="flex items-center gap-1 hover:text-white"
 						onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
 					>
-						사용자
+						{t("usersTab.thUser")}
 						<ArrowUpDown size={13} className="text-secondary" />
 					</Button>
 				),
@@ -217,7 +220,7 @@ export function AdminUsersTab({
 							</div>
 							<div>
 								<div style={{ fontWeight: 600, fontSize: 13 }}>
-									{info.getValue() || "이름 없음"}
+									{info.getValue() || t("usersTab.noName")}
 								</div>
 								<div
 									style={{
@@ -241,7 +244,7 @@ export function AdminUsersTab({
 						className="flex items-center gap-1 hover:text-white"
 						onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
 					>
-						시스템 역할
+						{t("usersTab.thRole")}
 						<ArrowUpDown size={13} className="text-secondary" />
 					</Button>
 				),
@@ -255,7 +258,7 @@ export function AdminUsersTab({
 							value={currentRole}
 							onChange={(e) => !isSelf && changeRole(row.id, e.target.value as UserRole)}
 							disabled={isSelf}
-							title={isSelf ? "자신의 역할은 변경할 수 없습니다" : "클릭하여 역할 변경"}
+							title={isSelf ? t("usersTab.cannotChangeSelfRole") : t("usersTab.clickToChangeRole")}
 							style={{
 								background: "var(--app-bg-muted)",
 								border: `1px solid ${meta.color}40`,
@@ -270,7 +273,7 @@ export function AdminUsersTab({
 						>
 							{Object.entries(ROLE_META).map(([key, val]) => (
 								<option key={key} value={key}>
-									{val.icon} {val.label}
+									{val.icon} {t(`roles.${key}`, val.label)}
 								</option>
 							))}
 						</select>
@@ -286,7 +289,7 @@ export function AdminUsersTab({
 						className="flex items-center gap-1 hover:text-white"
 						onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
 					>
-						소속 워크스페이스
+						{t("usersTab.thWorkspaces")}
 						<ArrowUpDown size={13} className="text-secondary" />
 					</Button>
 				),
@@ -314,13 +317,13 @@ export function AdminUsersTab({
 						className="flex items-center gap-1 hover:text-white"
 						onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
 					>
-						가입일
+						{t("usersTab.thJoinedAt")}
 						<ArrowUpDown size={13} className="text-secondary" />
 					</Button>
 				),
 				cell: (info) => (
 					<span style={{ fontSize: 12, color: "var(--text-tertiary)" }}>
-						{new Date(info.getValue()).toLocaleDateString("ko-KR")}
+						{new Date(info.getValue()).toLocaleDateString(t("usersTab.thJoinedAt") === "Joined Date" ? "en-US" : "ko-KR")}
 					</span>
 				),
 			}),
@@ -332,7 +335,7 @@ export function AdminUsersTab({
 						className="flex items-center gap-1 hover:text-white"
 						onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
 					>
-						최근 활동
+						{t("usersTab.thRecentActivity")}
 						<ArrowUpDown size={13} className="text-secondary" />
 					</Button>
 				),
@@ -342,15 +345,15 @@ export function AdminUsersTab({
 					const diffH = Math.floor(diffMs / 3600000);
 					const label =
 						diffH < 1
-							? "방금 전"
+							? t("usersTab.recentActivity.justNow")
 							: diffH < 24
-								? `${diffH}시간 전`
-								: `${Math.floor(diffH / 24)}일 전`;
+								? t("usersTab.recentActivity.hoursAgo", { count: diffH })
+								: t("usersTab.recentActivity.daysAgo", { count: Math.floor(diffH / 24) });
 					return <span style={{ fontSize: 12, color: "var(--text-tertiary)" }}>{label}</span>;
 				},
 			}),
 		],
-		[userId, changeRole, workspaces],
+		[userId, changeRole, workspaces, t],
 	);
 
 	const table = useReactTable({
@@ -374,7 +377,7 @@ export function AdminUsersTab({
 						<Users size={22} />
 					</div>
 					<div className="admin-stat-content">
-						<div className="admin-stat-label">전체 사용자</div>
+						<div className="admin-stat-label">{t("stats.totalUsers")}</div>
 						<div className="admin-stat-value">{userStats.total}</div>
 					</div>
 				</div>
@@ -383,7 +386,7 @@ export function AdminUsersTab({
 						<Shield size={22} />
 					</div>
 					<div className="admin-stat-content">
-						<div className="admin-stat-label">관리자</div>
+						<div className="admin-stat-label">{t("stats.admins")}</div>
 						<div className="admin-stat-value">{userStats.admins}</div>
 					</div>
 				</div>
@@ -392,7 +395,7 @@ export function AdminUsersTab({
 						<Zap size={22} />
 					</div>
 					<div className="admin-stat-content">
-						<div className="admin-stat-label">최근 7일 가입</div>
+						<div className="admin-stat-label">{t("stats.recentWeek")}</div>
 						<div className="admin-stat-value">{userStats.recentWeek}</div>
 					</div>
 				</div>
@@ -401,11 +404,11 @@ export function AdminUsersTab({
 						<Building2 size={22} />
 					</div>
 					<div className="admin-stat-content">
-						<div className="admin-stat-label">워크스페이스 참여</div>
+						<div className="admin-stat-label">{t("stats.workspaceParticipation")}</div>
 						<div className="admin-stat-value">
 							{profiles.reduce((sum, p) => sum + p.memberships.length, 0)}
 						</div>
-						<div className="admin-stat-sub">총 멤버십 수</div>
+						<div className="admin-stat-sub">{t("stats.totalMemberships")}</div>
 					</div>
 				</div>
 			</div>
@@ -413,7 +416,7 @@ export function AdminUsersTab({
 			{/* 검색 + 테이블 */}
 			<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
 				<h3 className="admin-section-title" style={{ marginBottom: 0 }}>
-					<Users size={16} /> 사용자 목록
+					<Users size={16} /> {t("usersTab.title")}
 				</h3>
 				<div style={{ position: "relative", maxWidth: 320, width: "100%" }}>
 					<Search
@@ -428,7 +431,7 @@ export function AdminUsersTab({
 					/>
 					<Input
 						type="text"
-						placeholder="이름, 역할, 워크스페이스로 검색..."
+						placeholder={t("usersTab.searchPlaceholder")}
 						style={{ paddingLeft: 32, width: "100%", padding: "7px 10px 7px 32px", fontSize: 13 }}
 						value={globalFilter}
 						onChange={(e) => setGlobalFilter(e.target.value)}

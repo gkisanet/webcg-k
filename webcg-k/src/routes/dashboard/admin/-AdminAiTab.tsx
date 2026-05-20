@@ -10,6 +10,7 @@
  */
 
 import { useState, useMemo, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import {
 	createColumnHelper,
 	flexRender,
@@ -91,6 +92,8 @@ export function AdminAiTab({
 	linkApiKey,
 	testApiConnection,
 }: AdminAiTabProps) {
+	const { t } = useTranslation("admin");
+
 	// ─── 내부 상태 (설정 모달) ───────────────────────────────────
 	const [settingsModel, setSettingsModel] = useState<ModelConfig | null>(null);
 	const [promptDraft, setPromptDraft] = useState("");
@@ -160,17 +163,17 @@ export function AdminAiTab({
 	const columns = useMemo(() => [
 		// 상태 (활성/비활성)
 		columnHelper.accessor("is_active", {
-			header: "상태",
+			header: t("aiTab.thStatus", "상태"),
 			size: 80,
 			cell: (info) => info.getValue()
-				? <span className="model-status-badge active">✦ 활성</span>
-				: <span className="model-status-badge">비활성</span>,
+				? <span className="model-status-badge active">{t("aiTab.statusActive", "✦ 활성")}</span>
+				: <span className="model-status-badge">{t("aiTab.statusInactive", "비활성")}</span>,
 		}),
 		// 모델명 + 프로바이더
 		columnHelper.accessor("display_name", {
 			header: ({ column }) => (
 				<button className="th-sort-btn" onClick={() => column.toggleSorting()}>
-					모델명 <ArrowUpDown size={12} />
+					{t("aiTab.thModelName", "모델명")} <ArrowUpDown size={12} />
 				</button>
 			),
 			size: 200,
@@ -191,7 +194,7 @@ export function AdminAiTab({
 		}),
 		// 티어
 		columnHelper.accessor("tier", {
-			header: "티어",
+			header: t("aiTab.thTier", "티어"),
 			size: 70,
 			cell: (info) => <span className={`model-card-tier ${info.getValue()}`}>{info.getValue().toUpperCase()}</span>,
 		}),
@@ -209,7 +212,7 @@ export function AdminAiTab({
 		}),
 		// 오늘 사용량
 		columnHelper.accessor("todayRequests", {
-			header: "오늘 요청",
+			header: t("aiTab.thTodayRequests", "오늘 요청"),
 			size: 100,
 			cell: (info) => {
 				const m = info.row.original;
@@ -229,13 +232,13 @@ export function AdminAiTab({
 		}),
 		// 오늘 토큰
 		columnHelper.accessor("todayTokens", {
-			header: "오늘 토큰",
+			header: t("aiTab.thTodayTokens", "오늘 토큰"),
 			size: 100,
 			cell: (info) => <span>{info.getValue().toLocaleString()}</span>,
 		}),
 		// 총 토큰
 		columnHelper.accessor("totalTokens", {
-			header: "총 토큰",
+			header: t("aiTab.thTotalTokens", "총 토큰"),
 			size: 100,
 			cell: (info) => <span style={{ color: "var(--text-tertiary)" }}>{info.getValue().toLocaleString()}</span>,
 		}),
@@ -250,17 +253,17 @@ export function AdminAiTab({
 					<div style={{ display: "flex", gap: 6, justifyContent: "flex-end" }}>
 						{!m.is_active && (
 							<Button variant="secondary" size="sm" onClick={() => switchModel(m.model_id)} style={{ fontSize: 11 }}>
-								활성화
+								{t("aiTab.activate", "활성화")}
 							</Button>
 						)}
 						<Button variant="ghost" size="sm" onClick={() => openSettings(m)} style={{ fontSize: 11 }}>
-							<Settings2 size={12} /> 설정
+							<Settings2 size={12} /> {t("aiTab.settings", "설정")}
 						</Button>
 						{!m.is_active && (
 							deleteConfirm === m.model_id ? (
 								<>
-									<Button variant="destructive" size="sm" onClick={() => { deleteModel(m.model_id); setDeleteConfirm(null); }} style={{ fontSize: 11 }}>확인</Button>
-									<Button variant="ghost" size="sm" onClick={() => setDeleteConfirm(null)} style={{ fontSize: 11 }}>취소</Button>
+									<Button variant="destructive" size="sm" onClick={() => { deleteModel(m.model_id); setDeleteConfirm(null); }} style={{ fontSize: 11 }}>{t("aiTab.delete", "삭제")}</Button>
+									<Button variant="ghost" size="sm" onClick={() => setDeleteConfirm(null)} style={{ fontSize: 11 }}>{t("aiTab.cancel", "취소")}</Button>
 								</>
 							) : (
 								<Button variant="ghost" size="sm" onClick={() => setDeleteConfirm(m.model_id)} style={{ fontSize: 11, color: "var(--accent-danger, #ef4444)" }}>
@@ -272,7 +275,7 @@ export function AdminAiTab({
 				);
 			},
 		}),
-	], [deleteConfirm, switchModel, deleteModel]);
+	], [deleteConfirm, switchModel, deleteModel, t]);
 
 	const table = useReactTable({
 		data: tableData,
@@ -290,8 +293,8 @@ export function AdminAiTab({
 				<div className="admin-stat-card">
 					<div className="admin-stat-icon purple"><Bot size={22} /></div>
 					<div className="admin-stat-content">
-						<div className="admin-stat-label">현재 모델</div>
-						<div className="admin-stat-value" style={{ fontSize: 18 }}>{activeModel?.display_name || "미설정"}</div>
+						<div className="admin-stat-label">{t("stats.activeModel", "현재 모델")}</div>
+						<div className="admin-stat-value" style={{ fontSize: 18 }}>{activeModel?.display_name || t("stats.notSet", "미설정")}</div>
 						<div className="admin-stat-sub">
 							{activeModel ? `${PROVIDERS[activeModel.provider]?.label || activeModel.provider} • ${activeModel.tier} • ${activeModel.rpm_limit} RPM` : ""}
 						</div>
@@ -300,24 +303,24 @@ export function AdminAiTab({
 				<div className="admin-stat-card">
 					<div className="admin-stat-icon blue"><Zap size={22} /></div>
 					<div className="admin-stat-content">
-						<div className="admin-stat-label">오늘 요청 수</div>
+						<div className="admin-stat-label">{t("stats.todayRequests", "오늘 요청 수")}</div>
 						<div className="admin-stat-value">{usageSummary.todayRequests}</div>
 					</div>
 				</div>
 				<div className="admin-stat-card">
 					<div className="admin-stat-icon green"><Sparkles size={22} /></div>
 					<div className="admin-stat-content">
-						<div className="admin-stat-label">오늘 토큰</div>
+						<div className="admin-stat-label">{t("stats.todayTokens", "오늘 토큰")}</div>
 						<div className="admin-stat-value">{usageSummary.todayTokens.toLocaleString()}</div>
-						<div className="admin-stat-sub">누적: {usageSummary.totalTokens.toLocaleString()} tokens</div>
+						<div className="admin-stat-sub">{t("stats.cumulative", { count: usageSummary.totalTokens.toLocaleString(), defaultValue: "누적: {{count}} tokens" })}</div>
 					</div>
 				</div>
 				<div className="admin-stat-card">
 					<div className="admin-stat-icon amber"><Bot size={22} /></div>
 					<div className="admin-stat-content">
-						<div className="admin-stat-label">등록 모델</div>
+						<div className="admin-stat-label">{t("stats.registeredModels", "등록 모델")}</div>
 						<div className="admin-stat-value">{models.length}</div>
-						<div className="admin-stat-sub">전체 요청: {usageSummary.totalRequests}</div>
+						<div className="admin-stat-sub">{t("stats.totalRequests", "전체 요청")}: {usageSummary.totalRequests}</div>
 					</div>
 				</div>
 			</div>
@@ -325,10 +328,10 @@ export function AdminAiTab({
 			{/* 헤더 */}
 			<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
 				<h3 className="admin-section-title" style={{ marginBottom: 0 }}>
-					<Bot size={16} /> 모델 설정
+					<Bot size={16} /> {t("aiTab.title", "모델 설정")}
 				</h3>
 				<Button className="model-add-btn" onClick={() => setShowModelModal(true)}>
-					<Plus size={14} /> 모델 추가
+					<Plus size={14} /> {t("aiTab.addModel", "모델 추가")}
 				</Button>
 			</div>
 
@@ -336,7 +339,7 @@ export function AdminAiTab({
 			{modelsLoading ? (
 				<div className="admin-empty-state">
 					<Loader2 size={24} className="animate-spin" />
-					<p>모델 목록을 불러오는 중...</p>
+					<p>{t("aiTab.loading", "모델 목록을 불러오는 중...")}</p>
 				</div>
 			) : (
 				<div className="admin-table-wrapper">
@@ -374,7 +377,7 @@ export function AdminAiTab({
 						<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
 							<h3 style={{ margin: 0 }}>
 								<Settings2 size={18} />
-								{settingsModel.display_name} 설정
+								{t("aiTab.settingsTitle", { name: settingsModel.display_name, defaultValue: `${settingsModel.display_name} 설정` })}
 								<span className="provider-badge" style={{
 									borderColor: PROVIDERS[settingsModel.provider]?.color || "#888",
 									color: PROVIDERS[settingsModel.provider]?.color || "#888",
@@ -391,16 +394,16 @@ export function AdminAiTab({
 						{/* 시스템 프롬프트 */}
 						<div className="prompt-editor" style={{ marginTop: 20 }}>
 							<div className="prompt-editor-header">
-								<h4><Edit3 size={13} /> 시스템 프롬프트</h4>
+								<h4><Edit3 size={13} /> {t("aiTab.systemPrompt", "시스템 프롬프트")}</h4>
 								{settingsModel.system_prompt && (
-									<Button variant="ghost" size="sm" onClick={() => setPromptDraft("")}><RotateCcw size={12} /> 초기화</Button>
+									<Button variant="ghost" size="sm" onClick={() => setPromptDraft("")}><RotateCcw size={12} /> {t("aiTab.reset", "초기화")}</Button>
 								)}
 							</div>
 							<textarea
 								className="prompt-textarea"
 								value={promptDraft}
 								onChange={(e) => setPromptDraft(e.target.value)}
-								placeholder="시스템 프롬프트를 입력하세요... (비워두면 기본값 사용)"
+								placeholder={t("aiTab.systemPromptPlaceholder", "시스템 프롬프트를 입력하세요... (비워두면 기본값 사용)")}
 								rows={5}
 							/>
 						</div>
@@ -408,28 +411,28 @@ export function AdminAiTab({
 						{/* 파라미터 트윅 */}
 						<div className="tweak-panel" style={{ marginTop: 12 }}>
 							<h4 style={{ margin: "0 0 12px", fontSize: 13, fontWeight: 600, display: "flex", alignItems: "center", gap: 6 }}>
-								<Sliders size={13} /> 파라미터 트윅
+								<Sliders size={13} /> {t("aiTab.parameterTweak", "파라미터 트윅")}
 							</h4>
 							<div className="tweak-grid">
 								<div className="tweak-item">
-									<label>Temperature</label>
+									<label>{t("aiTab.temperature", "Temperature")}</label>
 									<Slider min={0} max={2} step={0.05} value={[configDraft.temperature]}
 										onValueChange={(v) => setConfigDraft(d => ({ ...d, temperature: v[0] }))} />
 									<span>{configDraft.temperature.toFixed(2)}</span>
 								</div>
 								<div className="tweak-item">
-									<label>Max Tokens</label>
+									<label>{t("aiTab.maxTokens", "Max Tokens")}</label>
 									<Input type="number" min={256} max={32768} step={256} value={configDraft.maxOutputTokens}
 										onChange={(e) => setConfigDraft(d => ({ ...d, maxOutputTokens: parseInt(e.target.value) || 8192 }))} />
 								</div>
 								<div className="tweak-item">
-									<label>Top P</label>
+									<label>{t("aiTab.topP", "Top P")}</label>
 									<Slider min={0} max={1} step={0.01} value={[configDraft.topP]}
 										onValueChange={(v) => setConfigDraft(d => ({ ...d, topP: v[0] }))} />
 									<span>{configDraft.topP.toFixed(2)}</span>
 								</div>
 								<div className="tweak-item">
-									<label>Top K</label>
+									<label>{t("aiTab.topK", "Top K")}</label>
 									<Input type="number" min={0} max={100} value={configDraft.topK}
 										onChange={(e) => setConfigDraft(d => ({ ...d, topK: parseInt(e.target.value) || 40 }))} />
 								</div>
@@ -438,20 +441,20 @@ export function AdminAiTab({
 										<div className="tweak-item" style={{ gridColumn: "1 / -1", display: "flex", alignItems: "center", gap: 8, marginTop: 4 }}>
 											<label style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", margin: 0, fontWeight: 600 }}>
 												<input type="checkbox" checked={configDraft.deepseekThinking} onChange={(e) => setConfigDraft(d => ({ ...d, deepseekThinking: e.target.checked }))} />
-												Thinking Mode (추론 모델) 활성화
+												{t("aiTab.thinkingMode", "Thinking Mode (추론 모델) 활성화")}
 											</label>
-											<span style={{ fontSize: 11, color: "var(--text-tertiary)" }}>DeepSeek V4 Pro 추론 기능. 활성화 시 temperature/top_p는 무시됩니다.</span>
+											<span style={{ fontSize: 11, color: "var(--text-tertiary)" }}>{t("aiTab.thinkingModeDesc", "DeepSeek V4 Pro 추론 기능. 활성화 시 temperature/top_p는 무시됩니다.")}</span>
 										</div>
 										{configDraft.deepseekThinking && (
 											<div className="tweak-item" style={{ gridColumn: "1 / -1" }}>
-												<label>Reasoning Effort</label>
+												<label>{t("aiTab.reasoningEffort", "Reasoning Effort")}</label>
 												<select
 													value={configDraft.deepseekReasoningEffort}
 													onChange={(e) => setConfigDraft(d => ({ ...d, deepseekReasoningEffort: e.target.value as "high" | "max" }))}
 													style={{ width: "100%", padding: "6px 8px", borderRadius: 6, border: "1px solid var(--border-color)", background: "var(--bg-input)", color: "var(--text-primary)", fontSize: 13 }}
 												>
-													<option value="high">high — 빠른 응답, 일반 추론</option>
-													<option value="max">max — 깊은 추론, 복잡한 작업</option>
+													<option value="high">{t("aiTab.reasoningEffortHigh", "high — 빠른 응답, 일반 추론")}</option>
+													<option value="max">{t("aiTab.reasoningEffortMax", "max — 깊은 추론, 복잡한 작업")}</option>
 												</select>
 											</div>
 										)}
@@ -463,43 +466,43 @@ export function AdminAiTab({
 									<div className="tweak-item" style={{ gridColumn: "1 / -1", display: "flex", alignItems: "center", gap: 8, marginTop: 4, paddingTop: 8, borderTop: "1px solid var(--border-color)" }}>
 										<label style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", margin: 0, fontWeight: 600 }}>
 											<input type="checkbox" checked={configDraft.thinkingEnabled} onChange={(e) => setConfigDraft(d => ({ ...d, thinkingEnabled: e.target.checked }))} />
-											🧠 Thinking Mode (추론) 활성화
+											{t("aiTab.thinkingModeGemini", "🧠 Thinking Mode (추론) 활성화")}
 										</label>
-										<span style={{ fontSize: 11, color: "var(--text-tertiary)" }}>Gemini 3 Flash 사고 모드. 문제 해결 품질이 향상됩니다.</span>
+										<span style={{ fontSize: 11, color: "var(--text-tertiary)" }}>{t("aiTab.thinkingModeGeminiDesc", "Gemini 3 Flash 사고 모드. 문제 해결 품질이 향상됩니다.")}</span>
 									</div>
 									{configDraft.thinkingEnabled && (
 										<>
 											<div className="tweak-item">
-												<label>Reasoning Effort</label>
+												<label>{t("aiTab.reasoningEffort", "Reasoning Effort")}</label>
 												<select
 													value={configDraft.thinkingEffort}
 													onChange={(e) => setConfigDraft(d => ({ ...d, thinkingEffort: e.target.value as "low" | "medium" | "high" }))}
 													style={{ width: "100%", padding: "6px 8px", borderRadius: 6, border: "1px solid var(--border-color)", background: "var(--bg-input)", color: "var(--text-primary)", fontSize: 13 }}
 												>
-													<option value="low">low — 최소 추론, 빠른 응답</option>
-													<option value="medium">medium — 균형 (기본값)</option>
-													<option value="high">high — 깊은 추론, 복잡한 작업</option>
+													<option value="low">{t("aiTab.reasoningEffortLow", "low — 최소 추론, 빠른 응답")}</option>
+													<option value="medium">{t("aiTab.reasoningEffortMedium", "medium — 균형 (기본값)")}</option>
+													<option value="high">{t("aiTab.reasoningEffortMax", "high — 깊은 추론, 복잡한 작업")}</option>
 												</select>
 											</div>
 											<div className="tweak-item" style={{ gridColumn: "1 / -1", display: "flex", alignItems: "center", gap: 8 }}>
 												<label style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", margin: 0 }}>
 													<input type="checkbox" checked={configDraft.includeThoughts} onChange={(e) => setConfigDraft(d => ({ ...d, includeThoughts: e.target.checked }))} />
-													사고 요약 포함 (include_thoughts)
+													{t("aiTab.includeThoughts", "사고 요약 포함 (include_thoughts)")}
 												</label>
-												<span style={{ fontSize: 11, color: "var(--text-tertiary)" }}>모델의 추론 과정 요약을 응답에 포함합니다.</span>
+												<span style={{ fontSize: 11, color: "var(--text-tertiary)" }}>{t("aiTab.includeThoughtsDesc", "모델의 추론 과정 요약을 응답에 포함합니다.")}</span>
 											</div>
 										</>
 									)}
 									<div className="tweak-item">
-										<label>Service Tier</label>
+										<label>{t("aiTab.serviceTier", "Service Tier")}</label>
 										<select
 											value={configDraft.serviceTier}
 											onChange={(e) => setConfigDraft(d => ({ ...d, serviceTier: e.target.value as "" | "flex" | "priority" }))}
 											style={{ width: "100%", padding: "6px 8px", borderRadius: 6, border: "1px solid var(--border-color)", background: "var(--bg-input)", color: "var(--text-primary)", fontSize: 13 }}
 										>
-											<option value="">default — 기본</option>
-											<option value="flex">flex — 저비용 (비용 절감)</option>
-											<option value="priority">priority — 고속 (레이턴시 최소화)</option>
+											<option value="">{t("aiTab.serviceTierDefault", "default — 기본")}</option>
+											<option value="flex">{t("aiTab.serviceTierFlex", "flex — 저비용 (비용 절감)")}</option>
+											<option value="priority">{t("aiTab.serviceTierPriority", "priority — 고속 (레이턴시 최소화)")}</option>
 										</select>
 									</div>
 								</>
@@ -509,7 +512,7 @@ export function AdminAiTab({
 
 						{/* API 키 연결 */}
 						<div className="model-card-apikey" style={{ marginTop: 12 }}>
-							<label><Key size={11} /> API 키:</label>
+							<label><Key size={11} /> {t("aiTab.apiKey", "API 키:")}</label>
 							<select
 								value={settingsModel.api_key_id || ""}
 								onChange={(e) => {
@@ -518,7 +521,7 @@ export function AdminAiTab({
 									setSettingsModel((prev) => (prev ? { ...prev, api_key_id: val } : null));
 								}}
 							>
-								<option value="">환경변수 사용</option>
+								<option value="">{t("aiTab.useEnv", "환경변수 사용")}</option>
 								{apiKeys.filter((k) => k.service === settingsModel.provider || k.service === "custom").map((k) => (
 									<option key={k.id} value={k.id}>{k.name}</option>
 								))}
@@ -535,7 +538,7 @@ export function AdminAiTab({
 						{/* API 연결 테스트 */}
 						<div className="test-connection-panel" style={{ marginTop: 12 }}>
 							<div className="test-connection-header">
-								<h4><Zap size={13} /> API 연결 테스트</h4>
+								<h4><Zap size={13} /> {t("aiTab.apiTest", "API 연결 테스트")}</h4>
 								<Button
 									className={`test-btn ${isTesting ? "testing" : ""}`}
 									disabled={isTesting || !settingsModel.is_active}
@@ -549,15 +552,15 @@ export function AdminAiTab({
 									}}
 								>
 									{isTesting ? (
-										<><Loader2 size={12} className="animate-spin" /> 테스트 중...</>
+										<><Loader2 size={12} className="animate-spin" /> {t("aiTab.testing", "테스트 중...")}</>
 									) : (
-										<><Zap size={12} /> 테스트 실행</>
+										<><Zap size={12} /> {t("aiTab.testBtn", "테스트 실행")}</>
 									)}
 								</Button>
 							</div>
 							{!settingsModel.is_active && (
 								<div style={{ fontSize: 11, color: "var(--text-tertiary)", marginTop: 4 }}>
-									※ 활성 모델만 테스트할 수 있습니다
+									{t("aiTab.activeTestOnly", "※ 활성 모델만 테스트할 수 있습니다")}
 								</div>
 							)}
 							{testResult && (
@@ -580,13 +583,13 @@ export function AdminAiTab({
 
 						{/* 저장/취소 */}
 						<div className="admin-modal-actions">
-							<Button variant="secondary" onClick={() => setSettingsModel(null)}>취소</Button>
+							<Button variant="secondary" onClick={() => setSettingsModel(null)}>{t("aiTab.cancel", "취소")}</Button>
 							<Button onClick={() => {
 								saveSystemPrompt(settingsModel.model_id, promptDraft);
 								saveGenerationConfig(settingsModel.model_id, configDraft);
 								setSettingsModel(null);
 							}}>
-								<Save size={14} /> 저장
+								<Save size={14} /> {t("aiTab.save", "저장")}
 							</Button>
 						</div>
 					</div>
