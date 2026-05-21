@@ -1,46 +1,87 @@
-# 📚 WebCG-K Security & Learning Tasks
+# TASKS
 
-본 문서는 단순히 코딩 구현(Doing)을 넘어, 각 태스크 달성 시 실무 및 아키텍처 관점에서 무엇을 학습하고 성장하는지 정의하는 **학습형 백로그(Learning Backlog)**입니다.
+## 🟢 DOING (진행 중인 작업)
+- [ ] **디자인 테마 기반 Bundle UI 확장 (Phase 3)**
+  - *학습 목표: 구조(HTML)와 표현(CSS)을 분리하여 확장성 높은 디자인 시스템 컴포넌트 만들기*
+  - 번들 에디터(`/bundles/$bundleId.tsx`)에서 `theme_config` JSONB 속성을 수정할 수 있는 컬러 피커 툴 UI 추가
 
----
+## 🔵 TODO (예정된 작업)
+- [ ] **오버레이 SDK 시간/상태 동기화 계약 구현**
+  - *학습 목표: 상태ful 방송 그래픽(Broadcast Graphics)을 iframe runtime 시작 시점이 아니라 TAKE 절대 시간 기준으로 재현하는 방법 습득*
+- [ ] **오버레이 카테고리 분리 마이그레이션 실행**
+  - 생성된 SQL 마이그레이션 로컬 DB 적용 (`supabase migration up`)
+- [ ] **로컬 DB 마이그레이션 적용**: `supabase migration up` 실행하여 `input_contract`, `semantic_role`, `last_modified_by`, `generation_source_hash` 컬럼 등 AI 큐시트 메타데이터 스키마 적용
 
-## 🎯 Completed Tasks (Done)
-
-### 1) [HIGH] api_keys.encrypted_key 컬럼 암호화
-- **상태:** ✅ 완료
-- **조치:** Supabase 마이그레이션 내 pgcrypto 활성화 + 대칭 암호화 트리거 구성 + `aiSvgService.ts` RPC 연동.
-- **💡 🎯 이 태스크의 학습 목표 (Learning Objective):**
-  > "데이터베이스 저장 시점(Rest)의 암호화 기법(Symmetric Encryption)을 구현하고, DB가 통째로 유출되는 위기 상황에서도 마스터 자격 증명(API Key)을 보존할 수 있는 **Deep Security-by-Design 설계 사상**을 터득한다."
-
-### 2) [HIGH] characters 스토리지 버킷 파일 제한 강화
-- **상태:** ✅ 완료
-- **조치:** 단일 마이그레이션 파일 내 `storage.buckets` 제약 조건(MIME, 크기 5MB 제한) 부착 및 `ON CONFLICT DO UPDATE` 방어 쿼리 적용.
-- **💡 🎯 이 태스크의 학습 목표 (Learning Objective):**
-  > "스토리지 버킷에 대한 무제한 업로드 취약점(DoS, 악성 스크립트 실행 XSS)을 스키마 제어단에서 근본적으로 봉쇄하는 **스토리지 엔지니어링 방어 전략**을 완성한다."
-
-### 3) [MIGRATION] 마이그레이션 파일 단일화 통합
-- **상태:** ✅ 완료
-- **조치:** `202605140001_overlay_blend_mode.sql`과 `20260520000000_combined_migration.sql`을 연대기적(Chonological) 순서로 하나의 통합 SQL로 빌드 완료.
-- **💡 🎯 이 태스크의 학습 목표 (Learning Objective):**
-  > "다중으로 파편화된 데이터베이스 마이그레이션 파일들을 시간순 의존성(Chronological Dependency)을 해치지 않고 하나의 원자적(Atomic) 단일 파일로 완전 융합하는 **스키마 무결성 최적화 관리 기술**을 익힌다."
-
-### 4) [CLEANUP] Fathom 모듈 및 시드 데이터 소거
-- **상태:** ✅ 완료
-- **조치:** 통합 마이그레이션 파일 내에서 9개의 `fathom_*` 테이블, `fathom-files` 스토리지 버킷, helper 함수, 관련 RLS 및 시드 데이터를 퍼블릭 리포지토리에서 완전 분리·소거 (공통 핵심 인프라인 `profiles`, `pgcrypto` 등은 안전히 유지).
-- **💡 🎯 이 태스크의 학습 목표 (Learning Objective):**
-  > "불필요한 대형 모듈을 상호 의존성 분석 하에 영향도 없이 완벽히 은퇴(Retire)시키고, 스키마 및 저장소 공격 표면(Attack Surface)을 선제적으로 극소화하는 **안전한 레거시 은퇴 및 경량화 기술**을 습득한다."
-
----
-
-## ⏳ In Progress Tasks (Doing)
-
-- 현재 진행 중인 상위 태스크 없음.
-
----
-
-## 📋 Backlog Tasks (Todo)
-
-### 5) [HIGH] iframe postMessage 오리진 검증 및 최소화 (우선순위 상)
-- **💡 🎯 이 태스크의 학습 목표 (Learning Objective):**
-  > "크로스 도메인 통신(postMessage)의 무방비 와일드카드 타깃 지정을 피하고, DOM Tree 탈취(innerHTML exfiltration) 방지를 통해 **클라이언트 샌드박싱 격리 기술**을 체득한다."
-
+## ✅ DONE (완료된 작업)
+- [x] **Supabase Realtime 암묵적 REST fallback 경고 제거**
+  - *학습 목표: WebSocket broadcast와 REST delivery의 의도를 분리하고 테스트로 고정해, 방송 그래픽(Broadcast Graphics) 실시간 명령과 presence 이벤트를 다르게 다루는 방법 습득*
+- [x] **판서 레이어 입력 불가 버그 복구**
+  - *학습 목표: DB schema cache/마이그레이션 지연과 pen/touch pointer event 차이를 분리해, 방송 그래픽(Broadcast Graphics) 운영 입력을 graceful degradation으로 보호하는 방법 습득*
+- [x] **판서 에디터 실제 render 배경 및 송출 커서 구현**
+  - *학습 목표: passive render iframe과 TTL presence cursor로 편집 조준성과 실제 송출 안전성을 동시에 확보하는 방법 습득*
+- [x] **tldraw 제거 및 경량 방송 판서 레이어 구현**
+  - *학습 목표: 무거운 에디터 SDK 대신 작은 stroke engine과 JSON 문서 모델로 라이선스 안전한 방송용 텔레스트레이션 레이어를 설계하는 방법 습득*
+- [x] **화이트보드 PVW/PGM 절체 및 렌더링 복구**
+  - *학습 목표: Yjs 스냅샷 hydrate와 수동 playout 버스를 PVW/PGM/render 공통 렌더링 경로로 연결하는 방법 습득*
+- [x] **PVW 오버레이 런타임 격리 정책 적용**
+  - *학습 목표: PGM으로 TAKE된 상태ful 오버레이를 PVW에서 숨겨 timer/animation drift 노출을 줄이는 운영 정책 설계 습득*
+- [x] **ACK/Heartbeat 복구 루프 1차 완성**
+  - *학습 목표: Supabase Realtime broadcast의 fire-and-forget 한계를 ACK retry와 heartbeat topic 정렬로 보완하는 방법 습득*
+- [x] **Broadcast Source Contract 정규화**
+  - *학습 목표: 런다운 오버레이 데이터 계약을 깊은 모듈로 수렴해 PVW/PGM/render 출력 일관성을 확보하는 방법 습득*
+  - `broadcastSourceData.ts`, `BroadcastHtmlOverlay.tsx` 추가 및 세 렌더링 경로 연결
+- [x] **AI Cuesheet Localization & Service Refinement**
+  - *학습 목표: 다국어(i18n) 시스템 확장 및 외부 API(Supabase Join) 데이터와 로컬 Interface 간의 타입 안정성 확보*
+  - `aiCuesheetSessionService.ts`: `Json` 타입 불일치로 인한 TS 에러 해결 (명시적 캐스팅 적용)
+  - `ai-cuesheet.lazy.tsx`: 모든 UI 텍스트를 `dashboard` 네임스페이스로 이전 및 한글화 완료 (StepIndicator, StatusBadge, WizardSteps 대응)
+  - 서비스 로직 내 `rundownId` 스코프 수정 및 미정의 변수(`supabase`) 에러 해결
+- [x] **AI Overlay Prompt Refinement & Zone Awareness**
+  - *학습 목표: LLM에게 물리적 렌더링 제약 조건(Zone, Overflow)을 명시적으로 주입하여 생성 코드의 안정성 확보*
+  - `aiOverlayService.ts`: 좌표(x, y), 크기(w, h) 및 반응형 레이아웃(Flex/Ratio) 지침 추가
+- [x] **Bundle-Aware AI Cuesheet Workflow 완성**
+  - *학습 목표: 개별 서비스(Cuesheet, Overlay)와 통합 저장소(Bundle) 간의 데이터 흐름 자동화 (FK 연동)*
+  - `aiCuesheetService.ts`: 생성된 오버레이를 Bundle Slot에 자동 등록하는 로직 구현
+  - `bundleService.ts`: `overlay_id` 필드 지원을 통해 AI 생성 템플릿의 직접적인 번들링 허용
+- [x] **SemanticRenderer v3: Semantic & Fluid CG 아키텍처 구현 (12 Phase)**
+  - *학습 목표: Schema.org(구조화된 데이터) + CSS Flexbox/Grid(레이아웃 추상화)를 방송 그래픽에 융합한 의미론적 렌더링 시스템 설계*
+  - Phase 1-2: `semanticTypes.ts`(타입), `themePresets.ts`(3개 내장 테마)
+  - Phase 3-4: `themeStore.ts`(TanStack Store), `ThemeProvider.tsx`(--cg-* CSS 변수 주입)
+  - Phase 5-7: `layoutUtils.ts`(LayoutIntent→CSS), `NodeRenderer.tsx`(재귀, maxDepth=4), `SemanticRenderer.tsx`(Scene + AnimPhase)
+  - Phase 8-9: `CompositorLayer.tsx`(semantic 라우팅), `semanticRenderer.css`(Container Queries)
+  - Phase 10-12: `styles.css`(--cg-* fallback), `bundleService.ts`(theme_config R/W), `render.tsx`(ThemeProvider 래핑)
+- [x] **AI 큐시트 Phase 2 핵심 파이프라인 구현**
+  - *학습 목표: 구조적 계약(`input_contract`) 기반 템플릿 매칭 엔진 + JSON Truncation Recovery 파서*
+  - `aiCuesheetTypes.ts` — 타입 정의
+  - `aiCuesheetService.ts` — 시스템 프롬프트 빌더, 3단계 JSON 복구 파서, 구조적 계약 매칭 엔진, 미싱 오버레이 일괄 생성, 런다운 블록 빌더
+  - `ai-cuesheet.lazy.tsx` — 5단계 스테이트 머신 UI (시스템 프롬프트 → JSON 입력 → 템플릿 매칭 → 생성 → 런다운 생성)
+  - DB 마이그레이션: `input_contract`, `semantic_role`, `last_modified_by`, `generation_source_hash` 컬럼 + Phase 4 대비 `ai_cuesheet_sessions`/`scenes` 테이블 선제 정의
+- [x] **Graphify 지식 그래프 최신화 (`graphify update`)**
+  - *학습 목표: 코드베이스 성장에 따른 정적 분석 기반의 의존성 시각화 및 God Nodes 추적*
+  - `graphify-out` 초기화 및 재생성 (노드 707개, 엣지 905개로 구조적 밀도 증가 확인)
+- [x] **AI 서비스 아키텍처 통합 및 고도화 (aiCoreService)**
+  - *학습 목표: 공통 API 인프라(Core)와 도메인 서비스(Overlay, CG, Cuesheet) 분리를 통한 유지보수성 확보 및 추론 모델(Reasoning) 대응*
+  - `aiCoreService.ts` 도입: API 키 관리, 프로바이더 추상화(Gemini, OpenAI-compatible), 사용량 로깅, 캐싱 통합
+  - `aiOverlayService`, `aiCgService`, `aiCuesheetService`를 Core 기반으로 리팩토링
+  - Truncated JSON Repair(잘린 JSON 복구) 로직 고도화 및 추론 모델 전용 압축 시스템 프롬프트 도입
+- [x] **최신 코드베이스 동기화 (`git pull`)**
+  - *학습 목표: 업스트림 변경사항 병합 및 다중 워크스페이스(Workspace) 아키텍처의 상태 동기화 메커니즘 이해*
+  - **Pull 날짜**: 2026-05-12
+  - **주요 반영 사항**:
+    - `AuthContext`: `activeWorkspaceId` 및 `setActiveWorkspace` Provider 누락 수정 반영.
+    - **Workspace 고도화**: 워크스페이스 수정, 초대 멤버 검색, `workspace_id` 자동 주입 로직 통합.
+    - **DB Type Safety**: `workspace` 테이블이 포함된 최신 `database.types.ts` 동기화.
+    - conflict 발생 시 `docs/` 파일들을 remote 기준으로 강제 동기화하여 환경 정합성 확보.
+- [x] **대시보드 사이드바 네비게이션 UX/UI 전면 개편 (3-Tier 구조 도입)**
+  - *학습 목표: TanStack Router의 파일 기반 중첩 라우팅 아키텍처 완벽 이해 및 Progressive Disclosure 패턴 적용하기*
+  - `useProMode` 훅 도입으로 초보/프로 유저 권한 및 복잡도 분리 달성
+  - `graphics`, `overlays`, `bundles` -> `studio` 하위 라우트로 그룹화
+  - `images`, `fonts` -> `assets` 하위 라우트로 그룹화
+  - 관련된 모든 링크 의존성 및 CSS 파일 경로 수정 완료
+- [x] **Admin Workspace Management UI Stability Fix**
+  - *학습 목표: malformed JSX가 유발하는 'Unterminated regular expression' 오차 분석 및 복합 중첩 구조의 태그 정합성 확보*
+  - `AdminWorkspacesTab.tsx`: 중복/누락된 `</div>` 태그 전수 조사 및 수정 완료 (컴파일러 혼란 해결)
+  - 서비스 레이어 함수명(`fetchMembers`, `inviteMember`, `removeMember`) 정합성 오류 해결
+- [x] **TanStack Supply Chain Attack Security Audit**
+  - *학습 목표: 오픈소스 공급망 공격의 메커니즘(캐시 오염, OIDC 탈취) 이해 및 프로젝트 안전성 검증 방법론 숙달*
+  - IOC(침해 지표) 전수 검사: `@tanstack/setup` 의존성 및 `router_init.js` 페이로드 부재 확인
+  - 타임라인 분석: 5월 1일 업그레이드 이력을 통해 5월 11일 발생한 공격으로부터 물리적 격리 입증
