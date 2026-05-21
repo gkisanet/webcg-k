@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef } from "react";
 import type { PluginSourceCode } from "../../../../lib/overlayTypes";
 import { getVisualEditBridgeInline } from "../../../../lib/visualEditBridge";
-import { getWebcgkApiInline } from "../lib/webcgk-api";
+import { buildPluginSrcdoc } from "../../../../lib/webcgkSrcdoc";
 
 export function usePreviewBridge(
   code: PluginSourceCode,
@@ -21,48 +21,14 @@ export function usePreviewBridge(
 
   const buildSrcdoc = useCallback(
     (c: PluginSourceCode) => {
-      return `<!DOCTYPE html>
-<html>
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=1920,height=1080">
-<style>
-* { margin: 0; padding: 0; box-sizing: border-box; }
-html {
-  background-color: #666;
-  background-image:
-    linear-gradient(45deg, #444 25%, transparent 25%),
-    linear-gradient(-45deg, #444 25%, transparent 25%),
-    linear-gradient(45deg, transparent 75%, #444 75%),
-    linear-gradient(-45deg, transparent 75%, #444 75%);
-  background-size: 16px 16px;
-  background-position: 0 0, 0 8px, 8px -8px, -8px 0px;
-}
-body { width: 100%; height: 100vh; overflow: hidden; background: transparent; }
-@keyframes fadeInUp {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-@keyframes fadeOutDown {
-  from { opacity: 1; transform: translateY(0); }
-  to { opacity: 0; transform: translateY(20px); }
-}
-${c.css}
-</style>
-</head>
-<body>
-${c.html}
-<script>
-${getWebcgkApiInline()}
-</script>
-<script>
-${getVisualEditBridgeInline()}
-</script>
-<script>
-${c.js}
-</script>
-</body>
-</html>`;
+      return buildPluginSrcdoc({
+        html: c.html,
+        css: c.css,
+        js: c.js,
+        autoShow: false,
+        previewBackground: "checkerboard",
+        extraBodyScripts: [getVisualEditBridgeInline()],
+      });
     },
     [],
   );

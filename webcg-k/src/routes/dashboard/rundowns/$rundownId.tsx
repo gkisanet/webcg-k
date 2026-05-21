@@ -40,7 +40,7 @@ import { Button } from "@/components/ui/button";
 import { GraphicPreviewRenderer, getTextElements, type GraphicElement } from "../../../components/GraphicPreviewRenderer";
 import { useAuth } from "../../../lib/auth";
 import { supabase } from "../../../lib/supabase";
-import { getWebcgkApiInline } from "../../../components/Overlay/PluginEditor/lib/webcgk-api";
+import { buildPluginSrcdoc } from "../../../lib/webcgkSrcdoc";
 import {
     buildOverlayReplicantData,
     getDashboardSchemaProperties,
@@ -797,43 +797,15 @@ function RundownEditorPage() {
         }
     };
 
-    // srcdoc 생성 — 코드 + webcgk-api.js 주입
+    // srcdoc 생성 — 공통 webcgk 런타임 주입
     const buildPreviewSrcdoc = (html: string, css: string, js: string) => {
-        return `<!DOCTYPE html>
-<html>
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=1920,height=1080">
-<style>
-* { margin: 0; padding: 0; box-sizing: border-box; }
-html {
-  background-color: #666;
-  background-image:
-    linear-gradient(45deg, #444 25%, transparent 25%),
-    linear-gradient(-45deg, #444 25%, transparent 25%),
-    linear-gradient(45deg, transparent 75%, #444 75%),
-    linear-gradient(-45deg, transparent 75%, #444 75%);
-  background-size: 16px 16px;
-  background-position: 0 0, 0 8px, 8px -8px, -8px 0px;
-}
-body { width: 100%; height: 100vh; overflow: hidden; background: transparent; }
-@keyframes fadeInUp {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-@keyframes fadeOutDown {
-  from { opacity: 1; transform: translateY(0); }
-  to { opacity: 0; transform: translateY(20px); }
-}
-${css}
-</style>
-</head>
-<body>
-${html}
-<script>${getWebcgkApiInline()}</script>
-<script>${js}</script>
-</body>
-</html>`;
+        return buildPluginSrcdoc({
+            html,
+            css,
+            js,
+            autoShow: false,
+            previewBackground: "checkerboard",
+        });
     };
 
     // 프리뷰 iframe에 데이터 전달 후 SHOW

@@ -3,7 +3,7 @@
  *
  * 모든 SemanticRole 정의의 단일 진실 공급원.
  * aiCuesheetTypes, buildSystemPrompt, GRAPHIC_GENERATION_SYSTEM_PROMPT,
- * Graphic Tagging 페이지 등이 이 파일을 참조한다.
+ * 방송 그래픽 워크벤치 페이지 등이 이 파일을 참조한다.
  *
  * 새 role 추가 시 이 파일만 수정하면 모든 곳에 자동 반영됨.
  */

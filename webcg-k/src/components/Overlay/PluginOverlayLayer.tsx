@@ -30,6 +30,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "../../lib/supabase";
+import { buildPluginSrcdoc } from "../../lib/webcgkSrcdoc";
 
 // ─── 타입 ─────────────────────────────────────────────────────
 interface PluginOverlay {
@@ -57,42 +58,6 @@ interface PluginOverlayLayerProps {
 	 *   기본값 "program" (기존 동작 유지) */
 	mode?: "preview" | "program";
 }
-
-// ─── webcgk-api 인라인 코드 ───────────────────────────────────
-// iframe sandbox에서는 외부 스크립트를 로드할 수 없으므로
-// API 코드를 문자열로 직접 주입한다.
-const WEBCGK_API_INLINE = `
-(function() {
-  var _data = {}, _listeners = { data: [], show: [], hide: [], ready: [] }, _isVisible = false;
-  window.webcgk = {
-    onData: function(cb) { if (typeof cb === "function") { _listeners.data.push(cb); if (Object.keys(_data).length > 0) cb(_data); } },
-    onShow: function(cb) { if (typeof cb === "function") _listeners.show.push(cb); },
-    onHide: function(cb) { if (typeof cb === "function") _listeners.hide.push(cb); },
-    onReady: function(cb) { if (typeof cb === "function") _listeners.ready.push(cb); },
-    getData: function() { return _data; },
-    isVisible: function() { return _isVisible; },
-    sendToParent: function(type, payload) { try { window.parent.postMessage({ source: "webcgk-plugin", type: type, payload: payload }, "*"); } catch(e) {} }
-  };
-  window.addEventListener("message", function(event) {
-    var msg = event.data;
-    if (!msg || typeof msg !== "object") return;
-    if (msg.type === "REPLICANT_UPDATE") {
-      _data = msg.payload || {};
-      _listeners.data.forEach(function(cb) { try { cb(_data); } catch(e) { console.error("[webcgk]", e); } });
-    } else if (msg.type === "SHOW") {
-      _isVisible = true;
-      _listeners.show.forEach(function(cb) { try { cb(); } catch(e) {} });
-    } else if (msg.type === "HIDE") {
-      _isVisible = false;
-      _listeners.hide.forEach(function(cb) { try { cb(); } catch(e) {} });
-    } else if (msg.type === "INIT") {
-      if (msg.payload) { _data = msg.payload; _listeners.data.forEach(function(cb) { try { cb(_data); } catch(e) {} }); }
-      _listeners.ready.forEach(function(cb) { try { cb(); } catch(e) {} });
-    }
-  });
-  try { window.parent.postMessage({ source: "webcgk-plugin", type: "PLUGIN_READY" }, "*"); } catch(e) {}
-})();
-`;
 
 // ─── 컴포넌트 ─────────────────────────────────────────────────
 export function PluginOverlayLayer({ sessionId, mode = "program" }: PluginOverlayLayerProps) {
@@ -198,35 +163,14 @@ function PluginIframeLayer({ overlay }: { overlay: PluginOverlay }) {
 	//   플러그인 CSS는 1920x1080 해상도를 기준으로 작성되었으므로
 	//   iframe 내부를 고정 크기로 설정하고, 외부 컨테이너에서 CSS transform: scale()로 축소.
 	//   이렇게 하면 PVW든 PGM이든 에디터든 모두 동일한 비율을 보장.
-	const srcdoc = `<!DOCTYPE html>
-<html>
-<head>
-<meta charset="utf-8">
-<style>
-* { margin: 0; padding: 0; box-sizing: border-box; }
-html, body { background: transparent !important; }
-body { width: ${BASE_W}px; height: ${BASE_H}px; overflow: hidden; }
-@keyframes fadeInUp {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-@keyframes fadeOutDown {
-  from { opacity: 1; transform: translateY(0); }
-  to { opacity: 0; transform: translateY(20px); }
-}
-${css}
-</style>
-</head>
-<body>
-${html}
-<script>
-${WEBCGK_API_INLINE}
-</script>
-<script>
-${js}
-</script>
-</body>
-</html>`;
+	const srcdoc = buildPluginSrcdoc({
+		html,
+		css,
+		js,
+		width: BASE_W,
+		height: BASE_H,
+		autoShow: false,
+	});
 
 	// ■ replicant_data를 JSON 문자열로 직렬화하여 deep comparison
 	// Why?
@@ -356,4 +300,3 @@ ${js}
 		</div>
 	);
 }
-

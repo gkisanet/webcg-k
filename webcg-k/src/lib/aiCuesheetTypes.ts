@@ -1,12 +1,14 @@
 /**
  * AI 큐시트 타입 정의
  *
- * v4: AI는 콘텐츠 구조(TextSlot[])만 출력하고, 시각 디자인은 사람이 Graphic Tagging으로 제어.
+ * v4: AI는 콘텐츠 구조(TextSlot[])만 출력하고, 시각 디자인은 사람이 방송 그래픽 워크벤치에서 제어.
  *     Step 3에서 AI 플러그인 생성 방식처럼 씬별 HTML/CSS 그래픽을 생성.
  *
  * v3: semantic_scene 기반 (SemanticScene + SemanticRenderer)
  * v2: template 기반 (is_new / fields / input_contract 매칭)
  */
+
+import type { AiCuesheetZoneProfile } from "@/lib/aiCuesheetZoneProfile";
 
 // ─── 세션 상태 ─────────────────────────────────────────────────────
 
@@ -19,6 +21,7 @@ export interface AiCuesheetSession {
   program_title: string;
   expert_data: { name: string; title: string; affiliation?: string };
   raw_input_json: string | null;
+  layout_profile?: AiCuesheetZoneProfile | null;
   scene_count: number;
   generated_count: number;
   status: SessionStatus;
@@ -54,7 +57,7 @@ export interface SessionListRow {
 // ─── 콘텐츠 구조 (AI 출력 + 사람 검토) ────────────────────────────
 
 /**
- * 정보의 성격 — Graphic Tagging에서 HTML 요소에 data-semantic 태깅할 때 사용.
+ * 정보의 성격 — 방송 그래픽 워크벤치에서 HTML 요소에 data-semantic 바인딩할 때 사용.
  *
  * ⚠️ SSOT: 새 role 추가 시 lib/semanticRoleDefs.ts 의 SEMANTIC_ROLE_DEFS 에만 추가하세요.
  *   이 union type과 buildSystemPrompt, GRAPHIC_GENERATION_SYSTEM_PROMPT 가 자동 반영됩니다.
@@ -74,7 +77,7 @@ export type StyleHint = "emphasis" | "normal" | "muted";
 
 /**
  * 하나의 텍스트 조각.
- * AI가 생성하고 사람이 Graphic Tagging에서 오버레이 요소에 매핑.
+ * AI가 생성하고 사람이 방송 그래픽 워크벤치에서 오버레이 요소에 매핑.
  */
 export interface TextSlot {
   /** 장면 내부에서 텍스트를 추적하는 안정 ID. HTML data-slot-id와 연결된다. */
@@ -211,4 +214,6 @@ export interface CuesheetWizardState {
   graphicStates: SceneGraphicState[];
   /** 추출된 테마 저장소 (themeId → ExtractedTheme) */
   extractedThemes: Record<string, ExtractedTheme>;
+  /** 세션 전체에서 zone_hint를 실제 1920x1080 좌표로 해석하는 레이아웃 프로필 */
+  zoneProfile: AiCuesheetZoneProfile;
 }

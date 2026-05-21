@@ -1,6 +1,6 @@
 import {
   FileCode, Palette, Zap, Table2,
-  Save, Copy, Wrench,
+  Save, Copy, Wrench, Undo2, Redo2,
 } from "lucide-react";
 import { useMemo } from "react";
 import type { EditorTab } from "../hooks/usePluginCode";
@@ -35,16 +35,24 @@ export function Toolbar({
   onSave,
   onSaveAs,
   onFormat,
+  onUndo,
+  onRedo,
   onImport,
   isSchemaTab,
+  canUndo,
+  canRedo,
 }: {
   activeTab: EditorTab;
   onTabChange: (tab: EditorTab) => void;
   onSave: () => void;
   onSaveAs: () => void;
   onFormat: () => void;
+  onUndo: () => void;
+  onRedo: () => void;
   onImport: () => void;
   isSchemaTab: boolean;
+  canUndo: boolean;
+  canRedo: boolean;
 }) {
   const tabs = useMemo(() => [
     { key: "html" as EditorTab, label: "HTML", icon: <FileCode size={14} /> },
@@ -72,6 +80,26 @@ export function Toolbar({
         ))}
       </div>
       <div style={{ display: "flex", gap: "8px" }}>
+        <button
+          type="button"
+          onClick={onUndo}
+          style={{ ...styles.saveBtn, background: "transparent", border: "1px solid var(--border-default)", color: "var(--text-secondary)" }}
+          title="되돌리기 (Ctrl+Z)"
+          aria-label="되돌리기"
+          disabled={isSchemaTab || !canUndo}
+        >
+          <Undo2 size={14} />
+        </button>
+        <button
+          type="button"
+          onClick={onRedo}
+          style={{ ...styles.saveBtn, background: "transparent", border: "1px solid var(--border-default)", color: "var(--text-secondary)" }}
+          title="다시 실행 (Ctrl+Y / Ctrl+Shift+Z)"
+          aria-label="다시 실행"
+          disabled={isSchemaTab || !canRedo}
+        >
+          <Redo2 size={14} />
+        </button>
         <button
           type="button"
           onClick={onImport}

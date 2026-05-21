@@ -1,8 +1,8 @@
 /**
- * Graphic Tagging — AI 생성 HTML/CSS 그래픽의 요소에 data-semantic 태깅
+ * Broadcast Graphics Workbench — AI 생성 HTML/CSS 방송 그래픽의 요소에 data-semantic 바인딩
  *
- * AI 큐시트 Step 3에서 "Send to Graphic Tagging"으로 전달된
- * HTML+CSS 그래픽을 iframe에 렌더링하고, 요소 클릭 → semantic role 태깅.
+ * AI 큐시트 Step 3에서 "Send to Workbench"로 전달된
+ * HTML+CSS 방송 그래픽을 iframe에 렌더링하고, 요소 클릭 → semantic role 바인딩.
  *
  * sessionStorage key: graphic-tagging:scene
  */
@@ -355,19 +355,19 @@ ${html}
       <div className="flex flex-col items-center justify-center h-full gap-4 text-center p-6">
         <Tag size={48} className="text-[var(--text-muted)]" />
         <div>
-          <h1 className="text-lg font-bold text-[var(--text-primary)] mb-2">Graphic Tagging</h1>
+          <h1 className="text-lg font-bold text-[var(--text-primary)] mb-2">Broadcast Graphics Workbench</h1>
           <p className="text-sm text-[var(--text-secondary)] max-w-md">
-            AI 큐시트에서 생성된 그래픽에 <code className="px-1 py-0.5 rounded bg-[var(--app-bg)] text-[11px]">data-semantic</code> 어트리뷰트를 태깅합니다.
+            AI 큐시트에서 생성된 HTML 방송 그래픽에 <code className="px-1 py-0.5 rounded bg-[var(--app-bg)] text-[11px]">data-semantic</code> 바인딩을 적용합니다.
           </p>
         </div>
         <div className="p-4 rounded-xl bg-[var(--app-bg)] border border-[var(--border-primary)] text-xs text-[var(--text-muted)] max-w-sm text-left space-y-2">
           <p className="font-semibold text-[var(--text-secondary)]">사용 방법</p>
           <ol className="list-decimal list-inside space-y-1">
-            <li>AI 큐시트 → Step 3에서 그래픽 생성</li>
-            <li>"Send to Graphic Tagging" 버튼 클릭</li>
-            <li>이 페이지에서 요소를 클릭하여 semantic role 태깅</li>
+            <li>AI 큐시트 → Step 3에서 방송 그래픽 생성</li>
+            <li>"Send to Workbench" 버튼 클릭</li>
+            <li>이 페이지에서 요소를 클릭하여 semantic role 바인딩</li>
             <li>Preview 모드로 실제 텍스트 확인</li>
-            <li>저장 후 Graphic Tagging에서 다시 열기</li>
+            <li>저장 후 Workbench에서 다시 열기</li>
           </ol>
         </div>
       </div>
@@ -393,7 +393,7 @@ ${html}
           </button>
           <div>
             <h1 className="text-sm font-bold text-[var(--text-primary)]">
-              Graphic Tagging
+              Broadcast Graphics Workbench
             </h1>
             <p className="text-[11px] text-[var(--text-secondary)]">
               {programTitle} — Scene {scene.order}: {scene.trigger}
@@ -438,7 +438,7 @@ ${html}
               srcDoc={iframeSrcDoc}
               className="w-full h-full border-0"
               sandbox="allow-scripts"
-              title="Graphic Tagging Canvas"
+              title="Broadcast Graphics Workbench Canvas"
             />
           </div>
         </div>

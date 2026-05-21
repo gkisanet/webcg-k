@@ -9,7 +9,11 @@ export interface AiCuesheetPublishReadiness {
   failedScenes: SceneContent[];
 }
 
-function isReadyGraphicState(state: SceneGraphicState | undefined): state is SceneGraphicState & { overlayTemplateId: string } {
+export function hasGeneratedGraphic(state: SceneGraphicState | undefined): state is SceneGraphicState & { generatedHtml: string } {
+  return state?.status === "done" && Boolean(state.generatedHtml);
+}
+
+function isPublishedGraphicState(state: SceneGraphicState | undefined): state is SceneGraphicState & { overlayTemplateId: string } {
   return state?.status === "done" && Boolean(state.overlayTemplateId);
 }
 
@@ -23,7 +27,7 @@ export function analyzeAiCuesheetPublishReadiness(
 
   scenes.forEach((scene, sceneIndex) => {
     const state = graphicStates[sceneIndex];
-    if (isReadyGraphicState(state)) {
+    if (hasGeneratedGraphic(state)) {
       readyScenes += 1;
       return;
     }
@@ -48,7 +52,7 @@ export function buildPartialPublishMessage(readiness: AiCuesheetPublishReadiness
 
   return [
     `${readiness.readyScenes}/${readiness.totalScenes}개 장면만 런다운에 발행됩니다.`,
-    "아래 장면은 생성 또는 저장된 오버레이가 없어 제외됩니다.",
+    "아래 장면은 생성된 HTML 방송 그래픽이 없어 제외됩니다.",
     missing,
     "부분 발행을 계속할까요?",
   ].filter(Boolean).join("\n\n");
@@ -69,7 +73,7 @@ export function buildRundownOverlayInserts({
 
   return scenes.flatMap((scene, sceneIndex) => {
     const state = graphicStates[sceneIndex];
-    if (!isReadyGraphicState(state)) return [];
+    if (!isPublishedGraphicState(state)) return [];
 
     return [{
       rundown_id: rundownId,

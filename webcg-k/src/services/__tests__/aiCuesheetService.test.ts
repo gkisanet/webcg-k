@@ -9,6 +9,7 @@ import {
 	validateGraphicSlotBindings,
 } from "../aiCuesheetService";
 import type { SceneContent, SceneGraphicResult } from "@/lib/aiCuesheetTypes";
+import { DEFAULT_AI_CUESHEET_ZONE_PROFILE } from "@/lib/aiCuesheetZoneProfile";
 
 function makeScene(): SceneContent {
 	return {
@@ -192,6 +193,16 @@ describe("AI cuesheet v4.1 provenance contract", () => {
 		expect(prompt).toContain('source_value: "홍길동 한국대학교 문화학 교수"');
 		expect(prompt).toContain('evidence_anchor: "홍길동 한국대학교"');
 		expect(prompt).toContain("HTML에는 display_value만 표시");
+	});
+
+	it("passes concrete session zone bounds to graphic generation", () => {
+		const prompt = buildGraphicUserPrompt(makeScene(), "테스트 프로그램", {
+			zoneProfile: DEFAULT_AI_CUESHEET_ZONE_PROFILE,
+		});
+
+		expect(prompt).toContain("## 세션 Zone 프로필");
+		expect(prompt).toContain("bottom_bar: x=0px, y=800px, width=1920px, height=230px");
+		expect(prompt).toContain("slot_id scene-1-slot-1은 bottom_bar 영역 안에서만 렌더링");
 	});
 });
 

@@ -106,6 +106,41 @@ export function DashboardField({
     );
   }
 
+  const uiWidget = prop["ui:widget"];
+  if (uiWidget === "slider" && prop.type === "number") {
+    return (
+      <div style={containerStyle}>
+        <label style={labelStyle} title={prop.title}>{prop.title}</label>
+        <input
+          type="range"
+          min={prop.min ?? prop.minimum ?? 0}
+          max={prop.max ?? prop.maximum ?? 100}
+          step={prop.step ?? 1}
+          value={Number(value ?? 0)}
+          onChange={(e) => onChange(Number(e.target.value))}
+          style={{ flex: 1 }}
+        />
+        <span style={{ fontSize: "11px", color: "#94a3b8", minWidth: "32px", textAlign: "right" }}>
+          {String(value ?? 0)}
+        </span>
+      </div>
+    );
+  }
+
+  if (uiWidget === "textarea" && prop.type === "string") {
+    return (
+      <div style={{ ...containerStyle, flexDirection: "column", alignItems: "stretch" }}>
+        <label style={{ ...labelStyle, width: "auto" }} title={prop.title}>{prop.title}</label>
+        <textarea
+          value={String(value ?? "")}
+          onChange={(e) => onChange(e.target.value)}
+          rows={3}
+          style={{ ...inputStyle, resize: "vertical", fontFamily: "inherit" }}
+        />
+      </div>
+    );
+  }
+
   switch (prop.type) {
     case "number":
       return (

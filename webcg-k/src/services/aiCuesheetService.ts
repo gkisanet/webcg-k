@@ -21,6 +21,13 @@ import type {
   ExtractedTheme,
 } from "../lib/aiCuesheetTypes";
 import type { ThemeTokens } from "../lib/types/semanticTypes";
+import type { AiCuesheetZoneProfile } from "../lib/aiCuesheetZoneProfile";
+import {
+  DEFAULT_AI_CUESHEET_ZONE_PROFILE,
+  AI_CUESHEET_ZONE_ORDER,
+  formatZoneDefinitionForPrompt,
+  getZoneDefinition,
+} from "../lib/aiCuesheetZoneProfile";
 import {
   isValidSemanticRole,
   buildRolePromptFragment,
@@ -1009,6 +1016,7 @@ export async function generateSceneGraphic(
     extractedTheme?: ExtractedTheme | null;
     existingCode?: { html: string; css: string } | null;
     modifyRequest?: string | null;
+    zoneProfile?: AiCuesheetZoneProfile | null;
   },
 ): Promise<SceneGraphicResult> {
   const userPrompt = buildGraphicUserPrompt(scene, programTitle, options);
@@ -1038,6 +1046,7 @@ export function buildGraphicUserPrompt(
     extractedTheme?: ExtractedTheme | null;
     existingCode?: { html: string; css: string } | null;
     modifyRequest?: string | null;
+    zoneProfile?: AiCuesheetZoneProfile | null;
   },
 ): string {
   // 수정 모드
@@ -1075,6 +1084,11 @@ ${programTitle}`);
     parts.push(`- 연출 의도: ${scene._design_rationale}`);
   }
 
+  const zoneProfile = options?.zoneProfile ?? DEFAULT_AI_CUESHEET_ZONE_PROFILE;
+  parts.push(`\n## 세션 Zone 프로필
+이 세션에서 zone_hint는 아래의 실제 1920x1080 좌표를 의미합니다. 그래픽마다 임의로 위치를 재해석하지 말고, 각 slot은 지정된 영역 안에서만 렌더링하세요.
+${AI_CUESHEET_ZONE_ORDER.map((zone) => formatZoneDefinitionForPrompt(getZoneDefinition(zoneProfile, zone))).join("\n")}`);
+
   parts.push(`\n## 표시할 텍스트`);
   scene.text_slots.forEach((slot, slotIdx) => {
     const slotId = slot.id || buildSceneSlotId(scene.order, slotIdx);
@@ -1083,6 +1097,7 @@ ${programTitle}`);
     const evidence = slot.evidence_anchor ? `, evidence_anchor: "${slot.evidence_anchor}"` : "";
     const context = slot.context ? `, context: ${slot.context}` : "";
     parts.push(`- slot_id: ${slotId}, semantic_role: ${slot.semantic_role}, display_value: "${displayValue}", source_value: "${sourceValue}"${evidence}, 중요도 ${slot.importance}, 존 ${slot.zone_hint}, 스타일 ${slot.style_hint}${context}`);
+    parts.push(`  - slot_id ${slotId}은 ${slot.zone_hint} 영역 안에서만 렌더링: ${formatZoneDefinitionForPrompt(getZoneDefinition(zoneProfile, slot.zone_hint))}`);
   });
 
   parts.push(`\n## 필수 Binding 검수 조건

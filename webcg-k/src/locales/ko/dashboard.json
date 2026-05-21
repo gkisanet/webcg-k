@@ -63,7 +63,7 @@
 		}
 	},
 	"graphicTagging": {
-		"title": "그래픽 태깅",
-		"description": "그래픽 템플릿의 HTML 요소에 data-semantic 어트리뷰트를 태깅하여 AI 콘텐츠를 자동 주입합니다."
+		"title": "방송 그래픽 워크벤치",
+		"description": "AI 큐시트에서 생성한 HTML 방송 그래픽을 검수하고, data-semantic 바인딩과 승격 전 작업을 처리합니다."
 	}
 }

@@ -14,6 +14,8 @@ import type {
   SceneGraphicState,
   ExtractedTheme,
 } from "@/lib/aiCuesheetTypes";
+import type { AiCuesheetZoneProfile } from "@/lib/aiCuesheetZoneProfile";
+import { DEFAULT_AI_CUESHEET_ZONE_PROFILE } from "@/lib/aiCuesheetZoneProfile";
 
 // ─── Action Types ─────────────────────────────────────────────────
 
@@ -27,6 +29,7 @@ export type WizardAction =
   | { type: "INIT_GRAPHIC_STATES"; sceneCount: number }
   | { type: "UPDATE_GRAPHIC_STATE"; sceneIdx: number; patch: Partial<SceneGraphicState> }
   | { type: "EXTRACT_THEME"; id: string; theme: ExtractedTheme }
+  | { type: "UPDATE_ZONE_PROFILE"; profile: AiCuesheetZoneProfile }
   | { type: "RESTORE_SESSION"; data: Partial<CuesheetWizardState> }
   // Scene/Slot editing (문제 1)
   | { type: "UPDATE_SLOT"; sceneIdx: number; slotIdx: number; patch: Partial<TextSlot> }
@@ -50,6 +53,7 @@ export function createInitialState(mode: "manual" | "api", systemPrompt: string)
     parseResult: null,
     graphicStates: [],
     extractedThemes: {},
+    zoneProfile: DEFAULT_AI_CUESHEET_ZONE_PROFILE,
   };
 }
 
@@ -79,10 +83,12 @@ export function wizardReducer(state: CuesheetWizardState, action: WizardAction):
     case "INIT_GRAPHIC_STATES":
       return {
         ...state,
-        graphicStates: Array.from({ length: action.sceneCount }, (_, i) => ({
-          sceneIndex: i,
-          status: "idle" as const,
-        })),
+        graphicStates: Array.from({ length: action.sceneCount }, (_, i) => (
+          state.graphicStates[i] ?? {
+            sceneIndex: i,
+            status: "idle" as const,
+          }
+        )),
       };
 
     case "UPDATE_GRAPHIC_STATE":
@@ -98,6 +104,9 @@ export function wizardReducer(state: CuesheetWizardState, action: WizardAction):
         ...state,
         extractedThemes: { ...state.extractedThemes, [action.id]: action.theme },
       };
+
+    case "UPDATE_ZONE_PROFILE":
+      return { ...state, zoneProfile: action.profile };
 
     // ─── Scene/Slot editing (문제 1) ────────────────────
 

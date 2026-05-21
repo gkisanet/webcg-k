@@ -24,6 +24,7 @@ import {
   parseAiCuesheetJson,
   generateCuesheetFromSource,
   validateAgainstSource,
+  upsertGraphicAsOverlay,
   type HallucinationCheck,
 } from "@/services/aiCuesheetService";
 import {
@@ -279,6 +280,9 @@ function AiCuesheetWizardView() {
       try {
         const { session, scenes } = await getSession(initialSessionId);
         dispatch({ type: "SET_SESSION_ID", id: session.id });
+        if (session.layout_profile) {
+          dispatch({ type: "UPDATE_ZONE_PROFILE", profile: session.layout_profile as any });
+        }
 
         const restoredScenes = scenes.map((s) => s.scene_data as SceneContent);
         const cuesheet = {
@@ -300,11 +304,11 @@ function AiCuesheetWizardView() {
         setMode(cuesheet.scenes.length > 0 ? "api" : "manual");
 
         dispatch({ type: "INIT_GRAPHIC_STATES", sceneCount: restoredScenes.length });
-        // Restore generated HTML/CSS (Bug 1 fix: scene_order - 1)
-        scenes.forEach((s) => {
+        // Restore generated HTML/CSS by loaded row index; scene_order may be non-contiguous.
+        scenes.forEach((s, sceneIdx) => {
           if (s.generated_html) {
             dispatch({
-              type: "UPDATE_GRAPHIC_STATE", sceneIdx: s.scene_order - 1,
+              type: "UPDATE_GRAPHIC_STATE", sceneIdx,
               patch: {
                 status: "done",
                 generatedHtml: s.generated_html,
@@ -512,9 +516,30 @@ function AiCuesheetWizardView() {
       if (rErr) throw rErr;
       const rundownId = (rundown as any).id;
 
+      const publishGraphicStates = [...state.graphicStates];
+      for (let sceneIndex = 0; sceneIndex < scenes.length; sceneIndex += 1) {
+        const scene = scenes[sceneIndex];
+        const graphicState = publishGraphicStates[sceneIndex];
+        if (graphicState?.status !== "done" || !graphicState.generatedHtml) continue;
+        if (graphicState.overlayTemplateId) continue;
+
+        const overlayTemplateId = await upsertGraphicAsOverlay(
+          graphicState.generatedHtml,
+          graphicState.generatedCss ?? "",
+          `Scene ${scene.order}: ${scene.trigger.slice(0, 80)}`,
+          user.id,
+          undefined,
+          scene,
+          programTitle,
+          state.sessionId,
+        );
+        publishGraphicStates[sceneIndex] = { ...graphicState, overlayTemplateId };
+        dispatch({ type: "UPDATE_GRAPHIC_STATE", sceneIdx: sceneIndex, patch: { overlayTemplateId } });
+      }
+
       const inserts = buildRundownOverlayInserts({
         scenes,
-        graphicStates: state.graphicStates,
+        graphicStates: publishGraphicStates,
         rundownId,
         programTitle,
       });
@@ -688,6 +713,9 @@ function AiCuesheetWizardView() {
             programTitle={state.parseResult?.cuesheet?.program_title ?? ""}
             sessionId={state.sessionId}
             graphicStates={state.graphicStates}
+            zoneProfile={state.zoneProfile}
+            onUpdateZoneProfile={(profile) => dispatch({ type: "UPDATE_ZONE_PROFILE", profile })}
+            onUpdateSlot={(sceneIdx, slotIdx, patch) => dispatch({ type: "UPDATE_SLOT", sceneIdx, slotIdx, patch })}
             onUpdateGraphicState={(sceneIdx, patch) =>
               dispatch({ type: "UPDATE_GRAPHIC_STATE", sceneIdx, patch })
             }

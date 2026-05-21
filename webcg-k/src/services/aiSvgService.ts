@@ -91,6 +91,12 @@ export type SvgStylePreset = typeof SVG_STYLE_PRESETS[number]["id"];
  *   1. service="gemini-svg" 인 키 (전용 키)
  *   2. service="gemini" 인 키 (공용 Gemini 키)
  *   3. 환경변수 VITE_GEMINI_API_KEY (개발용 폴백)
+ *
+ * ■ 보안 변경 (2026-05):
+ *   encrypted_key 컬럼을 직접 SELECT하면 암호화된 blob이 클라이언트로 전송됨.
+ *   대신 id만 조회하고, get_decrypted_api_key() SECURITY DEFINER RPC를 통해
+ *   DB 서버 내부에서만 복호화 후 평문을 반환받는 방식으로 변경.
+ *   → 네트워크 상에서 암호화 키(blob)가 노출되지 않음.
  */
 async function getSvgApiKey(): Promise<string> {
 	// 1단계: gemini-svg 전용 키 id 조회

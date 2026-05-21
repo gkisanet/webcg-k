@@ -25,9 +25,9 @@ function makeScenes(): SceneContent[] {
 }
 
 describe("analyzeAiCuesheetPublishReadiness", () => {
-	it("requires explicit partial confirmation when any scene is missing a saved overlay", () => {
+	it("requires explicit partial confirmation when any scene is missing generated HTML", () => {
 		const readiness = analyzeAiCuesheetPublishReadiness(makeScenes(), [
-			{ sceneIndex: 0, status: "done", overlayTemplateId: "overlay-1" },
+			{ sceneIndex: 0, status: "done", generatedHtml: "<div>first</div>", generatedCss: ".first{}" },
 			{ sceneIndex: 1, status: "idle" },
 		]);
 
@@ -42,8 +42,8 @@ describe("analyzeAiCuesheetPublishReadiness", () => {
 
 	it("allows normal publish when every scene has a saved overlay", () => {
 		const readiness = analyzeAiCuesheetPublishReadiness(makeScenes(), [
-			{ sceneIndex: 0, status: "done", overlayTemplateId: "overlay-1" },
-			{ sceneIndex: 1, status: "done", overlayTemplateId: "overlay-2" },
+			{ sceneIndex: 0, status: "done", generatedHtml: "<div>first</div>" },
+			{ sceneIndex: 1, status: "done", generatedHtml: "<div>second</div>" },
 		]);
 
 		expect(readiness).toMatchObject({

@@ -15,6 +15,7 @@ import type {
   SessionListRow,
   CuesheetWizardState,
 } from "../lib/aiCuesheetTypes";
+import type { AiCuesheetZoneProfile } from "../lib/aiCuesheetZoneProfile";
 
 // ─── 1. 세션 목록 조회 ────────────────────────────────────────────
 
@@ -41,6 +42,7 @@ export async function createSession(data: {
   program_title: string;
   expert_data: Record<string, unknown>;
   raw_input_json?: string | null;
+  layout_profile?: AiCuesheetZoneProfile | null;
   scene_count?: number;
 }): Promise<AiCuesheetSession> {
   const { data: { user } } = await supabase.auth.getUser();
@@ -92,7 +94,7 @@ export async function getSession(id: string): Promise<{
 
 export async function updateSession(
   id: string,
-  updates: Partial<Pick<AiCuesheetSession, "status" | "program_title" | "expert_data" | "raw_input_json" | "scene_count" | "generated_count">>,
+  updates: Partial<Pick<AiCuesheetSession, "status" | "program_title" | "expert_data" | "raw_input_json" | "layout_profile" | "scene_count" | "generated_count">>,
 ): Promise<void> {
   const { error } = await supabase
     .from("ai_cuesheet_sessions")
@@ -201,6 +203,7 @@ export async function autoSaveWizardState(
       program_title: programTitle,
       expert_data: expertData,
       raw_input_json: state.rawJson || null,
+      layout_profile: state.zoneProfile,
       scene_count: sceneCount,
     });
     sessionId = session.id;
@@ -210,6 +213,7 @@ export async function autoSaveWizardState(
     program_title: programTitle,
     expert_data: expertData,
     raw_input_json: state.rawJson || null,
+    layout_profile: state.zoneProfile,
     scene_count: sceneCount,
     generated_count: generatedCount,
   });

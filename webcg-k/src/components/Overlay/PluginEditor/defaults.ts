@@ -3,13 +3,13 @@ import type { DashboardSchema } from "../../../lib/overlayTypes";
 export const DEFAULT_HTML = `<div id="overlay">
   <div class="scoreboard">
     <div class="team home">
-      <span class="team-name" id="home-name">HOME</span>
-      <span class="score" id="home-score">0</span>
+      <span class="team-name" data-cg-bind="homeName">HOME</span>
+      <span class="score" data-cg-bind="homeScore">0</span>
     </div>
     <div class="separator">:</div>
     <div class="team away">
-      <span class="score" id="away-score">0</span>
-      <span class="team-name" id="away-name">AWAY</span>
+      <span class="score" data-cg-bind="awayScore">0</span>
+      <span class="team-name" data-cg-bind="awayName">AWAY</span>
     </div>
   </div>
 </div>`;
@@ -64,26 +64,9 @@ export const DEFAULT_CSS = `/* 스코어보드 기본 스타일 */
   color: rgba(255,255,255,0.4);
 }`;
 
-export const DEFAULT_JS = `// WebCG-K Plugin API 사용법
-// webcgk.onData(data) — 데이터 변경 시 호출
-// webcgk.onShow() — 오버레이 표시 시 호출
-// webcgk.onHide() — 오버레이 숨김 시 호출
-
-webcgk.onData(function(data) {
-  // 대시보드에서 변경한 데이터를 DOM에 반영
-  var el;
-  el = document.getElementById("home-name");
-  if (el) el.textContent = data.homeName || "HOME";
-
-  el = document.getElementById("home-score");
-  if (el) el.textContent = String(data.homeScore || 0);
-
-  el = document.getElementById("away-name");
-  if (el) el.textContent = data.awayName || "AWAY";
-
-  el = document.getElementById("away-score");
-  if (el) el.textContent = String(data.awayScore || 0);
-});
+export const DEFAULT_JS = `// WebCG-K Declarative Binding
+// 데이터 바인딩은 HTML의 data-cg-bind 속성이 자동 처리합니다.
+// JS는 애니메이션, 타이머, 상태머신 같은 고급 로직에만 사용하세요.
 
 webcgk.onShow(function() {
   var overlay = document.getElementById("overlay");

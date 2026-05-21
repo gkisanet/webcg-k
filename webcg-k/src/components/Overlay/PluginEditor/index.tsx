@@ -1,8 +1,9 @@
 import { useCallback, useMemo, useRef, useState } from "react";
 import Editor from "@monaco-editor/react";
-import { Eye, Play, Square, MousePointer2, Settings, Sparkles } from "lucide-react";
+import { Eye, Play, Square, MousePointer2, Settings, Sparkles, Undo2, Redo2 } from "lucide-react";
 import type { PluginSourceCode, DashboardSchema } from "../../../lib/overlayTypes";
 import { SchemaEditor } from "../SchemaEditor";
+import { validateOverlayBindings } from "../../../services/aiOverlayService";
 
 import { usePluginCode } from "./hooks/usePluginCode";
 import { useResizer } from "./hooks/useResizer";
@@ -17,6 +18,7 @@ import { AIGenerationPanel } from "./components/AIGenerationPanel";
 import { DashboardPanel } from "./components/DashboardPanel";
 import { ImportModal } from "./components/ImportModal";
 import { VizNumField, VizTextField, VizColorField, RootVarsPanel } from "./components/VizFields";
+import { BindingValidationPanel } from "./components/BindingValidationPanel";
 
 // ─── 타입 ─────────────────────────────────────────────────────
 type BottomTab = "ai" | "dashboard" | "visual";
@@ -44,7 +46,11 @@ export function PluginEditor({
 }: PluginEditorProps) {
   // ─── Hooks ────────────────────────────────────────────────
   const codeHook = usePluginCode(initialCode, initialSchema, initialDefaults);
-  const { activeTab, setActiveTab, code, setCode, schema, handleSchemaChange, testData, setTestData } = codeHook;
+  const {
+    activeTab, setActiveTab, code, setCode,
+    undoCode, redoCode, canUndoCode, canRedoCode,
+    schema, handleSchemaChange, testData, setTestData,
+  } = codeHook;
 
   const resizer = useResizer();
   const { editorWidthPercent, isDragging, containerRef, previewHeightPercent, isVDragging, rightPaneRef, handleResizeStart, handleVResizeStart } = resizer;
@@ -53,12 +59,24 @@ export function PluginEditor({
   const editorRef = useRef<any>(null);
 
   const visualEdit = useVisualEditBridge(iframeRef, setCode);
-  const { visualEditMode, setVisualEditMode, selectedVizElement, handleVizStyleChange, handleVizRootVarChange } = visualEdit;
+  const { visualEditMode, setVisualEditMode, selectedVizElement, setSelectedVizElement, handleVizStyleChange, handleVizRootVarChange } = visualEdit;
 
   const preview = usePreviewBridge(code, testData, visualEditMode, selectedVizElement, iframeRef);
   const { buildSrcdoc, sendDataToPreview } = preview;
 
   const [bottomTab, setBottomTab] = useState<BottomTab>("dashboard");
+
+  const bindingValidation = useMemo(
+    () =>
+      validateOverlayBindings({
+        html: code.html,
+        css: code.css,
+        js: code.js,
+        dashboard_schema: schema,
+        replicant_defaults: testData,
+      }),
+    [code.html, code.css, code.js, schema, testData],
+  );
 
   const ai = useAIGeneration(setCode, handleSchemaChange, setTestData, code, schema, setActiveTab, setBottomTab);
   const {
@@ -91,6 +109,16 @@ export function PluginEditor({
       editorRef.current.getAction("editor.action.formatDocument")?.run();
     }
   }, []);
+
+  const handleUndo = useCallback(() => {
+    undoCode();
+    setSelectedVizElement(null);
+  }, [setSelectedVizElement, undoCode]);
+
+  const handleRedo = useCallback(() => {
+    redoCode();
+    setSelectedVizElement(null);
+  }, [redoCode, setSelectedVizElement]);
 
   // ─── 키보드 단축키 ────────────────────────────────────────
   useKeyboardShortcuts(handleSave, handleFormat);
@@ -131,8 +159,12 @@ export function PluginEditor({
             onSave={handleSave}
             onSaveAs={handleSaveAs}
             onFormat={handleFormat}
+            onUndo={handleUndo}
+            onRedo={handleRedo}
             onImport={() => { setImportJsonText(""); setImportError(null); setShowImportModal(true); }}
             isSchemaTab={activeTab === "schema"}
+            canUndo={canUndoCode}
+            canRedo={canRedoCode}
           />
 
           <div style={styles.editorWrapper}>
@@ -299,6 +331,9 @@ export function PluginEditor({
                 display: "flex", alignItems: "center", gap: "4px",
               }}>
                 <Settings size={12} /> 대시보드
+                {bindingValidation.warnings.length > 0 && (
+                  <span style={styles.warningBadge}>{bindingValidation.warnings.length}</span>
+                )}
               </button>
               <button type="button" onClick={() => setBottomTab("visual")} style={{
                 padding: "8px 14px",
@@ -312,6 +347,8 @@ export function PluginEditor({
                 <MousePointer2 size={12} /> 시각 편집
               </button>
             </div>
+
+            <BindingValidationPanel validation={bindingValidation} />
 
             {/* AI 프롬프트 탭 */}
             {bottomTab === "ai" && (
@@ -354,6 +391,37 @@ export function PluginEditor({
             {/* 시각 편집 탭 */}
             {bottomTab === "visual" && (
               <div style={{ padding: "10px 12px", overflowY: "auto", flex: 1 }}>
+                <div style={styles.visualHistoryBar}>
+                  <span style={styles.visualHistoryText}>시각 편집 변경</span>
+                  <button
+                    type="button"
+                    onClick={handleUndo}
+                    disabled={!canUndoCode}
+                    style={{
+                      ...styles.visualHistoryBtn,
+                      opacity: canUndoCode ? 1 : 0.45,
+                      cursor: canUndoCode ? "pointer" : "not-allowed",
+                    }}
+                    title="시각 편집 변경 되돌리기"
+                    aria-label="시각 편집 변경 되돌리기"
+                  >
+                    <Undo2 size={13} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleRedo}
+                    disabled={!canRedoCode}
+                    style={{
+                      ...styles.visualHistoryBtn,
+                      opacity: canRedoCode ? 1 : 0.45,
+                      cursor: canRedoCode ? "pointer" : "not-allowed",
+                    }}
+                    title="시각 편집 변경 다시 실행"
+                    aria-label="시각 편집 변경 다시 실행"
+                  >
+                    <Redo2 size={13} />
+                  </button>
+                </div>
                 {!visualEditMode && (
                   <div style={{ ...styles.emptyDashboard, padding: "1rem" }}>
                     <MousePointer2 size={24} style={{ opacity: 0.4, color: "#00d4ff" }} />
@@ -462,5 +530,46 @@ const styles: Record<string, React.CSSProperties> = {
   emptyDashboard: {
     textAlign: "center", padding: "1.5rem",
     color: "var(--text-tertiary, #666)", fontSize: "12px",
+  },
+  warningBadge: {
+    minWidth: "16px",
+    height: "16px",
+    padding: "0 5px",
+    borderRadius: "999px",
+    background: "rgba(245, 158, 11, 0.24)",
+    color: "#fbbf24",
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    fontSize: "10px",
+    fontWeight: 800,
+    lineHeight: 1,
+  },
+  visualHistoryBar: {
+    display: "flex",
+    alignItems: "center",
+    gap: "6px",
+    marginBottom: "10px",
+    padding: "6px 8px",
+    border: "1px solid rgba(255,255,255,0.06)",
+    borderRadius: "6px",
+    background: "rgba(15, 23, 42, 0.42)",
+  },
+  visualHistoryText: {
+    marginRight: "auto",
+    color: "#94a3b8",
+    fontSize: "11px",
+    fontWeight: 700,
+  },
+  visualHistoryBtn: {
+    width: "26px",
+    height: "24px",
+    borderRadius: "5px",
+    border: "1px solid rgba(34, 211, 238, 0.24)",
+    background: "rgba(34, 211, 238, 0.08)",
+    color: "#22d3ee",
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
   },
 };

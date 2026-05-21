@@ -50,7 +50,7 @@ export function StepRundownEdit({
       {excludedCount > 0 && (
         <div className="mt-4 rounded-lg border border-amber-500/25 bg-amber-500/10 p-3 text-xs text-amber-100 flex gap-2">
           <AlertTriangle size={16} className="shrink-0 text-amber-300" />
-          <span>일부 장면은 저장된 오버레이가 없어 이번 런다운 발행에서 제외됩니다. 필요한 경우 Graphics 단계로 돌아가 장면 그래픽을 먼저 생성하세요.</span>
+          <span>일부 장면은 생성된 HTML 방송 그래픽이 없어 이번 런다운 발행에서 제외됩니다. 필요한 경우 Graphics 단계로 돌아가 장면 그래픽을 먼저 생성하세요.</span>
         </div>
       )}
 

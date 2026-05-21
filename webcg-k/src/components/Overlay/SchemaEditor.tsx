@@ -10,9 +10,8 @@
  *   JSON을 직접 쓰는 대신, 타입 선택 → 라벨 입력 → 기본값 설정으로
  *   비개발자도 대시보드 컨트롤을 설계할 수 있게 한다.
  *
- * ■ JS 바인딩 힌트:
- *   스키마 필드를 분석하여 webcgk.onData() 보일러플레이트를
- *   자동 생성. 복사 버튼으로 JS 탭에 바로 적용 가능.
+ * ■ 선언형 바인딩 힌트:
+ *   스키마 필드를 분석하여 data-cg-* HTML 바인딩 예시를 자동 생성.
  */
 
 import { useCallback, useMemo, useState } from "react";
@@ -163,30 +162,27 @@ export function SchemaEditor({ schema, onChange }: SchemaEditorProps) {
 		[properties, onChange],
 	);
 
-	// ─── JS 바인딩 코드 힌트 ───
-	const jsHint = useMemo(() => {
+	// ─── 선언형 HTML 바인딩 힌트 ───
+	const bindingHint = useMemo(() => {
 		if (entries.length === 0) return "";
 
 		const lines = entries.map(([key, prop]) => {
-			const comment = `  // ${key} (${prop.enum ? "enum" : prop.type}) → "${prop.title}"`;
-			if (prop.type === "number") {
-				return `${comment}\n  el = document.getElementById("${key}");\n  if (el) el.textContent = String(data.${key} || 0);`;
-			}
+			const type = prop.enum ? "enum" : prop.type;
 			if (prop.type === "boolean") {
-				return `${comment}\n  // data.${key} → true/false`;
+				return `<!-- ${key} (${type}) → "${prop.title}" -->\n<div data-cg-if="${key}">조건부 콘텐츠</div>\n<div data-cg-class="active:${key}">토글 스타일</div>`;
 			}
 			if (prop.type === "color") {
-				return `${comment}\n  el = document.getElementById("${key}");\n  if (el) el.style.color = data.${key};`;
+				return `<!-- ${key} (${type}) → "${prop.title}" -->\n<!-- 색상은 CSS 변수 또는 고급 JS 로직에서 처리하세요. -->`;
 			}
-			return `${comment}\n  el = document.getElementById("${key}");\n  if (el) el.textContent = data.${key} || "";`;
+			return `<!-- ${key} (${type}) → "${prop.title}" -->\n<span data-cg-bind="${key}">${prop.default ?? ""}</span>`;
 		});
 
-		return `webcgk.onData(function(data) {\n  var el;\n${lines.join("\n\n")}\n});`;
+		return lines.join("\n\n");
 	}, [entries]);
 
 	const handleCopyHint = useCallback(() => {
-		navigator.clipboard.writeText(jsHint);
-	}, [jsHint]);
+		navigator.clipboard.writeText(bindingHint);
+	}, [bindingHint]);
 
 	return (
 		<div style={S.container}>
@@ -245,17 +241,17 @@ export function SchemaEditor({ schema, onChange }: SchemaEditorProps) {
 						))}
 					</div>
 
-					{/* ─── JS 바인딩 힌트 ─── */}
+					{/* ─── 선언형 바인딩 힌트 ─── */}
 					{entries.length > 0 && (
 						<div style={S.hintSection}>
 							<div style={S.hintHeader}>
-								<Zap size={12} style={{ color: "#f59e0b" }} />
-								<span>JS 바인딩 코드 (자동 생성)</span>
+								<Zap size={12} style={{ color: "#22d3ee" }} />
+								<span>HTML 선언형 바인딩 힌트 (자동 생성)</span>
 								<button type="button" onClick={handleCopyHint} style={S.copyBtn}>
 									<Copy size={10} /> 복사
 								</button>
 							</div>
-							<pre style={S.hintCode}>{jsHint}</pre>
+							<pre style={S.hintCode}>{bindingHint}</pre>
 						</div>
 					)}
 				</>

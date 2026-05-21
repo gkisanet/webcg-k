@@ -19,6 +19,8 @@
  * ■ 비유: "같은 레시피(API 스펙)로 요리해야 같은 맛(동작)이 나온다"
  */
 
+import { WEBCGK_REACTIVE_INLINE } from "./webcgk-reactive";
+
 // ─── webcgk API 인라인 코드 (모든 렌더러 공통) ─────────────────
 /**
  * iframe sandbox 내부에서 실행되는 webcgk 런타임 API.
@@ -36,7 +38,11 @@
  */
 export const WEBCGK_API_INLINE = `
 (function() {
-  var _data = {}, _listeners = { data: [], show: [], hide: [], ready: [] }, _isVisible = false;
+  var _data = {}, _listeners = { data: [], show: [], hide: [], ready: [] }, _isVisible = false, _preDataHooks = [];
+  function notifyData() {
+    _preDataHooks.forEach(function(hook) { try { hook(_data); } catch(e) { console.error("[webcgk-reactive]", e); } });
+    _listeners.data.forEach(function(cb) { try { cb(_data); } catch(e) { console.error("[webcgk]", e); } });
+  }
   window.webcgk = {
     onData: function(cb) { if (typeof cb === "function") { _listeners.data.push(cb); if (Object.keys(_data).length > 0) cb(_data); } },
     onShow: function(cb) { if (typeof cb === "function") _listeners.show.push(cb); },
@@ -47,6 +53,7 @@ export const WEBCGK_API_INLINE = `
     sendToParent: function(type, payload) {
       try { window.parent.postMessage({ source: "webcgk-plugin", type: type, payload: payload }, "*"); } catch(e) {}
     },
+    _addPreDataHook: function(cb) { if (typeof cb === "function") _preDataHooks.push(cb); },
     /** 타이머 replicant 데이터로 현재 remaining(초) 계산. startedAt이 서버 보정값이므로 iframe 내부에서도 정확. */
     computeTimerRemaining: function(data) {
       if (!data || typeof data !== "object") return 0;
@@ -61,7 +68,7 @@ export const WEBCGK_API_INLINE = `
     if (!msg || typeof msg !== "object") return;
     if (msg.type === "REPLICANT_UPDATE") {
       _data = msg.payload || {};
-      _listeners.data.forEach(function(cb) { try { cb(_data); } catch(e) { console.error("[webcgk]", e); } });
+      notifyData();
     } else if (msg.type === "SHOW") {
       _isVisible = true;
       _listeners.show.forEach(function(cb) { try { cb(); } catch(e) {} });
@@ -69,7 +76,7 @@ export const WEBCGK_API_INLINE = `
       _isVisible = false;
       _listeners.hide.forEach(function(cb) { try { cb(); } catch(e) {} });
     } else if (msg.type === "INIT") {
-      if (msg.payload) { _data = msg.payload; _listeners.data.forEach(function(cb) { try { cb(_data); } catch(e) {} }); }
+      if (msg.payload) { _data = msg.payload; notifyData(); }
       _listeners.ready.forEach(function(cb) { try { cb(); } catch(e) {} });
     }
   });
@@ -122,6 +129,10 @@ export interface SrcdocOptions {
 	width?: number;
 	/** iframe body 크기 (px). 기본 1080 */
 	height?: number;
+	/** 에디터 프리뷰에서 투명도를 확인하기 위한 체커보드 배경 */
+	previewBackground?: "checkerboard" | "transparent";
+	/** webcgk 런타임 뒤, 사용자 JS 앞에 추가로 주입할 인라인 스크립트 */
+	extraBodyScripts?: string[];
 	/**
 	 * true이면 로드 직후 자동으로 SHOW 메시지를 자체 발행.
 	 * 에디터 미리보기처럼 외부에서 SHOW를 보내지 않는 환경에서 사용.
@@ -151,6 +162,8 @@ export function buildPluginSrcdoc({
 	js,
 	width = 1920,
 	height = 1080,
+	previewBackground = "transparent",
+	extraBodyScripts = [],
 	autoShow = false,
 }: SrcdocOptions): string {
 	// ■ Step 1: 전역 리셋 + body 크기 고정
@@ -161,13 +174,28 @@ export function buildPluginSrcdoc({
 	// ■ Step 6: 플러그인 커스텀 JS (try-catch로 에러 격리)
 	// ■ Step 7: (선택) 자동 SHOW 트리거
 
+	const htmlBackground = previewBackground === "checkerboard"
+		? `html {
+  background-color: #666;
+  background-image:
+    linear-gradient(45deg, #444 25%, transparent 25%),
+    linear-gradient(-45deg, #444 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #444 75%),
+    linear-gradient(-45deg, transparent 75%, #444 75%);
+  background-size: 16px 16px;
+  background-position: 0 0, 0 8px, 8px -8px, -8px 0px;
+  color-scheme: normal;
+}`
+		: "html { background: transparent !important; color-scheme: normal; }";
+	const extraScripts = extraBodyScripts.map((script) => `<script>${script}</script>`).join("\n");
+
 	return `<!DOCTYPE html>
 <html>
 <head>
 <meta charset="utf-8">
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
-html { background: transparent !important; color-scheme: normal; }
+${htmlBackground}
 body { width: ${width}px; height: ${height}px; overflow: hidden; background: transparent !important; }
 @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes fadeOutDown { from { opacity: 1; transform: translateY(0); } to { opacity: 0; transform: translateY(20px); } }
@@ -177,6 +205,8 @@ ${css}
 <body>
 ${html}
 <script>${WEBCGK_API_INLINE}</script>
+<script>${WEBCGK_REACTIVE_INLINE}</script>
+${extraScripts}
 <script>try { ${js} } catch(e) { console.error("[webcgk-plugin]", e); }</script>${autoShow ? `
 <script>
 // 에디터 프리뷰용: 외부 SHOW 메시지가 없으므로 자체 발행

@@ -1,6 +1,6 @@
 /**
  * Overlay System Types
- * 오버레이 AI CG 생성 시스템 타입 정의
+ * 오버레이 AI 방송 그래픽 생성 시스템 타입 정의
  */
 
 import type { GraphicElement } from "../components/GraphicPreviewRenderer";
@@ -32,9 +32,9 @@ export type OverlaySourceType =
 	| "imported"
 	| "api_bound";
 
-// ─── CG Variation ─────────────────────────────────────────────────
+// ─── Broadcast Graphic Variation ──────────────────────────────────
 
-/** AI가 생성한 CG Variation 하나 */
+/** AI가 생성한 방송 그래픽 Variation 하나 */
 export interface CgVariation {
 	id: string;
 	name: string;
@@ -79,6 +79,12 @@ export interface DashboardSchemaProperty {
 	items?: DashboardSchemaProperty;
 	/** object 타입일 때 내부 프로퍼티 스키마 */
 	properties?: Record<string, DashboardSchemaProperty>;
+	/** 커스텀 위젯: "slider" | "color-picker" | "image-picker" | "textarea" | "toggle" */
+	"ui:widget"?: string;
+	/** 논리적 그룹명 */
+	"ui:group"?: string;
+	/** 바인딩된 HTML data-cg-* 키 */
+	"ui:boundTo"?: string;
 }
 
 /** 대시보드 스키마: 플러그인의 제어 가능한 데이터 필드 정의 */

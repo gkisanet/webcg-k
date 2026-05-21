@@ -42,6 +42,7 @@ import { OverlayEditor } from "../../../../components/Overlay/OverlayEditor";
 import { GraphicPreviewRenderer } from "../../../../components/GraphicPreviewRenderer";
 import type { GraphicElement } from "../../../../components/GraphicPreviewRenderer";
 import { formatDateWithTime } from "../../../../lib/utils/dateFormat";
+import { buildPluginSrcdoc } from "../../../../lib/webcgkSrcdoc";
 
 import "./index.css";
 
@@ -987,53 +988,12 @@ function HtmlPluginThumbnail({
 		}
 	}, [isHovered, replicantDefaults]);
 
-	// ■ webcgk-api (데이터 연동 및 SHOW/HIDE 이벤트 동작을 지원하도록 Full 버전 주입)
-	const webcgkApiInline = `
-(function() {
-  var _data = {}, _listeners = { data: [], show: [], hide: [], ready: [] }, _isVisible = false;
-  window.webcgk = {
-    onData: function(cb) { if (typeof cb === "function") { _listeners.data.push(cb); if (Object.keys(_data).length > 0) cb(_data); } },
-    onShow: function(cb) { if (typeof cb === "function") _listeners.show.push(cb); },
-    onHide: function(cb) { if (typeof cb === "function") _listeners.hide.push(cb); },
-    onReady: function(cb) { if (typeof cb === "function") _listeners.ready.push(cb); },
-    getData: function() { return _data; },
-    isVisible: function() { return _isVisible; },
-    sendToParent: function(type, payload) {}
-  };
-  window.addEventListener("message", function(event) {
-    var msg = event.data;
-    if (!msg || typeof msg !== "object") return;
-    if (msg.type === "REPLICANT_UPDATE") {
-      _data = msg.payload || {};
-      _listeners.data.forEach(function(cb) { try { cb(_data); } catch(e) {} });
-    } else if (msg.type === "SHOW") {
-      _isVisible = true;
-      _listeners.show.forEach(function(cb) { try { cb(); } catch(e) {} });
-    } else if (msg.type === "HIDE") {
-      _isVisible = false;
-      _listeners.hide.forEach(function(cb) { try { cb(); } catch(e) {} });
-    } else if (msg.type === "INIT") {
-      if (msg.payload) { _data = msg.payload; _listeners.data.forEach(function(cb) { try { cb(_data); } catch(e) {} }); }
-      _listeners.ready.forEach(function(cb) { try { cb(); } catch(e) {} });
-    }
-  });
-})();
-	`
-
-	const srcdoc = `<!DOCTYPE html><html><head>
-<meta charset="utf-8">
-<style>
-*{margin:0;padding:0;box-sizing:border-box;}
-html{background-color:#808080;background-image:linear-gradient(45deg,#555 25%,transparent 25%),linear-gradient(-45deg,#555 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#555 75%),linear-gradient(-45deg,transparent 75%,#555 75%);background-size:48px 48px;background-position:0 0,0 24px,24px -24px,-24px 0px;}
-body{width:1920px;height:1080px;overflow:hidden;background:transparent;}
-@keyframes fadeInUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
-@keyframes fadeOutDown{from{opacity:1;transform:translateY(0)}to{opacity:0;transform:translateY(20px)}}
-${sourceCode.css}
-</style></head><body>
-${sourceCode.html}
-<script>${webcgkApiInline}</script>
-<script>try{${sourceCode.js}}catch(e){}</script>
-</body></html>`;
+	const srcdoc = buildPluginSrcdoc({
+		html: sourceCode.html,
+		css: sourceCode.css,
+		js: sourceCode.js,
+		previewBackground: "checkerboard",
+	});
 
 	return (
 		<div
