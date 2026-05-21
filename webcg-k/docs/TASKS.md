@@ -15,6 +15,8 @@
 ---
 
 ### 🔴 Done
+- [x] **Restore Original English Documentation & Sync Residue Cleanup**
+  *   🎯 **Learning Objective**: Master git selective checkout (`git checkout <commit> -- <files>`) to target and restore specific file sets without regressing functional codebases or security patches.
 - [x] **Full English Translation of Technical & Architectural Documentation**
   *   🎯 **Learning Objective**: Master systemic documentation structures by mapping all localized guides, setup guidelines, and internal database architectures to high-quality technical English.
 - [x] **Excalidraw Core Innovations & Renderer Architecture Trade-off Analysis Completed**

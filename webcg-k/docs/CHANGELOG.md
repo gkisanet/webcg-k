@@ -1,5 +1,18 @@
 # 📝 Technical Changelog (docs/CHANGELOG.md)
 
+## [2026.05.21] Restore Original English Documentation & Sync Residue Cleanup
+
+### 1. English Documentation Selective Restore
+*   **What**: Selectively restored 19 documentation markdown (.md) files to their original high-quality English versions from commit `1a53224`.
+*   **Why**: Resolved a syncing mistake where private Korean workspace documentations accidentally overwrote the public repository's English files.
+*   **How**: Executed `git checkout 1a53224 -- README.md DESIGN.md webcg-k/README.md webcg-k/docs/` to roll back documents without affecting recently patched business logic (like PostgreSQL API key encryption or PL/pgSQL STUB hotfixes).
+
+### 2. Synchronization Residue Purge
+*   **What**: Permanently removed untracked files/folders at the root level including `docs/`, `graphify-out/`, `AGENTS.md`, `CLAUDE.md`, `.claudeignore`, `.graphifyignore`, and `skills-lock.json`.
+*   **Why**: Cleaned up internal/private configuration and duplicated Korean docs left over from the migration script, keeping the public workspace lean and clean.
+
+---
+
 ## [2026.05.17] Full Technical Documentation English Translation
 
 ### 1. English Translation of Root & Application Guides

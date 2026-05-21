@@ -1,16 +1,14 @@
 # 🚚 Environment Handovers & Brain Warm-up (docs/HANDOVER.md)
 
 ## 📌 Last Known Status
+- **Documentation Restore Completed**: Successfully restored 19 documentation files back to English from commit `1a53224`, resolving a Korean-override sync error, and pruned internal residue files (`docs/`, `graphify-out/`, etc.) keeping the public workspace lean.
 - **Full English Translation Completed**: Successfully translated 15+ guides, architectural specs, and database setup instructions from Korean to clean, professional technical English.
 - **Migration Consolidation Completed**: Squashed 65 fragmented migration files into a single consolidated file: `202605140001_overlay_blend_mode.sql`, establishing a completely unified database schema initialization.
 - **Session Isolation Conflict Resolved**: Appended `RESET search_path;` to recover from PostgreSQL session modifications (`search_path = ''` left behind by `pg_dump`), allowing downstream scripts like `seed.sql` to execute seamlessly.
 - **Integrated Local Testing Successful**: Verified that running `supabase db reset` cleanly executes the entire pipeline (schema setup ➔ seed data injection ➔ storage bucket creation ➔ server hot reload) without any lag or runtime exceptions.
  
 ## 🚀 Next Steps
-1.  **Git Commit & Push**:
-    *   Stage and commit all newly created/modified English documentation files.
-    *   Push commits to remote origin (`main` branch) to synchronize the workspace.
-2.  **Dual-Layer Canvas Design Review & Prototyping**:
+1.  **Dual-Layer Canvas Design Review & Prototyping**:
     *   Isolate the static SVG rendering nodes in `Canvas.tsx` from volatile interaction overlays (selection boxes, snap guides) into separate sub-components, applying `React.memo` for selective paint isolation.
 
 ---
