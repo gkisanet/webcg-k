@@ -1,0 +1,1422 @@
+{
+  "/home/genk/2026-study/webcg-k/supabase/seed.sql": {
+    "mtime": 1779360301.4325404,
+    "hash": "cd38e29a10cdc74a56b1f5db79a36e0e"
+  },
+  "/home/genk/2026-study/webcg-k/supabase/migrations/20260520000002_ai_model_lineup_v2.sql": {
+    "mtime": 1779360685.9149077,
+    "hash": "6beb375a6ac87dc6247bc807860b8e90"
+  },
+  "/home/genk/2026-study/webcg-k/supabase/migrations/20260520000004_api_key_security.sql": {
+    "mtime": 1779361179.2682743,
+    "hash": "684abec6ae95456436ceb3b318c1a6a5"
+  },
+  "/home/genk/2026-study/webcg-k/supabase/migrations/20260520000003_overlay_user_folders.sql": {
+    "mtime": 1779360685.9149077,
+    "hash": "5a34ffdccd2663044467b71bc9618899"
+  },
+  "/home/genk/2026-study/webcg-k/supabase/migrations/20260520000001_ai_cuesheet_scene_overlay_link.sql": {
+    "mtime": 1779360685.9149077,
+    "hash": "1373beecc9df45832e09914cdd47c5c3"
+  },
+  "/home/genk/2026-study/webcg-k/supabase/migrations/20260521000001_ai_cuesheet_session_zone_profile.sql": {
+    "mtime": 1779360685.9186172,
+    "hash": "b335bc07a30cb7f3420b1183a1e3eba7"
+  },
+  "/home/genk/2026-study/webcg-k/supabase/migrations/20260520000000_combined_migration.sql": {
+    "mtime": 1779350877.5384593,
+    "hash": "5476df356b37edd3b5d5de80b7cbc8d8"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/vitest.config.ts": {
+    "mtime": 1779087952.52214,
+    "hash": "c8cd39739fa21166a6ab7c0d4ebdc07d"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/vite.config.ts": {
+    "mtime": 1770944811.3624916,
+    "hash": "9b8015c90032543685195d26aa3f6396"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/public/webcgk-api.js": {
+    "mtime": 1777535628.6239364,
+    "hash": "cec0277a4266929601afa6c36d927f27"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/router.tsx": {
+    "mtime": 1770939928.413689,
+    "hash": "9a7883072dc1e13d33ab95963538d874"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/routeTree.gen.ts": {
+    "mtime": 1779087952.5146418,
+    "hash": "070571925ccba1f3abf2dd79ec583b50"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/utils/colorUtils.ts": {
+    "mtime": 1778043589.087394,
+    "hash": "11f01c642f81887cb106224392897401"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/routes/controller.tsx": {
+    "mtime": 1771388152.4782255,
+    "hash": "dbf0f1c92e7675aece4c97f20e752f69"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/routes/login.tsx": {
+    "mtime": 1770939928.4100237,
+    "hash": "df6ad52c8ef366fa352a058b35fcb2ca"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/routes/index.tsx": {
+    "mtime": 1770939928.4100237,
+    "hash": "f22ca9ed6b748906f6002058af3dcde5"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/routes/render.tsx": {
+    "mtime": 1779102817.9628155,
+    "hash": "afbd4a97d19db050bee36e8ca8d4d537"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/routes/__root.tsx": {
+    "mtime": 1774962437.916383,
+    "hash": "f23259469b0e96dfdf12fa2bdce88c28"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/routes/dashboard.tsx": {
+    "mtime": 1770939928.413689,
+    "hash": "ad04f4fd7a19130a134c5ef64706a568"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/routes/controller/$sessionId.tsx": {
+    "mtime": 1779249085.7973955,
+    "hash": "5347e5326d07fbc927553029fcb58adf"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/routes/dashboard/graphic-tagging.lazy.tsx": {
+    "mtime": 1779347768.988093,
+    "hash": "a899403f4f6ce3d9c8f40be04013d09d"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/routes/dashboard/ai-cuesheet.lazy.tsx": {
+    "mtime": 1779347768.988093,
+    "hash": "6c4d65fb193411e48e9e3569dd06d94c"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/routes/dashboard/index.tsx": {
+    "mtime": 1775191708.6711097,
+    "hash": "7b48ba3317d6f009610a591a682089ad"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/routes/dashboard/index.lazy.tsx": {
+    "mtime": 1778458337.7481363,
+    "hash": "888044f92b017224f61b32de958c0cf6"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/routes/dashboard/cuesheets/index.tsx": {
+    "mtime": 1777719851.89378,
+    "hash": "0f772ddf1e26e1334f899022c79d1e6a"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/routes/dashboard/cuesheets/$cuesheetId.tsx": {
+    "mtime": 1779157749.4647672,
+    "hash": "08d1d2e0f6a68613eac8e8d0bfbf75ed"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/routes/dashboard/cuesheets/index.lazy.tsx": {
+    "mtime": 1779087952.52214,
+    "hash": "1a61708004169f4f0195a796b8229bc6"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/routes/dashboard/datasources/-CustomSourceModal.tsx": {
+    "mtime": 1777719851.89378,
+    "hash": "27d36f0ec19afb6c32fbf418b0ae3687"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/routes/dashboard/datasources/index.tsx": {
+    "mtime": 1777719851.89378,
+    "hash": "ddc302f6fb45dbb1b3f938c881cb1bde"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/routes/dashboard/datasources/-datasourcesTypes.ts": {
+    "mtime": 1777719851.89378,
+    "hash": "7d6c5e94d514e9068dbb14004c4fd4d8"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/routes/dashboard/datasources/-NrcsPanel.tsx": {
+    "mtime": 1777719851.89378,
+    "hash": "51504807b1449b624a5e419548d66161"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/routes/dashboard/datasources/index.lazy.tsx": {
+    "mtime": 1777719851.89378,
+    "hash": "d0694f65b83953905bde1ca3efe19f4d"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/routes/dashboard/rundowns/index.tsx": {
+    "mtime": 1777719851.89378,
+    "hash": "7609e61a70ba5fe33a3c6018a42d1ee6"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/routes/dashboard/rundowns/$rundownId.tsx": {
+    "mtime": 1779347768.988093,
+    "hash": "4f917d6ed12407acf13e9ceb78963d9f"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/routes/dashboard/rundowns/index.lazy.tsx": {
+    "mtime": 1779087952.52214,
+    "hash": "c185dd459180502e2b8f4b4b29cc7625"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/routes/dashboard/broadcast/index.tsx": {
+    "mtime": 1777719851.89738,
+    "hash": "5be5f4bdd6cdbc3bbed5639b2af8e0c2"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/routes/dashboard/broadcast/index.lazy.tsx": {
+    "mtime": 1779157808.012588,
+    "hash": "607f7da49a864658423753f2d2be6d7e"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/routes/dashboard/characters/index.tsx": {
+    "mtime": 1777719851.89738,
+    "hash": "cd55c65eea40c57e0e01550634000a85"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/routes/dashboard/assets/images/index.tsx": {
+    "mtime": 1778043589.0834482,
+    "hash": "06cffbc38b228b8cece76232fe3225d4"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/routes/dashboard/assets/images/index.lazy.tsx": {
+    "mtime": 1779087952.52214,
+    "hash": "1afbd793f1be156bd358ac0cfb9a2ce7"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/routes/dashboard/assets/fonts/index.tsx": {
+    "mtime": 1778043589.0834482,
+    "hash": "3cea59de7fb0421b1a1c8109954cfcf2"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/routes/dashboard/assets/fonts/index.lazy.tsx": {
+    "mtime": 1779087952.52214,
+    "hash": "e025a56ae0fd5b6cd2c5e4862e6fd976"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/routes/dashboard/studio/bundles/index.tsx": {
+    "mtime": 1778043589.0834482,
+    "hash": "b5c52c0c8d098e508a10447e8117bc71"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/routes/dashboard/studio/bundles/$bundleId.tsx": {
+    "mtime": 1778458337.7481363,
+    "hash": "ab23af1273f8c7ca5c4e3fd0db9f96f2"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/routes/dashboard/studio/whiteboards/$whiteboardId.tsx": {
+    "mtime": 1779236467.3297462,
+    "hash": "372b9c77adc9748cd7d85d9ac7b17e8c"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/routes/dashboard/studio/whiteboards/index.lazy.tsx": {
+    "mtime": 1779236467.3297462,
+    "hash": "bbcccc9a9582feb13c991ff737da4429"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/routes/dashboard/studio/overlays/index.tsx": {
+    "mtime": 1778043589.087394,
+    "hash": "e9334e3521de470c8696b81cdda29d8f"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/routes/dashboard/studio/overlays/editor.$pluginId.tsx": {
+    "mtime": 1778043589.0834482,
+    "hash": "b0f7fe468b2aa47b2238622a0619d9c7"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/routes/dashboard/studio/overlays/index.lazy.tsx": {
+    "mtime": 1779347768.988093,
+    "hash": "b6059bb28d804ae75de384e59900934c"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/routes/dashboard/studio/grid-templates/index.lazy.tsx": {
+    "mtime": 1779249085.7973955,
+    "hash": "269be487fe57c3e648e6a1fabb212555"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/routes/dashboard/studio/graphics/index.tsx": {
+    "mtime": 1778043589.0834482,
+    "hash": "76a9462cec45f682b4970a0d986638e6"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/routes/dashboard/studio/graphics/-graphicsTypes.tsx": {
+    "mtime": 1778043589.0834482,
+    "hash": "aac2f21d385c57fd1ef5a85545056c32"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/routes/dashboard/studio/graphics/$graphicId.tsx": {
+    "mtime": 1779087952.52214,
+    "hash": "6c52f2b8f4c8008d6f71d0559c5fbbf4"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/routes/dashboard/studio/graphics/index.lazy.tsx": {
+    "mtime": 1779249085.7973955,
+    "hash": "b5f1a2e35b8c8e2e38199fff7bac33d3"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/routes/dashboard/studio/graphics/grid-templates/new.tsx": {
+    "mtime": 1779087952.52214,
+    "hash": "e5adf99534292366927518b84a2e93a7"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/routes/dashboard/studio/graphics/grid-templates/$templateId.tsx": {
+    "mtime": 1779087952.52214,
+    "hash": "f489bd6793f3d2e60484bc429ac6d0d2"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/routes/dashboard/admin/-AdminUsersTab.tsx": {
+    "mtime": 1779347768.9844263,
+    "hash": "cfa7f7506ef04c05fb96ec9ad365f290"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/routes/dashboard/admin/-adminTypes.ts": {
+    "mtime": 1778584313.2881348,
+    "hash": "ae74c3560f386d80d9a37c57cc48e445"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/routes/dashboard/admin/index.tsx": {
+    "mtime": 1777719851.89738,
+    "hash": "d20d22bce0e4949e757d4ec773414c31"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/routes/dashboard/admin/-AdminAiTab.tsx": {
+    "mtime": 1779347768.9844263,
+    "hash": "f4c6ded03bfa238253a7214bc8723902"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/routes/dashboard/admin/-AdminApiKeysTab.tsx": {
+    "mtime": 1779347768.9844263,
+    "hash": "3c88c36d7967da21409ce1293a458142"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/routes/dashboard/admin/-AdminWorkspacesTab.tsx": {
+    "mtime": 1779347768.988093,
+    "hash": "9b0c726330e053667a9c70712049285c"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/routes/dashboard/admin/index.lazy.tsx": {
+    "mtime": 1779347768.988093,
+    "hash": "e08c1d6601b646c56ef74364b4354043"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/types/rive-webgl2.d.ts": {
+    "mtime": 1771057998.7426763,
+    "hash": "1967260ab00b4a1e8102706c27076e8d"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/lib/rundownOverlayData.ts": {
+    "mtime": 1779236467.3297462,
+    "hash": "a0a422b9d293c4dffa09bb8fe9622da5"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/lib/timerUtils.ts": {
+    "mtime": 1778828910.4066448,
+    "hash": "1962b3627dbecc058c7d3f6c7807fdb9"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/lib/ackProtocol.ts": {
+    "mtime": 1779100777.0089264,
+    "hash": "4fe7b5495032c5bc5aeb83be86fd380a"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/lib/aiCuesheetTypes.ts": {
+    "mtime": 1779347768.9844263,
+    "hash": "2a6f23b514b71c69f4cb3ba15e6167c7"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/lib/broadcastSourceData.ts": {
+    "mtime": 1779236467.3297462,
+    "hash": "903b90e23c3a87693088b5c6fd6a157a"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/lib/nrcsTypes.ts": {
+    "mtime": 1771488545.718612,
+    "hash": "2428ed98d508e416bd8584e6c9701741"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/lib/schemas.ts": {
+    "mtime": 1778201981.132719,
+    "hash": "b7cab05b5ccb05930382d69d133917be"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/lib/aiCharacterTypes.ts": {
+    "mtime": 1771063721.0297482,
+    "hash": "3ca28efa05453d8f6d54fee4b3d80c2c"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/lib/fontSizeExtension.ts": {
+    "mtime": 1772425694.3958898,
+    "hash": "d524aae160237c4ef15af0e88a761f25"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/lib/logger.ts": {
+    "mtime": 1774962551.8978355,
+    "hash": "48f31bfea9854f49568fc4b018ad0939"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/lib/database.types.ts": {
+    "mtime": 1779347768.9844263,
+    "hash": "e2a8afe9066147d24e8a084bfbc43098"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/lib/visualEditBridge.ts": {
+    "mtime": 1778458337.7441363,
+    "hash": "d6576ceb1fa38fd62a049c3fb73c1097"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/lib/webcgk-reactive.ts": {
+    "mtime": 1779347768.9844263,
+    "hash": "d0c2b206e1380d54b937cafbf003dba7"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/lib/monacoHistory.ts": {
+    "mtime": 1779347768.9844263,
+    "hash": "f9929e6f103d87679149071bfa130691"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/lib/realtimeBroadcast.ts": {
+    "mtime": 1779100777.0089264,
+    "hash": "918fa413b7c958dc729516927586cf31"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/lib/semanticRoleDefs.ts": {
+    "mtime": 1779347768.9844263,
+    "hash": "d21bcc1a3b205d328fe058e9aed53fd1"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/lib/overlayTypes.ts": {
+    "mtime": 1779347768.9844263,
+    "hash": "1e40a45d8d866bb559c9b51ae4b3ac99"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/lib/textMeasure.ts": {
+    "mtime": 1775204380.288629,
+    "hash": "57706802ab6360aa9c572f27a441c5f6"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/lib/gridTypes.ts": {
+    "mtime": 1771488777.0482464,
+    "hash": "74f957270a2fe04c1e7d379c3673e2fa"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/lib/csvParser.ts": {
+    "mtime": 1775210147.605792,
+    "hash": "0b4bea3fc9fda92d3ba0545ebdddd36d"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/lib/utils.ts": {
+    "mtime": 1770939928.413689,
+    "hash": "5a6fd53fdcf2be529e9cc0b718fde352"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/lib/webcgkSrcdoc.ts": {
+    "mtime": 1779347768.9844263,
+    "hash": "c7cf226cbcee38bfcdeb1f0ff9fda3cd"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/lib/i18n.ts": {
+    "mtime": 1779105031.71362,
+    "hash": "0742462fbdb4ef5de2516da8169c9101"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/lib/auth.tsx": {
+    "mtime": 1779169509.2010143,
+    "hash": "3f461b984527ef2dbdf8b444f417f8a1"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/lib/clockSync.ts": {
+    "mtime": 1778567617.132672,
+    "hash": "119878cebbd2c5fdfd6b13cddba12889"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/lib/supabase.ts": {
+    "mtime": 1779100777.0089264,
+    "hash": "c83ed3ada87f41796b059e6ff10430a2"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/lib/aiGraphicUtils.ts": {
+    "mtime": 1778567617.132672,
+    "hash": "51b4246c970a2d5545bcc514c7d6138d"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/lib/cssAstUtils.ts": {
+    "mtime": 1778828910.4066448,
+    "hash": "6f805291713bbd14a07c6d524d81ddc8"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/lib/aiCuesheetPublish.ts": {
+    "mtime": 1779347768.9844263,
+    "hash": "c611c534e8cc94078abd27085c851500"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/lib/aiCuesheetLocalSnapshot.ts": {
+    "mtime": 1779249085.7973955,
+    "hash": "dd2ca68939c755ea675455082021853b"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/lib/richTextUtils.ts": {
+    "mtime": 1772425692.4452233,
+    "hash": "f95a872934109620fdb2bfcf679061c1"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/lib/aiCuesheetZoneProfile.ts": {
+    "mtime": 1779347768.9844263,
+    "hash": "1c512c5333c8e909cca3bb2266c22afa"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/lib/fontRegistry.ts": {
+    "mtime": 1771481410.6462286,
+    "hash": "2e5eca8db9ccb88cc72171e77e100119"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/lib/utils/dateFormat.ts": {
+    "mtime": 1774962437.916383,
+    "hash": "6c5b39253d53dbac0f719aabcb43d11c"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/lib/annotation/annotationDocument.ts": {
+    "mtime": 1779236467.3297462,
+    "hash": "8c7bf8c03f45dc4a070acc02e30bb680"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/lib/annotation/__tests__/annotationDocument.test.ts": {
+    "mtime": 1779236467.3297462,
+    "hash": "7971172ea634fce79a2225e87c880f14"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/lib/types/broadcast.ts": {
+    "mtime": 1779087952.5146418,
+    "hash": "a2dc4b73ac352e35a2aa867da8a9aa85"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/lib/types/bindingTypes.ts": {
+    "mtime": 1775203529.6830304,
+    "hash": "ddc73122a3c025e335d48a4790a0adc4"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/lib/types/segment.ts": {
+    "mtime": 1776316316.6794245,
+    "hash": "f9108951f4226a20a7541c2a18a51a5a"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/lib/types/semanticTypes.ts": {
+    "mtime": 1778458337.7441363,
+    "hash": "c40aab446135c769476b5814a0528c17"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/lib/types/videoInput.ts": {
+    "mtime": 1775908686.0896292,
+    "hash": "51bd90f150769accdf1112af193b8c96"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/lib/element/sceneMath.ts": {
+    "mtime": 1779087952.5146418,
+    "hash": "ddeea1e805d08a2952eb87cec6041e10"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/lib/element/elementOperations.ts": {
+    "mtime": 1779087952.5146418,
+    "hash": "18a658427959c8148dd6c354751108bd"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/lib/element/__tests__/elementOperations.test.ts": {
+    "mtime": 1779087952.5146418,
+    "hash": "990741b91951b157a567a14d515d2e17"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/lib/element/__tests__/sceneMath.test.ts": {
+    "mtime": 1779087952.5146418,
+    "hash": "a6a79d1faf3af84e5a2654a299c15058"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/lib/__tests__/monacoHistory.test.ts": {
+    "mtime": 1779347768.9844263,
+    "hash": "caac6d277be02920e824df255d3ae114"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/lib/__tests__/webcgkReactive.test.ts": {
+    "mtime": 1779347768.9844263,
+    "hash": "26fbfe8670150e2cb8bbd2a725fc9526"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/lib/__tests__/aiCuesheetZoneProfile.test.ts": {
+    "mtime": 1779347768.9844263,
+    "hash": "ca280638dfdac652ae1551b76dad79b2"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/lib/__tests__/realtimeBroadcast.test.ts": {
+    "mtime": 1779100777.0089264,
+    "hash": "eb070cd9ffe8268fe5cfa881c2361241"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/lib/__tests__/broadcastSourceData.test.ts": {
+    "mtime": 1779236467.3297462,
+    "hash": "0d37a1e3a9a685747fc7e70547d586f1"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/lib/__tests__/aiCuesheetLocalSnapshot.test.ts": {
+    "mtime": 1779249085.7973955,
+    "hash": "2fab6aa70697114bbc9ae38c7d7834aa"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/lib/__tests__/aiCuesheetPublish.test.ts": {
+    "mtime": 1779347768.9844263,
+    "hash": "d68839d45bb95262974c06ebb09dd6d5"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/lib/actions/actionRegistry.ts": {
+    "mtime": 1779087952.5146418,
+    "hash": "ced78cccb8b7700adba161458c934013"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/lib/actions/__tests__/actionRegistry.test.ts": {
+    "mtime": 1779087952.5146418,
+    "hash": "34211b4aa0c75d1f082f2afac602f6b4"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/lib/hooks/useProMode.ts": {
+    "mtime": 1778043589.0834482,
+    "hash": "9f8181109757cbc01b8d789344aacb14"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/components/NrcsTrack.tsx": {
+    "mtime": 1771918200.443302,
+    "hash": "696d563c245cb0500871c70e5cda0296"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/components/GraphicPreviewRenderer.tsx": {
+    "mtime": 1778043589.079502,
+    "hash": "d665347e04bb6e485c75c8cc9322276e"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/components/NrcsMappingPreview.tsx": {
+    "mtime": 1771917844.3905702,
+    "hash": "96c53d9f72f2babb8c9f516b0b14611f"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/components/ErrorBoundary.tsx": {
+    "mtime": 1774962551.8978355,
+    "hash": "9474c3e7af46b7edd35b1972542b1630"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/components/AnimatedGraphicRenderer.tsx": {
+    "mtime": 1778215919.5704367,
+    "hash": "afc0fa927b1543892b696ff581bf7f4d"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/components/DataViewer.tsx": {
+    "mtime": 1775518499.2191718,
+    "hash": "3a97cd7825e8e23dfaf8fe29ed2b61b0"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/components/RoleGuard.tsx": {
+    "mtime": 1776747373.68654,
+    "hash": "b23646ffbd5ec7789924aba309bd3974"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/components/CsvImportWizard.tsx": {
+    "mtime": 1779087952.5108926,
+    "hash": "55a934c4c7b12994b6965b8ad7b03cc9"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/components/Controller/AiCharacterPanel.tsx": {
+    "mtime": 1771831505.1323953,
+    "hash": "f4d00c428ea6fc047cb2c29f00088b27"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/components/Controller/index.ts": {
+    "mtime": 1770939928.413689,
+    "hash": "4c46e018e6ab7892afa9ad11e5b936ca"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/components/Controller/VideoInputLayer.tsx": {
+    "mtime": 1777526205.6049647,
+    "hash": "d2ce5b019a97a427fb33a6a3e29e4890"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/components/Controller/OverlayPanel.tsx": {
+    "mtime": 1778458337.7441363,
+    "hash": "cd8573fa03a1642e137e796022db6adc"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/components/Controller/PreviewMonitor.tsx": {
+    "mtime": 1779172098.1019006,
+    "hash": "704a16ac7f8d3cd445474022cce332af"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/components/Controller/MonitorActionBar.tsx": {
+    "mtime": 1778567617.1253386,
+    "hash": "ea6942ca21fb1423a050f6657e968425"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/components/Controller/WhiteboardPanel.tsx": {
+    "mtime": 1779104093.1353378,
+    "hash": "a092a699f57d536c6dfe5a47e9a751ed"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/components/Controller/OverlayPlayoutLayer.tsx": {
+    "mtime": 1777710278.930894,
+    "hash": "f1c4ad416d5d0a84f41af14661665a0e"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/components/Controller/UserAvatars.tsx": {
+    "mtime": 1779087952.5108926,
+    "hash": "21832c908df028d1091dd69ab8915f76"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/components/Controller/timelineConstants.ts": {
+    "mtime": 1778567617.1290052,
+    "hash": "0aa066439d459c2c100bfe094509a55c"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/components/Controller/LogoGallery.tsx": {
+    "mtime": 1776929111.6037915,
+    "hash": "712f1fa9a7a5d6e94e13e888bbddbe7e"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/components/Controller/NrcsChangeAlert.tsx": {
+    "mtime": 1775993847.3240814,
+    "hash": "b9389eaf43aec17a148ccd44eb82b9ad"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/components/Controller/TimelineSubComponents.tsx": {
+    "mtime": 1778567617.1290052,
+    "hash": "ce84109e2c99bb68d057f907ff1c3f7a"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/components/Controller/KeyboardShortcutModal.tsx": {
+    "mtime": 1776926557.5704565,
+    "hash": "b3738ae6d56a6d34c6c97498821e0237"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/components/Controller/AiCharacterLayer.tsx": {
+    "mtime": 1778567617.1253386,
+    "hash": "a7e36b272bf22c8c876d31cac6141cb1"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/components/Controller/GroupOverlayCard.tsx": {
+    "mtime": 1777860431.2592096,
+    "hash": "9ada9d737a319192d4708e5db5f3138f"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/components/Controller/BroadcastButton.tsx": {
+    "mtime": 1776925619.7282686,
+    "hash": "2b54441d578b9ab6795108ae64b5e293"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/components/Controller/BlockEditDrawer.tsx": {
+    "mtime": 1775994004.0747356,
+    "hash": "4c793798168822b5e63953646ddda787"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/components/Controller/SegmentTabBar.tsx": {
+    "mtime": 1777547092.7402592,
+    "hash": "4b113b55724f41f59b5e09f8f55e53a1"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/components/Controller/OverlayCard.tsx": {
+    "mtime": 1778828910.4026444,
+    "hash": "48e2c377079b64a95e1a807311813b98"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/components/Controller/PGMMonitor.tsx": {
+    "mtime": 1779172105.2146342,
+    "hash": "8e1d50265168aecf26f6a668817a59fb"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/components/Controller/overlayConstants.tsx": {
+    "mtime": 1778828910.4026444,
+    "hash": "1803704fa3f62f2bc1c57f353f615995"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/components/Controller/SettingsPanel.tsx": {
+    "mtime": 1777526205.6049647,
+    "hash": "a8100ba6841c95ee9a9a25c27dee2ba4"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/components/Controller/Timeline.tsx": {
+    "mtime": 1778567617.1290052,
+    "hash": "759fdd5455073b4dbea40800f71c763c"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/components/Controller/ActionLogPanel.tsx": {
+    "mtime": 1774962437.9127831,
+    "hash": "5966fcb0c6edc48831ab983b96c56d13"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/components/Controller/DraggableBlock.tsx": {
+    "mtime": 1777527429.2701316,
+    "hash": "faceca9eb630817329420e74b9919229"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/components/Dashboard/Sidebar.tsx": {
+    "mtime": 1779169500.6996748,
+    "hash": "7dd20d0fc0631d2e5e12d0f03b0f2d3c"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/components/ui/dialog.tsx": {
+    "mtime": 1770939928.413689,
+    "hash": "4238862d16e2ba521f429e87a1344e1c"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/components/ui/slider.tsx": {
+    "mtime": 1770940992.9676285,
+    "hash": "bb123d2180600acc4c2900b257284e64"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/components/ui/label.tsx": {
+    "mtime": 1770939928.413689,
+    "hash": "84c1875f4b045f280ff7e6947cab726b"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/components/ui/select.tsx": {
+    "mtime": 1770939928.413689,
+    "hash": "6a0e07cd58ac996abcb87ff5bb702c05"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/components/ui/RichTextEditor.tsx": {
+    "mtime": 1775537827.895086,
+    "hash": "7dee46b8a9077cb808168ab3f826f8ca"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/components/ui/input.tsx": {
+    "mtime": 1770939928.413689,
+    "hash": "6666f8369b53c79d39be8060dc6c4ce5"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/components/ui/button.tsx": {
+    "mtime": 1770939928.413689,
+    "hash": "c146cd1d6f1e0d54e4a7bb5f15a0834b"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/components/Overlay/PluginOverlayLayer.tsx": {
+    "mtime": 1779347768.9770927,
+    "hash": "69e7622db479445f1d063f5e8685d795"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/components/Overlay/OverlayEditor.tsx": {
+    "mtime": 1770939928.413689,
+    "hash": "c5d91f10b8b006b1d637d3d519dc1f93"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/components/Overlay/GridSelector.tsx": {
+    "mtime": 1777852216.7959714,
+    "hash": "1093ed15a7678481680be186327ce1ef"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/components/Overlay/AiPromptPanel.tsx": {
+    "mtime": 1778043589.0834482,
+    "hash": "bfe0b6d70ed1bdd496e2579a50362c5e"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/components/Overlay/OverlayCreationWizard.tsx": {
+    "mtime": 1778043589.0834482,
+    "hash": "468323cc4a3061d49547bfe226a5f6de"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/components/Overlay/CgVariationGallery.tsx": {
+    "mtime": 1770939928.413689,
+    "hash": "b67b3357b68c121299838a1ad3a5c9ff"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/components/Overlay/ZoneSelector.tsx": {
+    "mtime": 1777852214.792233,
+    "hash": "dff9e1e0601be7ebb7c69da7b374fbde"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/components/Overlay/OverlayGallery.tsx": {
+    "mtime": 1779104548.653105,
+    "hash": "d8aaad0f79cd6d9e7c77fac35fb49fc1"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/components/Overlay/SchemaEditor.tsx": {
+    "mtime": 1779347768.9770927,
+    "hash": "5d7786f71904ab5d22ff060f1088f34a"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/components/Overlay/PluginEditor/defaults.ts": {
+    "mtime": 1779347768.9770927,
+    "hash": "72d26d53aeb3c78ccd9277c56d7e4a6c"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/components/Overlay/PluginEditor/index.tsx": {
+    "mtime": 1779347768.9770927,
+    "hash": "3c3b2cce402df307c72cb12c2950bff9"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/components/Overlay/PluginEditor/lib/grid-zones.ts": {
+    "mtime": 1778828910.4066448,
+    "hash": "b4e4a01ccb2eb758314331b2797dc183"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/components/Overlay/PluginEditor/components/DashboardField.tsx": {
+    "mtime": 1779347768.9770927,
+    "hash": "dc93791fa01131e3f9b0a72e38d2597e"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/components/Overlay/PluginEditor/components/Toolbar.tsx": {
+    "mtime": 1779347768.9770927,
+    "hash": "915bef594b05966c12b3e7d436c78791"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/components/Overlay/PluginEditor/components/VizFields.tsx": {
+    "mtime": 1778828910.4026444,
+    "hash": "f1762e04cbaca85137b6bc94f2aafe04"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/components/Overlay/PluginEditor/components/GridZoneOverlay.tsx": {
+    "mtime": 1778828910.4026444,
+    "hash": "9f1221bb1799ac77dd4e9e1a71804fca"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/components/Overlay/PluginEditor/components/AIGenerationPanel.tsx": {
+    "mtime": 1778828910.4026444,
+    "hash": "4de1399616b7f65ca146fc4391ae2da5"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/components/Overlay/PluginEditor/components/ImportModal.tsx": {
+    "mtime": 1778828910.4026444,
+    "hash": "aeeb677616bbe5f64bf661bd91fc7975"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/components/Overlay/PluginEditor/components/PreviewContainer.tsx": {
+    "mtime": 1778828910.4026444,
+    "hash": "e0a4b27efcb52f33224a66e5332aaaab"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/components/Overlay/PluginEditor/components/DashboardPanel.tsx": {
+    "mtime": 1778828910.4026444,
+    "hash": "776062c5fb9bdbfc13bba0fdf9ae2975"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/components/Overlay/PluginEditor/components/BindingValidationPanel.tsx": {
+    "mtime": 1779347768.9770927,
+    "hash": "1c59f28233d1137ee1f0f521f26808a7"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/components/Overlay/PluginEditor/components/__tests__/BindingValidationPanel.test.tsx": {
+    "mtime": 1779347768.9770927,
+    "hash": "4c0fdb25a8c510ad4c5a4a4ab162f48b"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/components/Overlay/PluginEditor/hooks/useKeyboardShortcuts.ts": {
+    "mtime": 1778828910.4066448,
+    "hash": "732f909fb893797f2bc8c6bf3510f0a3"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/components/Overlay/PluginEditor/hooks/useAIGeneration.ts": {
+    "mtime": 1778828910.4066448,
+    "hash": "b8577ae68c050c98f444418ef02c9813"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/components/Overlay/PluginEditor/hooks/usePluginCode.ts": {
+    "mtime": 1779347768.9770927,
+    "hash": "07cf4f9623e22f5af62e75fbe48d010c"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/components/Overlay/PluginEditor/hooks/useVisualEditBridge.ts": {
+    "mtime": 1778828910.4066448,
+    "hash": "04f84f4b36be21f66a8b3c9f81faf577"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/components/Overlay/PluginEditor/hooks/usePreviewBridge.ts": {
+    "mtime": 1779347768.9770927,
+    "hash": "0698c1e59291554ed9bc76ace54376e3"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/components/Overlay/PluginEditor/hooks/useResizer.ts": {
+    "mtime": 1778828910.4066448,
+    "hash": "5278f1b98cd014764d60ea20ad4ba7a7"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/components/Overlay/PluginEditor/hooks/__tests__/usePluginCode.test.ts": {
+    "mtime": 1779347768.9770927,
+    "hash": "2ac645198ca7239db23fee79e7d6f5f2"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/components/Compositor/CompositorLayer.tsx": {
+    "mtime": 1778828910.4026444,
+    "hash": "65a02edd5f460ba0929e707a50e657fa"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/components/Common/VisibilityToggle.tsx": {
+    "mtime": 1779103935.5397842,
+    "hash": "37a30946e1e03ccad010362f0a832aeb"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/components/GraphicsEditor/GraphicsEditor.tsx": {
+    "mtime": 1779087952.5146418,
+    "hash": "76fe25f4eaa82f3bbc581b2f628dad1b"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/components/GraphicsEditor/Canvas/Canvas.tsx": {
+    "mtime": 1779087952.5146418,
+    "hash": "184a9071e6d21ba9945d7cb0cc18c317"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/components/GraphicsEditor/Canvas/InteractionLayer.tsx": {
+    "mtime": 1779087952.5146418,
+    "hash": "6a71525957724f94f7bbcbce78112bb4"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/components/GraphicsEditor/Canvas/GridOverlay.tsx": {
+    "mtime": 1776309450.6214116,
+    "hash": "134499b6a93cf20cc81ee8cb619c6b5d"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/components/GraphicsEditor/Panels/ToolbarPanel.tsx": {
+    "mtime": 1778458337.7441363,
+    "hash": "1012eee26844c7acb0f3426fa0f06cd3"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/components/GraphicsEditor/Panels/PropertiesPanel.tsx": {
+    "mtime": 1778828910.4026444,
+    "hash": "e348c23e71c94dc8443107896ffc3de5"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/components/GraphicsEditor/Panels/LayersPanel.tsx": {
+    "mtime": 1778458337.7441363,
+    "hash": "101b0fabbd2f0e9f8228659aed6043fd"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/components/GraphicsEditor/Panels/tabs/AnimateTab.tsx": {
+    "mtime": 1778828910.4026444,
+    "hash": "a445596321f1ab1341600c5ffeef41eb"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/components/GraphicsEditor/Panels/tabs/BindingTab.tsx": {
+    "mtime": 1778828910.4026444,
+    "hash": "fa21e58a719e03e2532e71480ed2ad1b"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/components/GraphicsEditor/Panels/tabs/DesignTab.tsx": {
+    "mtime": 1778828910.4026444,
+    "hash": "1c790109279c212a70d93537437272dc"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/components/GraphicsEditor/Panels/tabs/CssTab.tsx": {
+    "mtime": 1778828910.4026444,
+    "hash": "421ee80529bab3dc41d478850536cde0"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/components/GraphicsEditor/Panels/tabs/TextTab.tsx": {
+    "mtime": 1778828910.4026444,
+    "hash": "401cab87328f5f9cffbad9d670ecbb4b"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/components/GraphicsEditor/hooks/useHistory.ts": {
+    "mtime": 1779087952.5146418,
+    "hash": "2721a9f4a9afd0f884eab52685bea11e"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/components/GraphicsEditor/hooks/__tests__/useHistory.test.ts": {
+    "mtime": 1779087952.5146418,
+    "hash": "9ae32352e39c77baced729d235f08785"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/components/GridEditor/PropertiesPanel.tsx": {
+    "mtime": 1770939928.4173539,
+    "hash": "0802cc975d564f2fb52ba1475fc44bc3"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/components/GridEditor/GridEditor.tsx": {
+    "mtime": 1770939928.4173539,
+    "hash": "675989bae91e52b03e42ad0e87966d84"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/components/GridEditor/GridSplitEditor.tsx": {
+    "mtime": 1779236467.3260796,
+    "hash": "107fe634d6b6a969c44bb5761ff6a135"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/components/GridEditor/ZonesPanel.tsx": {
+    "mtime": 1770939928.4173539,
+    "hash": "645bf640f7e5b82eabf618e1b22179d7"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/components/GridEditor/GridCanvas.tsx": {
+    "mtime": 1777852207.582464,
+    "hash": "344b96d10ec5bfb926ab6828251c1244"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/components/ai-cuesheet/SceneReviewList.tsx": {
+    "mtime": 1779236467.3297462,
+    "hash": "bbb5625fc2744eebe4f5e79576c770a3"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/components/ai-cuesheet/StepRundownEdit.tsx": {
+    "mtime": 1779347768.9770927,
+    "hash": "2ca3b0639ae653a58cab5d854c20fa65"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/components/ai-cuesheet/StepRenderVerify.tsx": {
+    "mtime": 1779236467.3297462,
+    "hash": "f010d0bfc148a6fc461b5830d82b8c4b"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/components/ai-cuesheet/StepGraphicGenerate.tsx": {
+    "mtime": 1779347768.9770927,
+    "hash": "87186b03319eaecbfbef96e87d40e2ab"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/components/ai-cuesheet/wizardReducer.ts": {
+    "mtime": 1779347768.9844263,
+    "hash": "97d29ff8cf3356b74a919d2d173b4825"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/components/ai-cuesheet/StepSourceInput.tsx": {
+    "mtime": 1779347768.9844263,
+    "hash": "f56b7af2b6db245080ce26c9aa7c90f3"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/components/ai-cuesheet/StepSystemPrompt.tsx": {
+    "mtime": 1778567617.132672,
+    "hash": "d7c5731c3f6733c8fffe4b2f2b94fdcf"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/components/ai-cuesheet/StepContentReview.tsx": {
+    "mtime": 1779236467.3297462,
+    "hash": "2fc1bb686b5c1a13999a844ede95bffa"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/components/ai-cuesheet/__tests__/wizardReducer.test.ts": {
+    "mtime": 1779347768.9844263,
+    "hash": "b4a614ca8bbb61459e9a06315a6f6e43"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/components/Renderer/RendererWhiteboard.tsx": {
+    "mtime": 1779155470.6363964,
+    "hash": "a4110353ecdf28b72e53ad325482be6a"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/components/Renderer/BroadcastHtmlOverlay.tsx": {
+    "mtime": 1779347768.9770927,
+    "hash": "48ffad2161c7053b5dcdfc9fbe84c706"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/components/Graphics/GraphicsGallery.tsx": {
+    "mtime": 1771388173.5982187,
+    "hash": "bb68d2aaa988eb91a8542968ee99e4e4"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/components/Graphics/templates.tsx": {
+    "mtime": 1774962551.8978355,
+    "hash": "1c3372edf45cead9f66310729310f0fe"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/components/Graphics/GridTemplatesList.tsx": {
+    "mtime": 1778458337.7441363,
+    "hash": "fff482541c0c2a4a37af969e17018b1f"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/components/SemanticRenderer/index.ts": {
+    "mtime": 1778125633.3501203,
+    "hash": "a7cf396a0074765c21fe6a29dd52a2d6"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/components/SemanticRenderer/NodeRenderer.tsx": {
+    "mtime": 1779249085.7973955,
+    "hash": "3f5aa11fff9a7a3fbc7bca82fcf9e1cb"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/components/SemanticRenderer/SemanticSceneThumbnail.tsx": {
+    "mtime": 1778458337.7441363,
+    "hash": "41e0a64816fc6da8d0595252b9012971"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/components/SemanticRenderer/ThemeProvider.tsx": {
+    "mtime": 1778125453.9603496,
+    "hash": "0db7f828d9e74459c6f74d75a50c425e"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/components/SemanticRenderer/themePresets.ts": {
+    "mtime": 1778125353.2549338,
+    "hash": "27e1eb53a2400e377da3fbe8c4bba15c"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/components/SemanticRenderer/SemanticRenderer.tsx": {
+    "mtime": 1779249085.7973955,
+    "hash": "d50657a86d4008d5db01d4af08cc7450"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/components/SemanticRenderer/layoutUtils.ts": {
+    "mtime": 1779249085.7973955,
+    "hash": "e20fad78434e8440c756ede124995af7"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/components/Characters/CharacterWizardModal.tsx": {
+    "mtime": 1778567617.1253386,
+    "hash": "21b91c4e2014701a1608f30d73e3efff"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/components/Annotation/AnnotationCanvas.tsx": {
+    "mtime": 1779236467.3260796,
+    "hash": "a5d7fcb08596a2516bd27ec0aad3edd6"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/components/Annotation/AnnotationRenderer.tsx": {
+    "mtime": 1779155569.969238,
+    "hash": "46b738028e603390151d13c3a1c7a5a1"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/stores/blockManipulation.ts": {
+    "mtime": 1776926294.8604057,
+    "hash": "38296c73f2c925a6d24099f5ba65ccc0"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/stores/themeStore.ts": {
+    "mtime": 1778131871.7474964,
+    "hash": "03c5b58416f725a411050c8d3fa855c6"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/stores/timelineStore.ts": {
+    "mtime": 1779087952.52214,
+    "hash": "13733eb9e1ca7042447671285c3323a0"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/stores/pendingChangesStore.ts": {
+    "mtime": 1775993792.4573376,
+    "hash": "85ccabbe08738ecfe41affe7a9f7ce8a"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/stores/actionLogStore.ts": {
+    "mtime": 1775994239.5794191,
+    "hash": "27c9520e14517c1824b02df470eba249"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/test/setup.ts": {
+    "mtime": 1779087952.52214,
+    "hash": "3709e3aa95abf0544678f0f2d9b46702"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/hooks/useClipboard.ts": {
+    "mtime": 1774962551.8978355,
+    "hash": "4e55ea45c22a62ec124be51c1638de41"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/hooks/useCuesheetSync.ts": {
+    "mtime": 1778828910.4066448,
+    "hash": "9c4c8a97e6c520cc20eb95fd92635577"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/hooks/useAnnotationDocument.ts": {
+    "mtime": 1779155463.7859278,
+    "hash": "4bc82067b057eaf337dfac8641f79822"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/hooks/useSessionPresence.ts": {
+    "mtime": 1778567617.132672,
+    "hash": "93ebc54d65a5306e7659126d00e4a57d"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/hooks/useSessionController.ts": {
+    "mtime": 1779100777.0089264,
+    "hash": "c35ac1731dd042c54cad386a7149b9ad"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/hooks/useDebounce.ts": {
+    "mtime": 1774962551.8978355,
+    "hash": "08f98f3ebfd01f5e5472100d1f9f6f3e"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/hooks/useRealtimeChannel.ts": {
+    "mtime": 1779100777.0089264,
+    "hash": "45e73a68fa585c6524bb6d02a7e502bd"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/hooks/useKeyboardNavigation.ts": {
+    "mtime": 1779249085.7973955,
+    "hash": "f9989af4684a05c2253217d099a3ab78"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/hooks/useOverlayStore.ts": {
+    "mtime": 1779087952.5146418,
+    "hash": "18e097c63ffc0d904c94e916caf1e71c"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/hooks/useActionDispatcher.ts": {
+    "mtime": 1779087952.5146418,
+    "hash": "edf2f2a0baea0b68bb1abf3f42b4e168"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/services/cuesheetService.ts": {
+    "mtime": 1779087952.52214,
+    "hash": "6cf1ff7fb863e2d2a11d5a6c2b969224"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/services/imageService.ts": {
+    "mtime": 1776929072.4242117,
+    "hash": "2948075abde6a0327e220c66beb58ecd"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/services/aiCgService.ts": {
+    "mtime": 1778201402.949509,
+    "hash": "8480dd1038344a09fc42e95ae3ab7422"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/services/aiCuesheetSessionService.ts": {
+    "mtime": 1779347768.988093,
+    "hash": "184fdce1398d09b999cd081b02e6358c"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/services/overlayFolderService.ts": {
+    "mtime": 1779249085.8011844,
+    "hash": "795282caeb7c505551984fc920b4b233"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/services/characterService.ts": {
+    "mtime": 1771830958.962328,
+    "hash": "853d9e47778489b8720f31b43acd7350"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/services/videoInputService.ts": {
+    "mtime": 1777526205.6089559,
+    "hash": "0257a299030c08b176fa788ed54e50aa"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/services/dataProviders.ts": {
+    "mtime": 1770939928.4173539,
+    "hash": "198f796c1c0df02f68e94fcadf4e9eba"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/services/nrcsRealtimeService.ts": {
+    "mtime": 1775518822.6777341,
+    "hash": "58da0d3b30aa53be4ebcbda755f69307"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/services/bundleService.ts": {
+    "mtime": 1778567617.1400054,
+    "hash": "959ce91fa6d6abac4bfd63b401c29e60"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/services/rundownRepository.ts": {
+    "mtime": 1779236467.3297462,
+    "hash": "24a1688ea216e8cbc7b19e2b35c63e3c"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/services/overlayApiService.ts": {
+    "mtime": 1779104414.19192,
+    "hash": "61f5df6effb7aeacabb83eadfc8c0d5d"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/services/aiCoreService.ts": {
+    "mtime": 1779361204.598345,
+    "hash": "4cc00b687ef5a4b2b473cc0ad71a8cf2"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/services/dashboardService.ts": {
+    "mtime": 1778458337.7481363,
+    "hash": "14d25dbf1202f4f9f8c4128587667d77"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/services/aiCuesheetService.ts": {
+    "mtime": 1779347768.988093,
+    "hash": "875cb46d6e37e90ab00e7df1e42f0cc1"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/services/cuesheetDataSourceService.ts": {
+    "mtime": 1775518178.3047705,
+    "hash": "131ce7509cfa2478ee2ac5e82da01581"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/services/aiOverlayService.ts": {
+    "mtime": 1779363155.9917626,
+    "hash": "0e583f16e391dcd5ce3382d0d998c64e"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/services/dataSourceService.ts": {
+    "mtime": 1771831622.6604006,
+    "hash": "2b0a02fe08063962f749659ce4012b69"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/services/adminService.ts": {
+    "mtime": 1779249085.7973955,
+    "hash": "208e09b622465382eb0e5a2563eb0515"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/services/fontService.ts": {
+    "mtime": 1771830958.962328,
+    "hash": "7f95880c17525c6f6fa23f30a5006aa2"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/services/nrcsService.ts": {
+    "mtime": 1777526205.6089559,
+    "hash": "b1ee4b9d5fe4e1ff36471651b4ae9ae8"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/services/aiSvgService.ts": {
+    "mtime": 1779347768.988093,
+    "hash": "a239b3e31a8557af0a95a99154f592ef"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/services/graphicService.ts": {
+    "mtime": 1779104397.0923905,
+    "hash": "f29b5666a1b0b616f619ed1e362fd5e0"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/services/nrcsMappingService.ts": {
+    "mtime": 1775200292.7223134,
+    "hash": "6f6b0017bd993f968b11581eff0b4905"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/services/preflightService.ts": {
+    "mtime": 1775541479.503481,
+    "hash": "f5ad460bd90666b6aacb2f430f974de4"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/services/whiteboardService.ts": {
+    "mtime": 1779236467.3297462,
+    "hash": "4ba27a657980bb00b985af3aaeb6cf27"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/services/workspaceService.ts": {
+    "mtime": 1778635065.859105,
+    "hash": "48c55ec6024defc05a70d4f2e6d1c2f1"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/services/gridTemplateService.ts": {
+    "mtime": 1779104430.4991932,
+    "hash": "c8f5fd8ab1ceb0d4f610ab85021d3ee1"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/services/__tests__/aiCuesheetService.test.ts": {
+    "mtime": 1779347768.988093,
+    "hash": "2a041e9121fbe4e2630d40c4f2974b24"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/services/__tests__/overlayFolderService.test.ts": {
+    "mtime": 1779249085.7973955,
+    "hash": "744b198f2842b166a580a5eea6713d03"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/services/__tests__/aiOverlayService.test.ts": {
+    "mtime": 1779363171.6850913,
+    "hash": "589c6c6e9d0ab26dc82c4be05524f863"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/services/__tests__/aiCuesheetSessionService.test.ts": {
+    "mtime": 1779249085.7973955,
+    "hash": "96370acc777d2dcddc164e632bee8410"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/services/__tests__/aiCoreService.test.ts": {
+    "mtime": 1779236467.3297462,
+    "hash": "b96e24bdfd2e4e060da46940beb67d30"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/services/contentValidation/index.ts": {
+    "mtime": 1775537840.889901,
+    "hash": "5a0a1484dcbec73af31c0e7257f80328"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/services/contentValidation/titleValidator.ts": {
+    "mtime": 1775537760.0457327,
+    "hash": "5a9017b88ee20ce50c8bb0609d155a7c"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/services/contentValidation/spellCheckService.ts": {
+    "mtime": 1775537715.86745,
+    "hash": "102ee7040a8802f1229a99457ab745a0"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/services/contentValidation/temporalValidator.ts": {
+    "mtime": 1775537785.7162251,
+    "hash": "50db55d7f7811ef8d2375a6d5251e384"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/services/contentValidation/profanityFilter.ts": {
+    "mtime": 1775537850.2424989,
+    "hash": "6a8631c5e9505b0292d62eee7ec45868"
+  },
+  "/home/genk/2026-study/webcg-k/DESIGN.md": {
+    "mtime": 1779362362.7640305,
+    "hash": "0573040ea69c074693a4e221de704e31"
+  },
+  "/home/genk/2026-study/webcg-k/README.md": {
+    "mtime": 1779362362.7640305,
+    "hash": "131a2da2b7535dbbe4154c4d555d1f68"
+  },
+  "/home/genk/2026-study/webcg-k/supabase/docs/DB.md": {
+    "mtime": 1776747373.6627557,
+    "hash": "e031ffa8edb1d6c528aaefc3e39c2386"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/README.md": {
+    "mtime": 1779362362.767697,
+    "hash": "aeaaf393d5eed09e05f80747cb7d2518"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/docs/PHASE9_DESIGN.md": {
+    "mtime": 1776747373.6667197,
+    "hash": "28a5e27db21b06228444b3f842035db6"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/docs/AI_OVERLAY_PROTOCOL.md": {
+    "mtime": 1777601940.476501,
+    "hash": "2fc94ea54766da8259ef6823685b33f8"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/docs/CONTEXT.md": {
+    "mtime": 1779363186.955182,
+    "hash": "05dba4849d206b0f810d417e22201305"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/docs/HANDOVER.md": {
+    "mtime": 1779363213.4301736,
+    "hash": "0b8e9d3136736fbd0660224db6d76652"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/docs/USAGE.md": {
+    "mtime": 1779362362.767697,
+    "hash": "d6253e8ba810ff7855be0b8133ca0d2d"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/docs/TASKS.md": {
+    "mtime": 1779363193.5405135,
+    "hash": "e32427fd3baf220e0e9481e700728ece"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/docs/CHANGELOG.md": {
+    "mtime": 1779363202.4688444,
+    "hash": "909e165bbd59a3cda913d6a34d423ee3"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/docs/LESSONS.md": {
+    "mtime": 1779363222.0725045,
+    "hash": "48b62e6192ed74cc9a32a83801a3f2af"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/docs/analysis/OBM_VISION_ANALYSIS.md": {
+    "mtime": 1776747373.6667197,
+    "hash": "fe7bf46f4eefd3f1737de67b1ce42367"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/docs/analysis/RAG_ARCHITECTURE_ANALYSIS.md": {
+    "mtime": 1776747373.6667197,
+    "hash": "d1cfdb7d1e76c381aa04a70696818a6b"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/docs/guide/TROUBLESHOOTING.md": {
+    "mtime": 1779362362.767697,
+    "hash": "7a1a21c6ced1b871f7d805c0d43420f0"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/docs/guide/GRID_EDITOR.md": {
+    "mtime": 1779362362.767697,
+    "hash": "f263f8df416823f0f2654650f91edf1e"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/docs/guide/AI_CG_QUALITY_STRATEGY.md": {
+    "mtime": 1776747373.6786118,
+    "hash": "41de642bf40f02d72eb911d14951bddb"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/docs/guide/FONT_LICENSE_GUIDE.md": {
+    "mtime": 1779362362.767697,
+    "hash": "cb388824f4766084dc7499ef450ad8a4"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/docs/guide/AI_CHARACTER_SYSTEM.md": {
+    "mtime": 1779362362.767697,
+    "hash": "98c259cd3e1813d0d26572c3cd7ebc6b"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/docs/guide/SETUP.md": {
+    "mtime": 1779362362.767697,
+    "hash": "18d3dc355626d623f3f47193ed51bdbd"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/docs/guide/SVG_GENERATION_GUIDE.md": {
+    "mtime": 1777331333.4199529,
+    "hash": "cd6e2ad509ac0cde50e73b942f98e766"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/docs/guide/AI_CG_GUIDE.md": {
+    "mtime": 1779362362.767697,
+    "hash": "45e22c90e65e9f7ac30b938b74c2a513"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/docs/guide/GRAPHIFY_GUIDE.md": {
+    "mtime": 1776747373.6786118,
+    "hash": "b2b1dcce87dc0b197911628b2844b4d5"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/docs/guide/CUSTOM_PLUGIN_PROMPT_TEMPLATE.md": {
+    "mtime": 1777710278.9235606,
+    "hash": "6cbaac82f112452eeb56cb97e88f55ba"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/docs/guide/NRCS_CUESHEET_WORKFLOW.md": {
+    "mtime": 1779362362.767697,
+    "hash": "32b443f4952da8cff602b831d40a1c70"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/docs/guide/SUPABASE_TYPESAFETY_GUIDE.md": {
+    "mtime": 1776747373.6825757,
+    "hash": "dcd4ac5bfc664f72baef81e63519a78a"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/docs/guide/WEBCGK_COMPREHENSIVE_GUIDE.md": {
+    "mtime": 1776747373.6825757,
+    "hash": "c12a8b13466be56a9d34ade246668a43"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/docs/guide/GRAPHIFY_INTEGRATION.md": {
+    "mtime": 1776813226.620723,
+    "hash": "ecf89b5ffadf696aa3de5c4c4c9ccfd4"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/docs/guide/SHADCN_GUIDE.md": {
+    "mtime": 1779362362.767697,
+    "hash": "a83d31599afeb684c9e25151f9153377"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/docs/guide/RENDERER_RESOLUTION.md": {
+    "mtime": 1779362362.767697,
+    "hash": "7a34ae08b3d61cd6ef00a638b7c1e4a5"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/docs/guide/REALTIME_SYNC_ARCHITECTURE.md": {
+    "mtime": 1779362362.767697,
+    "hash": "0caf83403437f913dce12eacbe872129"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/docs/guide/TESTING_GUIDE.md": {
+    "mtime": 1779347768.9770927,
+    "hash": "d7a4a4224609d8ac33cd5f5146482768"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/docs/study/05-dom-bypass-drag-optimization.md": {
+    "mtime": 1779087952.5108926,
+    "hash": "2125d64e9ac624a8b726d9a1938fbbb4"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/docs/study/02-plugin-editor.md": {
+    "mtime": 1778828910.398644,
+    "hash": "3e72b8a75f414c73959b3f7402de2434"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/docs/study/SERVICE_LAYER_GUIDE.md": {
+    "mtime": 1777710278.9235606,
+    "hash": "e96aaa5015ac2c3011059ebb331b1c1b"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/docs/study/07-ai-cuesheet.md": {
+    "mtime": 1778828910.398644,
+    "hash": "659e9dde05cb1a7c06408680e3c03005"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/docs/study/AI_PIPELINE_ARCHITECTURE.md": {
+    "mtime": 1777710278.9235606,
+    "hash": "d72be5dc0d947d2e19a23933fb110f3f"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/docs/study/OVERLAY_REFACTORING.md": {
+    "mtime": 1777710278.9235606,
+    "hash": "9ed182d549958b7ef5374361816b6696"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/docs/study/05-rundown.md": {
+    "mtime": 1778828910.398644,
+    "hash": "44535f8b03d09e1d0bb5f08bd0c041d6"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/docs/study/04-excalidraw-architecture-transplant.md": {
+    "mtime": 1779087952.5108926,
+    "hash": "48cc6469ced2895036b4f59613dbe25b"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/docs/study/08-datasources.md": {
+    "mtime": 1778828910.398644,
+    "hash": "b3be9d4d7323a1cfcd707f9c2e12ecdc"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/docs/study/CQRS_DESIGN.md": {
+    "mtime": 1779347768.9770927,
+    "hash": "0c11690ff1184bad122b83c9b6539eb5"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/docs/study/06-controller.md": {
+    "mtime": 1778828910.398644,
+    "hash": "3090d1c334f27d02261c672374741fd9"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/docs/study/TYPESCRIPT_GUIDE.md": {
+    "mtime": 1777710278.9235606,
+    "hash": "fb7342e8495575efb26310db3e59aee2"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/docs/study/README.md": {
+    "mtime": 1778828910.398644,
+    "hash": "c454f8961c7a0f958a14c4be601568fd"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/docs/study/00-data-model.md": {
+    "mtime": 1778828910.398644,
+    "hash": "aded97b24f0242c6d553ed0782e0a635"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/docs/study/ZOD_GUIDE.md": {
+    "mtime": 1777710278.9235606,
+    "hash": "c16252a9b236655d758b20ef0fdf3d7b"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/docs/study/03-ai-overlay.md": {
+    "mtime": 1778828910.398644,
+    "hash": "29d51d6f5c0676c9718d2dfa1e09d580"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/docs/study/SUPABASE.md": {
+    "mtime": 1777710278.9235606,
+    "hash": "32dc8c7f699a8511fdc199f758783a53"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/docs/study/09-workspace.md": {
+    "mtime": 1778828910.398644,
+    "hash": "595c70a62f7b1c45fc23cf5b25e2a205"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/docs/study/01-renderer.md": {
+    "mtime": 1778828910.398644,
+    "hash": "9b2de81fcc77361314a175e18d898469"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/docs/study/RIVE.md": {
+    "mtime": 1777710278.9235606,
+    "hash": "974accb88941d86fc0601a24093cfe29"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/docs/study/04-bundle-theme.md": {
+    "mtime": 1778828910.398644,
+    "hash": "1bea1430d57418a325fa7ab4b9c49ab2"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/docs/report/TRAFFIC_STRATEGY.md": {
+    "mtime": 1776747373.68654,
+    "hash": "5f2b787340055b1eb06eec74f3ca0d5c"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/docs/report/DESIGN_AUDIT.md": {
+    "mtime": 1776747373.68654,
+    "hash": "50a979a266be2510fe2f9d217682d887"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/docs/report/SMART_TV_CG_REPORT.md": {
+    "mtime": 1776747373.68654,
+    "hash": "3a1e9cb264dad48d3ed337b3c86219ac"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/public/robots.txt": {
+    "mtime": 1770084910.603944,
+    "hash": "fa1ded1ed7c11438a9b0385b1e112850"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/docs/assets/walkthrough_renderer_overlay.png": {
+    "mtime": 1776747373.6746478,
+    "hash": "63e82199aa77c9511fda891c6c5f53f2"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/docs/assets/walkthrough_dropdown_darkmode.png": {
+    "mtime": 1776747373.6746478,
+    "hash": "f845bc300db8be8f3b8c25b811950f0f"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/docs/assets/walkthrough_api_test.png": {
+    "mtime": 1776747373.6706836,
+    "hash": "4a8924c5e48c9da4dc4caa8ae2c444b9"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/docs/assets/walkthrough_renderer_verify.webp": {
+    "mtime": 1776747373.6786118,
+    "hash": "38f8ed7c73f2247422f4666fd2750798"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/public/tanstack-word-logo-white.svg": {
+    "mtime": 1770084910.607944,
+    "hash": "946c021317999d0cddb014c232ddd777"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/public/logo192.png": {
+    "mtime": 1770084910.603944,
+    "hash": "33dbdd0177549353eeeb785d02c294af"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/public/tanstack-circle-logo.png": {
+    "mtime": 1770084910.607944,
+    "hash": "d48f48f33316e3702702a669f22c76e9"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/public/logo512.png": {
+    "mtime": 1770084910.603944,
+    "hash": "917515db74ea8d1aee6a246cfbcc0b45"
+  },
+  "/home/genk/2026-study/webcg-k/webcg-k/src/logo.svg": {
+    "mtime": 1770084910.683944,
+    "hash": "385dfbd069f6c48ba9687e5c0808f96d"
+  }
+}

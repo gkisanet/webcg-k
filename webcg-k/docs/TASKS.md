@@ -15,6 +15,8 @@
 ---
 
 ### 🔴 Done
+- [x] **AI Overlay Binding Validation Optimization & Aesthetic Autonomy**
+  *   🎯 **Learning Objective**: JS 구조 분해 할당(Destructuring) 및 정규식 정밀 추출 기법과 CSS 변수(Theme Variables) 토큰 스캐닝을 활용하여 유연하고 강인한 정합성 검증기(Validator)를 구축하고, 단순 미사용 경고(missingBindings)가 빌드를 방해하지 않게 완화하여 AI의 창의적 비주얼 연출 자율성을 극대화하는 방법을 학습합니다.
 - [x] **Restore Original English Documentation & Sync Residue Cleanup**
   *   🎯 **Learning Objective**: Master git selective checkout (`git checkout <commit> -- <files>`) to target and restore specific file sets without regressing functional codebases or security patches.
 - [x] **Full English Translation of Technical & Architectural Documentation**

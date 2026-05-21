@@ -120,3 +120,29 @@ grid
 *   **Background**: Direct reference mutation or excessive cloning of vector element arrays triggers full DOM re-renders of the canvas layout.
 *   **Solution (Why & How)**:
     *   When mutating graphics arrays, we define store actions that guarantee structural sharing patterns instead of basic shallow copies (`...`), ensuring the React Reconciler targets only the modified DOM nodes for minimal updates.
+
+### [ADR-04] AI Overlay Binding Validation & Aesthetic Autonomy
+*   **Background (배경)**: AI 플러그인을 사용하여 방송 오버레이 생성 시, 스키마 변수가 HTML 바인딩이나 단순 JS 멤버 접근(`data.key`)을 우회해 JS 구조 분해 할당(`const { timerDuration } = data;`) 또는 CSS Variables 테마 바인딩(`:root { --primary: var(--primaryColor); }`)으로 사용될 때, 기존 검증기가 이를 미사용 변수로 잘못 판단(False Positive)하여 스키마 정합성 검증 에러를 뿜으며 빌드를 차단하는 문제가 발생했다. 이로 인해 AI가 풍부하고 미학적인 템플릿을 창작하려는 시도가 제한받았다.
+*   **Solution (Why & How - 해결책)**:
+    1. **구조 분해 할당(Destructuring) 파서 탑재**: `extractJsDataKeys()`에 JS의 객체 구조 분해 할당 정규식(`(?:const|let|var)\s*\{\s*([^}]+)\s*\}\s*=\s*data\b`)을 적용하여 쉼표로 분리된 개별 키들과 콜론(`:`)을 사용한 별칭(alias) 분기를 정밀히 추출하여 1차적으로 탐색 역량을 강화했다.
+    2. **CSS Variables & 2차 휴리스틱 단어 경계 감지 (Heuristic Fallback)**: AST급의 무거운 컴파일러 파서 없이도 가볍고 견고하게 오탐을 원천 해결하기 위해, CSS 텍스트 및 JS 소스 전체에 대해 단어 경계 정규식(`\bkey\b`) 기반의 2차 구제 검색을 실행한다. 이를 통해 CSS의 테마 바인딩이나 동적 JS 참조를 완벽하게 감지한다.
+    3. **검증 통과 조건 완화 (Aesthetic Autonomy)**: 단순 미사용 스키마 키(`missingBindings`)는 경고만 띄우고 빌드 실패로 다스리지 않음으로써(`ok: true`), AI 모델이 불필요한 선언형 바인딩 제약에 얽매이지 않고 GSAP, WebGL2, 복잡한 SVG 애니메이션 상태머신 등 극도로 화려하고 창의적인 비주얼 연출을 마음껏 시도하도록 자율성을 보장한다.
+    
+```mermaid
+flowchart TD
+    Schema[dashboard_schema.properties] --> Keys{Check Key Usage}
+    Keys -->|data-cg-*| HTML[HTML Declarative Bindings]
+    Keys -->|data.key / Destructuring| JS[JS Imperative Logic]
+    Keys -->|--var: varKey| CSS[CSS Theme Variables]
+    
+    HTML -->|Found| Pass[Validation Passed: Used]
+    JS -->|Found| Pass
+    CSS -->|Found| Pass
+    
+    Keys -->|Not Found in HTML/JS/CSS| Fail[Mark as missingBindings]
+    Fail --> Warning[Emit Non-blocking Warning]
+    Warning --> ReturnOk[Final Result: ok=true]
+    
+    Orphan[HTML data-cg-* without Schema] --> Block[Mark as orphanBindings]
+    Block --> ReturnFail[Final Result: ok=false]
+```

@@ -274,18 +274,27 @@ async function getApiKey(config: CachedModelConfig): Promise<string> {
 			return _cachedApiKey;
 		}
 		try {
-			const { data } = await supabase
-				.from("api_keys")
-				.select("encrypted_key")
-				.eq("id", config.apiKeyId)
-				.single();
-			if (data?.encrypted_key) {
-				_cachedApiKey = data.encrypted_key;
+			const { data, error } = await supabase
+				.rpc("get_decrypted_api_key" as any, { key_id: config.apiKeyId });
+			if (error) throw error;
+			if (data) {
+				const trimmedData = (data as unknown as string).trim();
+				// 1단계 방어 가드: 'WYj'로 시작하는 base64 암호문이 그대로 노출되거나 에러 메시지가 키에 유입된 경우를 차단
+				if (trimmedData.startsWith("WYj") || trimmedData.startsWith("❌")) {
+					throw new Error(
+						`올바른 API 키가 아닙니다. DB 내 암호화 키 정합성이 맞지 않거나 복호화에 실패했습니다.`
+					);
+				}
+				_cachedApiKey = trimmedData;
 				_cachedApiKeyId = config.apiKeyId;
-				return data.encrypted_key;
+				return trimmedData;
 			}
-		} catch (err) {
+		} catch (err: any) {
 			console.warn("[AI-Core] DB API 키 조회 실패, env fallback:", err);
+			// 명시적인 복호화 가드 실패 에러는 조용히 덮지 않고 상위 호출자로 전파하여 명확한 오류 피드백 유도
+			if (err.message && err.message.includes("올바른 API 키가 아닙니다")) {
+				throw err;
+			}
 		}
 	}
 
