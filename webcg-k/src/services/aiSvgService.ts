@@ -93,25 +93,35 @@ export type SvgStylePreset = typeof SVG_STYLE_PRESETS[number]["id"];
  *   3. 환경변수 VITE_GEMINI_API_KEY (개발용 폴백)
  */
 async function getSvgApiKey(): Promise<string> {
-	// 1단계: gemini-svg 전용 키
+	// 1단계: gemini-svg 전용 키 id 조회
+	// ■ maybeSingle() 도입: 일치하는 행이 없어도 콘솔에 에러 객체를 뿜지 않게 방어 (개발 가독성 증대)
 	const { data: svgKey } = await supabase
 		.from("api_keys")
-		.select("encrypted_key")
+		.select("id")
 		.eq("service", "gemini-svg")
 		.limit(1)
-		.single();
+		.maybeSingle();
 
-	if (svgKey?.encrypted_key) return svgKey.encrypted_key;
+	if (svgKey?.id) {
+		// ■ pg_crypto로 암호화된 컬럼 복호화: RPC 보안 함수 래핑 호출
+		const { data: decrypted } = await supabase
+			.rpc("get_decrypted_api_key" as any, { key_id: svgKey.id });
+		if (decrypted) return decrypted as any as string;
+	}
 
-	// 2단계: 일반 gemini 키
+	// 2단계: 일반 gemini 키 id 조회
 	const { data: geminiKey } = await supabase
 		.from("api_keys")
-		.select("encrypted_key")
+		.select("id")
 		.eq("service", "gemini")
 		.limit(1)
-		.single();
+		.maybeSingle();
 
-	if (geminiKey?.encrypted_key) return geminiKey.encrypted_key;
+	if (geminiKey?.id) {
+		const { data: decrypted } = await supabase
+			.rpc("get_decrypted_api_key" as any, { key_id: geminiKey.id });
+		if (decrypted) return decrypted as any as string;
+	}
 
 	// 3단계: 환경변수 폴백 (개발용)
 	const envKey = import.meta.env.VITE_GEMINI_API_KEY;
