@@ -355,7 +355,7 @@ function ChangeCard({
 							marginLeft: "0.5rem",
 							fontSize: "10px",
 							padding: "1px 5px",
-							borderRadius: "3px",
+							borderRadius: "0.25rem",
 							background:
 								change.eventType === "DELETE"
 									? "rgba(239,68,68,0.2)"

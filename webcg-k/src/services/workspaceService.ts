@@ -113,14 +113,16 @@ export async function fetchWorkspace(wsId: string): Promise<Workspace | null> {
 	return data as Workspace;
 }
 
-/** 워크스페이스 생성 (생성자는 자동 owner) */
+/** 워크스페이스 생성 */
 export async function createWorkspace(
 	name: string,
 	description?: string,
+	options: { addCreatorAsOwner?: boolean } = {},
 ): Promise<Workspace | null> {
 	const { data: userData } = await supabase.auth.getUser();
 	const userId = userData.user?.id;
 	if (!userId) return null;
+	const addCreatorAsOwner = options.addCreatorAsOwner ?? true;
 
 	const slug = name
 		.toLowerCase()
@@ -144,12 +146,17 @@ export async function createWorkspace(
 		return null;
 	}
 
-	// 생성자를 owner로 등록
-	await supabase.from("workspace_members").insert({
-		workspace_id: data.id,
-		user_id: userId,
-		role: "owner",
-	});
+	if (addCreatorAsOwner) {
+		const { error: memberError } = await supabase.from("workspace_members").insert({
+			workspace_id: data.id,
+			user_id: userId,
+			role: "owner",
+		});
+		if (memberError) {
+			console.error("[WorkspaceService] createWorkspace owner membership error:", memberError);
+			throw memberError;
+		}
+	}
 
 	return data as Workspace;
 }

@@ -48,7 +48,7 @@ function SceneReviewCard({ scene, index }: { scene: SceneContent; index: number 
   const slots = scene.text_slots ?? [];
 
   return (
-    <div className="p-3 rounded-lg bg-[var(--app-bg)] border border-[var(--border-primary)] transition-colors">
+    <div className="p-3 rounded-lg bg-[var(--app-bg)] border border-[var(--border-default)] transition-colors">
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2 flex-1 min-w-0">
           <span className="text-[10px] font-bold text-[var(--text-tertiary)] shrink-0 w-5">

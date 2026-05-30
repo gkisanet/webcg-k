@@ -199,7 +199,7 @@ export function GridCanvas({
                     y={pos.y - handleSize / 2}
                     width={handleSize}
                     height={handleSize}
-                    fill="#00d4ff"
+                    fill="var(--accent-primary)"
                     stroke="#fff"
                     strokeWidth={1}
                     rx={2}
@@ -281,7 +281,7 @@ export function GridCanvas({
                                 width={zone.bounds.width}
                                 height={zone.bounds.height}
                                 fill={zone.style?.backgroundColor || "#3a3a3a"}
-                                stroke={selectedZoneId === zone.id ? "#00d4ff" : "#555"}
+                                stroke={selectedZoneId === zone.id ? "var(--accent-primary)" : "#555"}
                                 strokeWidth={selectedZoneId === zone.id ? 3 : 1}
                                 rx={4}
                                 style={{ cursor: zone.locked ? "not-allowed" : "move" }}
@@ -305,7 +305,7 @@ export function GridCanvas({
                                 <text
                                     x={zone.bounds.x + zone.bounds.width / 2}
                                     y={zone.bounds.y + zone.bounds.height / 2 + 20}
-                                    fill="#00d4ff"
+                                    fill="var(--accent-primary)"
                                     fontSize={11}
                                     textAnchor="middle"
                                     dominantBaseline="middle"

@@ -779,7 +779,7 @@ const [themeSaving, setThemeSaving] = useState(false);
                     value={sortBy}
                     onChange={(e) => setSortBy(e.target.value as "updated" | "name")}
                     style={{
-                      background: "var(--app-bg-muted)", border: "1px solid var(--border-primary)",
+                      background: "var(--app-bg-muted)", border: "1px solid var(--border-default)",
                       borderRadius: 4, padding: "2px 6px", fontSize: 10, color: "var(--text-secondary)",
                     }}
                   >
@@ -839,7 +839,7 @@ const [themeSaving, setThemeSaving] = useState(false);
                       </span>
                       {(debouncedSearch || filterLinkedOnly) && (
                         <button
-                          style={{ marginTop: 6, background: "none", border: "1px solid var(--border-primary)", borderRadius: 4, padding: "4px 10px", fontSize: 11, color: "var(--text-secondary)", cursor: "pointer" }}
+                          style={{ marginTop: 6, background: "none", border: "1px solid var(--border-default)", borderRadius: 4, padding: "4px 10px", fontSize: 11, color: "var(--text-secondary)", cursor: "pointer" }}
                           onClick={() => { setSearchQuery(""); setFilterLinkedOnly(false); }}
                         >
                           필터 초기화

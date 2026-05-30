@@ -87,7 +87,19 @@ export function useOverlayStore(sessionId: string | undefined) {
                     loadOverlays();
                 },
             )
-            .subscribe();
+            .subscribe((status: string) => {
+                // ■ 자동 재연결: 장시간 가동 렌더러에서 네트워크 단절 대비
+                // Why? render.tsx의 broadcast 채널과 동일한 패턴 적용
+                if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
+                    console.warn(`[useOverlayStore] 채널 ${status} — 3초 후 재연결 시도`);
+                    setTimeout(() => {
+                        channel.unsubscribe();
+                        channel.subscribe();
+                    }, 3000);
+                } else if (status === "SUBSCRIBED") {
+                    console.log("[useOverlayStore] Realtime 채널 구독 성공:", channelId);
+                }
+            });
 
         channelRef.current = channel;
 
@@ -390,7 +402,7 @@ export function useOverlayStore(sessionId: string | undefined) {
                     ...current,
                     running: true,
                     startedAt: getServerNow(),
-                    remaining: current.remaining ?? current.duration ?? 60,
+                    remaining: current.remaining ?? current.duration ?? current.timerDuration ?? 60,
                 };
                 break;
             }
@@ -407,7 +419,7 @@ export function useOverlayStore(sessionId: string | undefined) {
                 next = {
                     ...current,
                     running: false,
-                    remaining: current.duration ?? 60,
+                    remaining: current.duration ?? current.timerDuration ?? 60,
                     startedAt: null,
                 };
                 break;

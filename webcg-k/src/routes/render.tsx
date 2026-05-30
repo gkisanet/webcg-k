@@ -21,7 +21,7 @@ import { ThemeProvider } from "../components/SemanticRenderer/ThemeProvider";
 import { useOverlayStore } from "../hooks/useOverlayStore";
 import { computeRemaining, isTimerReplicant } from "../lib/timerUtils";
 import { AiCharacterLayer } from "../components/Controller/AiCharacterLayer";
-import { type Resolution, type BroadcastItemPayload } from "../lib/types/broadcast";
+import { type Resolution, type BroadcastItemPayload, type SessionStatus } from "../lib/types/broadcast";
 import { parsePlayheadState, parseTimelineData } from "../lib/schemas";
 import { RendererWhiteboard } from "../components/Renderer/RendererWhiteboard";
 import { BroadcastHtmlOverlay } from "../components/Renderer/BroadcastHtmlOverlay";
@@ -40,10 +40,11 @@ export const Route = createFileRoute("/render")({
 	validateSearch: (search: Record<string, unknown>) => {
 		const resolution = search.resolution as string;
 		const sessionId = search.sessionId as string;
-		// ■ tag 파라미터: 특정 태그의 오버레이만 렌더링
-		// 예: /render?sessionId=xxx&tag=viewer → "viewer" 태그 오버레이만 표시
-		// 태그 없으면 기존 동작(모든 오버레이 표시)
-		const tag = search.tag as string;
+		// ■ tag 안전 변환: URL에서 "null", "undefined" 문자열이 들어오는 경우 실제 null로 변환
+		// Why? 브라우저 주소창에 tag=null이 문자열로 남아 있으면
+		//   필터가 "null"이라는 존재하지 않는 태그를 찾아 오버레이가 전부 사라진다.
+		const rawTag = search.tag as string;
+		const tag = (rawTag && rawTag !== "null" && rawTag !== "undefined") ? rawTag : null;
 		const hideAnnotation =
 			search.hideAnnotation === "1" ||
 			search.hideAnnotation === "true" ||
@@ -66,12 +67,26 @@ export const Route = createFileRoute("/render")({
 function RenderPage() {
 	const { sessionId, resolution, tag, hideAnnotation, passive } = Route.useSearch();
 
-	// 세션 상태 — live일 때만 그래픽 표시
-	const [isLive, setIsLive] = useState(false);
+	// 세션 상태 — 실제 송출과 리허설 모두 렌더러 출력 대상이다.
+	const [playoutStatus, setPlayoutStatus] = useState<SessionStatus>("ready");
+	const isPlayoutActive = playoutStatus === "live" || playoutStatus === "rehearsal";
+	const isRehearsal = playoutStatus === "rehearsal";
 
 	// ■ 오버레이 단일 진실점 — 렌더러 독립 인스턴스
 	// 컨트롤러와 별도의 Realtime 채널 1개만 구독
 	const { programOverlays, handlePluginAction, updateReplicantData, reportRenderState } = useOverlayStore(sessionId ?? undefined);
+
+	// ■ 오버레이 디버그 로그: 오버레이 상태 변경 추적
+	useEffect(() => {
+		console.log(
+			"[Renderer] 오버레이 상태:",
+			`sessionId=${sessionId}`,
+			`isPlayoutActive=${isPlayoutActive}`,
+			`programOverlays=${programOverlays.length}개`,
+			`tag=${tag ?? "없음"}`,
+			programOverlays.map(o => `${o.id.slice(0,8)}(active=${o.is_active})`),
+		);
+	}, [sessionId, isPlayoutActive, programOverlays, tag]);
 
 	// ■ 태그 필터: tag 파라미터가 있으면 해당 태그 오버레이만 표시
 	// Why useMemo? programOverlays가 변경될 때만 필터 재실행.
@@ -112,7 +127,7 @@ function RenderPage() {
 		tracksRef.current = tracks;
 	}, [tracks]);
 
-	// 세션 상태 구독 — live/ended 변경 실시간 감지
+	// 세션 상태 구독 — live/rehearsal/ended 변경 실시간 감지
 	useEffect(() => {
 		if (!sessionId) return;
 
@@ -129,13 +144,14 @@ function RenderPage() {
 					return;
 				}
 
-				const live = data.status === "live";
-				setIsLive(live);
+				const status = data.status as SessionStatus;
+				const active = status === "live" || status === "rehearsal";
+				setPlayoutStatus(status);
 
 				// ■ 멀티트랙 복원: pgmBlockIds에서 모든 활성 블록 복원
 				const ps = parsePlayheadState(data.playhead_state);
 				const pgmBlockIds = ps.pgmBlockIds ?? {};
-				if (live && Object.keys(pgmBlockIds).length > 0 && data.timeline_data) {
+				if (active && Object.keys(pgmBlockIds).length > 0 && data.timeline_data) {
 					const blocks = parseTimelineData(data.timeline_data);
 					const restoredItems = new Map<number, BroadcastItemPayload>();
 					for (const [trackIdStr, blockId] of Object.entries(pgmBlockIds)) {
@@ -192,9 +208,9 @@ function RenderPage() {
 				},
 				(payload: any) => {
 					const newStatus = payload.new?.status;
-					const nowLive = newStatus === "live";
-					setIsLive(nowLive);
-					if (!nowLive) setTracks(prev => {
+					const active = newStatus === "live" || newStatus === "rehearsal";
+					setPlayoutStatus((newStatus as SessionStatus) ?? "ready");
+					if (!active) setTracks(prev => {
 						const next = new Map(prev);
 						for (const [id, ts] of next) next.set(id, { ...ts, phase: "exit" as const });
 						return next;
@@ -224,7 +240,9 @@ function RenderPage() {
 
 				if (data.action === "PLAY_MULTI" && data.items) {
 					// ■ 멀티트랙: 새 아이템만 enter, 기존 idle 유지 (재진입 깜빡임 방지)
-					setIsLive(true);
+					// ■ 판서 트랙(99) 보호: 판서는 WhiteboardPanel에서 독립 제어되므로
+					//   타임라인 그래픽 PLAY_MULTI 명령에서 절대 exit 시키지 않는다.
+					//   비유: 화이트보드는 별도 리모컨으로 조작하는 독립 화면 — CG 전환과 무관.
 					setTracks((prev) => {
 						const newTracks = new Map<number, TrackState>();
 						for (const item of data.items) {
@@ -238,7 +256,12 @@ function RenderPage() {
 						}
 						for (const [trackId, ts] of prev) {
 							if (!newTracks.has(trackId)) {
-								newTracks.set(trackId, { ...ts, phase: "exit" });
+								// ■ trackId 99(판서) 보호: 타임라인 그래픽 변경으로 인한 exit를 방지
+								if (trackId === 99) {
+									newTracks.set(trackId, ts); // 기존 상태 유지
+								} else {
+									newTracks.set(trackId, { ...ts, phase: "exit" });
+								}
 							}
 						}
 						return newTracks;
@@ -247,15 +270,25 @@ function RenderPage() {
 					if (!passive && data.seqNum != null) sendAck(channel, data.seqNum, "rendered");
 				} else if (data.action === "PLAY" && data.item) {
 					// 레거시 단일 PLAY 호환
-					setIsLive(true);
-					const newTracks = new Map<number, TrackState>();
-					newTracks.set(data.item.trackId ?? 0, { item: data.item, phase: "enter" });
-					setTracks(newTracks);
+					// ■ 판서 트랙(99) 보호: 레거시 PLAY도 판서 상태를 보존
+					setTracks((prev) => {
+						const newTracks = new Map<number, TrackState>();
+						newTracks.set(data.item.trackId ?? 0, { item: data.item, phase: "enter" });
+						// 판서 트랙 보존
+						const wb = prev.get(99);
+						if (wb) newTracks.set(99, wb);
+						return newTracks;
+					});
 					if (!passive && data.seqNum != null) sendAck(channel, data.seqNum, "rendered");
 				} else if (data.action === "STOP" || data.action === "CLEAR") {
+					// ■ 판서 트랙(99) 보호: STOP/CLEAR는 타임라인 그래픽만 소거
+					//   판서는 별도 "whiteboard" 이벤트로 제어된다.
 					setTracks(prev => {
 						const next = new Map(prev);
-						for (const [id, ts] of next) next.set(id, { ...ts, phase: "exit" });
+						for (const [id, ts] of next) {
+							if (id === 99) continue; // 판서 보호
+							next.set(id, { ...ts, phase: "exit" });
+						}
 						return next;
 					});
 					if (!passive && data.seqNum != null) sendAck(channel, data.seqNum, "received");
@@ -427,7 +460,7 @@ function RenderPage() {
 			<ThemeProvider>
 				<div style={{ width: "100vw", height: "100vh", position: "relative", backgroundColor: "transparent" }}>
 				{/* ■ 멀티트랙 동시 렌더링: trackId 오름차순 Z-index, per-track phase */}
-				{isLive && tracks.size > 0 && (
+				{isPlayoutActive && tracks.size > 0 && (
 					[...tracks.entries()]
 						.sort(([a], [b]) => a - b)
 						.map(([trackId, { item, phase }]) => (
@@ -454,6 +487,29 @@ function RenderPage() {
 						))
 				)}
 
+				{isRehearsal && (
+					<div
+						style={{
+							position: "absolute",
+							top: 16,
+							right: 16,
+							zIndex: 10000,
+							padding: "4px 8px",
+							borderRadius: 4,
+							background: "rgba(96, 165, 250, 0.72)",
+							border: "1px solid rgba(96, 165, 250, 0.6)",
+							color: "white",
+							fontSize: 11,
+							fontWeight: 700,
+							letterSpacing: 0,
+							lineHeight: 1,
+							pointerEvents: "none",
+						}}
+					>
+						REHEARSAL
+					</div>
+				)}
+
 				{/* 대기 상태 (sessionId 없을 때만 표시) */}
 				{!sessionId && (
 					<div
@@ -476,9 +532,9 @@ function RenderPage() {
 					</div>
 				)}
 
-				{/* Layer 2+: 오버레이 — 송출 중(isLive)일 때만 표시 */}
+				{/* Layer 2+: 오버레이 — 송출 또는 리허설 중일 때만 표시 */}
 				{/* 🛡️ 각 레이어를 SilentErrorBoundary로 격리 — 하나가 크래시해도 다른 레이어/송출 유지 */}
-				{isLive && sessionId && filteredOverlays.length > 0 && (
+				{isPlayoutActive && sessionId && filteredOverlays.length > 0 && (
 					<SilentErrorBoundary componentName="CompositorLayer">
 						<CompositorLayer
 							overlays={filteredOverlays}
@@ -487,7 +543,7 @@ function RenderPage() {
 						/>
 					</SilentErrorBoundary>
 				)}
-				{isLive && sessionId && (
+				{isPlayoutActive && sessionId && (
 					<SilentErrorBoundary componentName="AiCharacterLayer">
 						<AiCharacterLayer sessionId={sessionId} mode="pgm" />
 					</SilentErrorBoundary>

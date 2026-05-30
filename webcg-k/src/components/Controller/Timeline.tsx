@@ -38,6 +38,7 @@ import {
 } from "./timelineConstants";
 import {
 	TimelineHeader,
+	ZoomControls,
 	TrackRow,
 	Playhead,
 	RemotePlayhead,
@@ -51,11 +52,27 @@ export type { RemotePlayheadData } from "./timelineConstants";
 interface TimelineProps {
 	remotePlayheads?: RemotePlayheadData[];
 	myColor?: string;
+	readOnly?: boolean;
+	undoAvailable?: boolean;
+	redoAvailable?: boolean;
+	onUndo?: () => void;
+	onRedo?: () => void;
+	onOpenShortcutHelp?: () => void;
 	/** 블록 더블클릭 시 핫 수정 드로어 열기 */
 	onBlockDoubleClick?: (block: GraphicBlock) => void;
 }
 
-export function Timeline({ remotePlayheads = [], myColor = "#ec4899", onBlockDoubleClick }: TimelineProps) {
+export function Timeline({
+	remotePlayheads = [],
+	myColor = "#ec4899",
+	readOnly = false,
+	undoAvailable = false,
+	redoAvailable = false,
+	onUndo,
+	onRedo,
+	onOpenShortcutHelp,
+	onBlockDoubleClick,
+}: TimelineProps) {
 	const tracks = useStore(timelineStore, (state) => state.tracks);
 	const blocks = useStore(timelineStore, (state) => state.blocks);
 	const playheadPosition = useStore(
@@ -84,6 +101,7 @@ export function Timeline({ remotePlayheads = [], myColor = "#ec4899", onBlockDou
 	const segments = useStore(timelineStore, (state) => state.segments);
 	const activeSegmentTab = useStore(timelineStore, (state) => state.activeSegmentTab);
 	const pgmBlockIds = useStore(timelineStore, (state) => state.pgmBlockIds);
+	const skippedBlockIds = useStore(timelineStore, (state) => state.skippedBlockIds);
 	const autoFollow = useStore(timelineStore, (state) => state.autoFollow);
 	const isScrubbing = useStore(timelineStore, (state) => state.isScrubbing);
 
@@ -96,6 +114,7 @@ export function Timeline({ remotePlayheads = [], myColor = "#ec4899", onBlockDou
 	// ===== 줌 상태 =====
 	const [zoomLevel, setZoomLevel] = useState(ZOOM_MAX);
 	const tracksRef = useRef<HTMLDivElement>(null);
+	const lastAutoScrollAtRef = useRef(0);
 
 	const handleZoomIn = useCallback(() => {
 		setZoomLevel((prev) => Math.min(prev + ZOOM_STEP, ZOOM_MAX));
@@ -298,6 +317,7 @@ export function Timeline({ remotePlayheads = [], myColor = "#ec4899", onBlockDou
 
 	// 클릭 처리 (빈 공간 클릭 시 갭 선택)
 	const handleTrackClick = (trackId: number, e: React.MouseEvent<HTMLDivElement>) => {
+		if (readOnly) return;
 		const target = e.target as HTMLElement;
 		if (target.closest(".graphic-block")) return;
 
@@ -319,6 +339,22 @@ export function Timeline({ remotePlayheads = [], myColor = "#ec4899", onBlockDou
 		return filteredBlocks.filter((block) => block.trackId === trackId);
 	};
 
+	const playheadReadout = useMemo(() => {
+		const playableBlocks = [...blocks]
+			.filter((block) => block.trackId !== 0)
+			.sort((a, b) => a.startPosition - b.startPosition || a.trackId - b.trackId);
+		const activeBlock = playableBlocks
+			.filter((block) =>
+				playheadPosition >= block.startPosition &&
+				playheadPosition < block.startPosition + block.width,
+			)
+			.sort((a, b) => b.trackId - a.trackId)[0];
+
+		if (!activeBlock) return `위치 ${playheadPosition}px`;
+		const sequenceIndex = playableBlocks.findIndex((block) => block.id === activeBlock.id) + 1;
+		return `${sequenceIndex}/${playableBlocks.length} ${activeBlock.name}`;
+	}, [blocks, playheadPosition]);
+
 	// 로고 갤러리 열기/닫기
 	const [galleryOpen, setGalleryOpen] = useState(false);
 
@@ -327,9 +363,14 @@ export function Timeline({ remotePlayheads = [], myColor = "#ec4899", onBlockDou
 		const container = tracksRef.current;
 		if (!container) return;
 
+		const now = performance.now();
+		const scrollBehavior: ScrollBehavior =
+			now - lastAutoScrollAtRef.current < 200 ? "auto" : "smooth";
+		lastAutoScrollAtRef.current = now;
+
 		// 맨 처음(position=0)이면 스크롤도 맨 왼쪽으로
 		if (playheadPosition === 0) {
-			container.scrollTo({ left: 0, behavior: "smooth" });
+			container.scrollTo({ left: 0, behavior: scrollBehavior });
 			return;
 		}
 
@@ -345,14 +386,14 @@ export function Timeline({ remotePlayheads = [], myColor = "#ec4899", onBlockDou
 		if (playheadPx > scrollLeft + viewportWidth - SCROLL_MARGIN) {
 			container.scrollTo({
 				left: playheadPx - viewportWidth + SCROLL_MARGIN * 2,
-				behavior: "smooth",
+				behavior: scrollBehavior,
 			});
 		}
 		// 플레이헤드가 뷰포트 왼쪽 밖으로 벗어났을 때
 		else if (playheadPx < scrollLeft + SCROLL_MARGIN) {
 			container.scrollTo({
 				left: Math.max(0, playheadPx - SCROLL_MARGIN),
-				behavior: "smooth",
+				behavior: scrollBehavior,
 			});
 		}
 	}, [playheadPosition, zoomLevel]);
@@ -364,12 +405,15 @@ export function Timeline({ remotePlayheads = [], myColor = "#ec4899", onBlockDou
 				style={{ position: "relative" }}
 			>
 				<TimelineHeader
-					zoomLevel={zoomLevel}
-					onZoomIn={handleZoomIn}
-					onZoomOut={handleZoomOut}
-					onZoomReset={handleZoomReset}
+					playheadReadout={playheadReadout}
 					autoFollow={autoFollow}
 					hasSegments={hasSegments}
+					showEditActions={!readOnly}
+					undoAvailable={undoAvailable}
+					redoAvailable={redoAvailable}
+					onUndo={onUndo}
+					onRedo={onRedo}
+					onOpenShortcutHelp={onOpenShortcutHelp}
 				/>
 
 					{/* 세그먼트 탭 바 — 항상 표시 (세그먼트 없으면 "전체" 탭만) */}
@@ -378,8 +422,9 @@ export function Timeline({ remotePlayheads = [], myColor = "#ec4899", onBlockDou
 				<SegmentTabBar
 					segments={segments}
 					activeTab={activeSegmentTab}
-					onTabChange={setActiveSegmentTab}
+					onTabChange={readOnly ? () => undefined : setActiveSegmentTab}
 					onTabClick={(segmentId) => {
+						if (readOnly) return;
 						if (!segmentId) {
 							// "전체" 탭 클릭 → playhead를 position 0으로
 							setPlayheadPosition(0);
@@ -396,14 +441,16 @@ export function Timeline({ remotePlayheads = [], myColor = "#ec4899", onBlockDou
 					blocks={blocks}
 					completedBlockIds={completedBlockIds}
 					pgmBlockIds={new Set(pgmBlockIds.values())}
-					onReorderSegments={reorderBlocksBySegments}
+					skippedBlockIds={skippedBlockIds}
+					onReorderSegments={readOnly ? undefined : reorderBlocksBySegments}
+					readOnly={readOnly}
 				/>
 
 				{/* 갤러리 + 트랙 영역 — 이 영역만 수직 스크롤 가능 */}
 				<div style={{ display: "flex", flex: 1, overflow: "hidden", overflowY: "auto", position: "relative" }}>
 					{/* 로고 갤러리 사이드바 (접이식) */}
-					<LogoGallery isOpen={galleryOpen} onToggle={() => setGalleryOpen(false)} />
-					{!galleryOpen && <LogoGalleryToggle onClick={() => setGalleryOpen(true)} />}
+					{!readOnly && <LogoGallery isOpen={galleryOpen} onToggle={() => setGalleryOpen(false)} />}
+					{!readOnly && !galleryOpen && <LogoGalleryToggle onClick={() => setGalleryOpen(true)} />}
 
 					{/* 트랙 영역 */}
 					<div
@@ -485,6 +532,7 @@ export function Timeline({ remotePlayheads = [], myColor = "#ec4899", onBlockDou
 									maxBlockEnd={maxBlockEnd}
 									onBlockDoubleClick={handleBlockDoubleClick}
 									activeSegmentTab={activeSegmentTab}
+									readOnly={readOnly}
 								/>
 							))}
 
@@ -508,6 +556,7 @@ export function Timeline({ remotePlayheads = [], myColor = "#ec4899", onBlockDou
 								<div
 									className={`next-segment-hint${softPromptActive ? " next-segment-hint--pulse" : ""}`}
 									onClick={() => {
+										if (readOnly) return;
 										// 다음 세그먼트 첫 블록으로 playhead 이동 → 자동 탭 활성화
 										const nextSegBlocks = blocks
 											.filter((b) => b.segmentId === nextSegmentInfo.nextSeg.id)
@@ -527,7 +576,7 @@ export function Timeline({ remotePlayheads = [], myColor = "#ec4899", onBlockDou
 										display: "flex",
 										alignItems: "center",
 										justifyContent: "center",
-										cursor: "pointer",
+										cursor: readOnly ? "default" : "pointer",
 										zIndex: 3,
 										transition: "opacity 0.2s, background 0.3s",
 										opacity: softPromptActive ? 1 : 0.8,
@@ -553,6 +602,12 @@ export function Timeline({ remotePlayheads = [], myColor = "#ec4899", onBlockDou
 							)}
 						</div>
 
+						<ZoomControls
+							zoomLevel={zoomLevel}
+							onZoomIn={handleZoomIn}
+							onZoomOut={handleZoomOut}
+							onZoomReset={handleZoomReset}
+						/>
 						<AddTrackButton />
 					</div>
 				</div>

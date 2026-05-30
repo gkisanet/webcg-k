@@ -15,16 +15,24 @@
  *   검증 로직은 순수 함수이므로 서비스 계층에 분리.
  */
 
-import { supabase } from "@/lib/supabase";
-import { checkTextOverflow } from "@/lib/textMeasure";
-import type { NrcsCuesheetItem } from "./cuesheetService";
 import type { CgTextItem } from "@/lib/nrcsTypes";
+import { supabase } from "@/lib/supabase";
+import { resolveBindingTextLayout } from "@/lib/textFitPolicy";
 import type { BundleSlot } from "./bundleService";
 import {
-	validateCgContent,
-	type ContentValidationResult,
 	type ContentIssue,
+	type ContentValidationResult,
+	validateCgContent,
 } from "./contentValidation";
+import {
+	buildCuesheetCheckContext,
+	type CuesheetCheckContext,
+	type CuesheetReusePolicy,
+	type CuesheetValidationStatus,
+	createCuesheetContentHash,
+	getCuesheetValidationStatus,
+} from "./cuesheetCheckService";
+import type { NrcsCuesheetItem } from "./cuesheetService";
 
 // ─── 결과 타입 ────────────────────────────────────────────────────
 
@@ -73,7 +81,20 @@ export interface PreflightReport {
 	errorCount: number;
 	/** 콘텐츠 이슈 총 건수 */
 	contentIssueCount: number;
+	/** 검증 기준시점/재활용 정책 */
+	checkContext: CuesheetCheckContext;
+	/** 검증 이후 내용 변경 감지를 위한 deterministic fingerprint */
+	contentHash: string;
+	/** 런다운 전송 가능성을 판단하는 큐시트 체크 상태 */
+	validationStatus: CuesheetValidationStatus;
 	items: PreflightItemResult[];
+}
+
+export interface RunPreflightOptions {
+	reusePolicy?: CuesheetReusePolicy;
+	generatedAt?: string | null;
+	originalAirDate?: string | null;
+	targetAirDate?: string | null;
 }
 
 // re-export for consumers
@@ -98,7 +119,21 @@ export async function runPreflight(
 	items: NrcsCuesheetItem[],
 	bundleId: string | null,
 	programDate?: string,
+	options: RunPreflightOptions = {},
 ): Promise<PreflightReport> {
+	const effectiveDate = programDate || new Date().toISOString().split("T")[0];
+	const checkContext = buildCuesheetCheckContext({
+		programDate: effectiveDate,
+		generatedAt: options.generatedAt,
+		reusePolicy: options.reusePolicy,
+		originalAirDate: options.originalAirDate,
+		targetAirDate: options.targetAirDate,
+	});
+	const contentHash = createCuesheetContentHash({
+		programDate: checkContext.programDate,
+		items,
+	});
+
 	// 번들 없으면 검증 스킵
 	if (!bundleId || items.length === 0) {
 		return {
@@ -107,6 +142,9 @@ export async function runPreflight(
 			warningCount: 0,
 			errorCount: items.length,
 			contentIssueCount: 0,
+			checkContext,
+			contentHash,
+			validationStatus: "blocked",
 			items: items.map((item) => ({
 				item,
 				cgResults: [],
@@ -122,8 +160,11 @@ export async function runPreflight(
 		.select("*, graphics(name, template_data)")
 		.eq("bundle_id", bundleId)
 		.order("sort_order", { ascending: true });
-	const slots: (BundleSlot & { graphics?: { name: string; template_data: Record<string, unknown> } | null })[] =
-		(slotsRaw || []) as unknown as (BundleSlot & { graphics?: { name: string; template_data: Record<string, unknown> } | null })[];
+	const slots: (BundleSlot & {
+		graphics?: { name: string; template_data: Record<string, unknown> } | null;
+	})[] = (slotsRaw || []) as unknown as (BundleSlot & {
+		graphics?: { name: string; template_data: Record<string, unknown> } | null;
+	})[];
 
 	// 2단계: 그래픽 ID → 존재 여부 맵 구축 (1회 쿼리)
 	const graphicIds = slots.map((s) => s.graphic_id).filter(Boolean) as string[];
@@ -139,7 +180,10 @@ export async function runPreflight(
 		for (const g of existingGraphics || []) {
 			graphicExistsMap.set(g.id, true);
 			graphicNameMap.set(g.id, g.name);
-			graphicTemplateMap.set(g.id, (g.template_data ?? {}) as Record<string, unknown>);
+			graphicTemplateMap.set(
+				g.id,
+				(g.template_data ?? {}) as Record<string, unknown>,
+			);
 		}
 	}
 
@@ -155,13 +199,19 @@ export async function runPreflight(
 			// CG 타입에 매칭되는 슬롯 찾기
 			const matchingSlot = slots.find((s) => s.cg_type === cgItem.type) || null;
 			const graphicId = matchingSlot?.graphic_id || null;
-			const graphicExists = graphicId ? (graphicExistsMap.get(graphicId) ?? false) : false;
-			const graphicName = graphicId ? (graphicNameMap.get(graphicId) ?? null) : null;
+			const graphicExists = graphicId
+				? (graphicExistsMap.get(graphicId) ?? false)
+				: false;
+			const graphicName = graphicId
+				? (graphicNameMap.get(graphicId) ?? null)
+				: null;
 
 			// 매핑 완성도 계산
 			const totalFields = Object.keys(cgItem.fields).length;
 			const mapping = matchingSlot?.field_mapping || {};
-			const mappedFields = Object.keys(cgItem.fields).filter((k) => mapping[k]).length;
+			const mappedFields = Object.keys(cgItem.fields).filter(
+				(k) => mapping[k],
+			).length;
 			const mappingRatio = totalFields > 0 ? mappedFields / totalFields : 0;
 
 			// 오버플로우 검사
@@ -170,32 +220,53 @@ export async function runPreflight(
 			if (graphicId && graphicExists) {
 				const templateData = graphicTemplateMap.get(graphicId);
 				if (templateData?.elements) {
+					const canvas = templateData.canvas as { width?: number } | undefined;
+					const canvasWidth = canvas?.width ?? 1920;
 					for (const [fieldKey, fieldValue] of Object.entries(cgItem.fields)) {
 						const mappingEntry = mapping[fieldKey];
 						if (!mappingEntry) continue;
 
 						// elements에서 바인딩 슬롯 찾기
-						for (const el of (templateData.elements as Array<Record<string, unknown>>)) {
-							const bc = el.bindingContainer as { enabled?: boolean; autoFit?: string; slots?: Array<Record<string, unknown>> } | undefined;
+						for (const el of templateData.elements as Array<
+							Record<string, unknown>
+						>) {
+							const bc = el.bindingContainer as
+								| {
+										enabled?: boolean;
+										autoFit?: string;
+										slots?: Array<Record<string, unknown>>;
+								  }
+								| undefined;
 							if (bc?.enabled && bc?.slots) {
 								const slot = bc.slots.find(
 									(s) => s.id === mappingEntry.target_element_id,
 								);
 								if (slot) {
-									const result = checkTextOverflow(
-										fieldValue as string,
-										slot.fontSize as number,
-										slot.fontFamily as string,
-										slot.fontWeight as number,
-										slot.frameWidth as number,
-										slot.frameHeight as number,
-										(bc.autoFit || "none") as "shrink" | "wrap" | "none",
-									);
-									if (result.overflow) {
+									const result = resolveBindingTextLayout({
+										content: String(fieldValue ?? ""),
+										autoFit: bc.autoFit,
+										shape: {
+											x: Number(el.x) || 0,
+											width: Number(el.width) || 0,
+											height: Number(el.height) || 0,
+										},
+										slot: {
+											frameX: Number(slot.frameX) || 0,
+											frameY: Number(slot.frameY) || 0,
+											frameWidth: Number(slot.frameWidth) || 0,
+											frameHeight: Number(slot.frameHeight) || 0,
+											fontSize: Number(slot.fontSize) || 24,
+											fontFamily: String(slot.fontFamily || "Pretendard"),
+											fontWeight: Number(slot.fontWeight) || 400,
+										},
+										constraints: { canvasWidth },
+									});
+									if (result.severity !== "ok") {
 										overflowWarnings.push({
 											fieldKey,
 											ratio: result.ratio,
-											severity: result.ratio > 1.5 ? "error" : "warning",
+											severity:
+												result.severity === "error" ? "error" : "warning",
 										});
 									}
 								}
@@ -207,11 +278,18 @@ export async function runPreflight(
 
 			// 종합 상태 판단
 			let status: "ok" | "warning" | "error" = "ok";
-			if (!matchingSlot) status = "error";              // 슬롯 없음
-			else if (!graphicExists) status = "error";         // 그래픽 미존재
-			else if (mappingRatio < 1) status = "warning";     // 부분 매핑
-			if (overflowWarnings.some((w) => w.severity === "error")) status = "error";
-			else if (overflowWarnings.some((w) => w.severity === "warning") && status === "ok") status = "warning";
+			if (!matchingSlot)
+				status = "error"; // 슬롯 없음
+			else if (!graphicExists)
+				status = "error"; // 그래픽 미존재
+			else if (mappingRatio < 1) status = "warning"; // 부분 매핑
+			if (overflowWarnings.some((w) => w.severity === "error"))
+				status = "error";
+			else if (
+				overflowWarnings.some((w) => w.severity === "warning") &&
+				status === "ok"
+			)
+				status = "warning";
 
 			return {
 				cgItem,
@@ -238,15 +316,20 @@ export async function runPreflight(
 	// ■ Why 구조적 검증과 분리 실행?
 	//   구조적 검증은 동기(map), 콘텐츠 검증은 비동기(AI 호출 가능).
 	//   또한 콘텐츠 검증은 그래픽 매핑과 무관하게 CG 텍스트 자체를 검사.
-	const effectiveDate = programDate || new Date().toISOString().split("T")[0];
 	const validatableItems = items.map((item) => ({
 		id: item.id,
 		slug: item.slug || "",
 		title: item.title || "",
-		cg_data: ((item.cg_data || []) as Array<{ type?: string; fields?: Record<string, string> }>),
+		cg_data: (item.cg_data || []) as Array<{
+			type?: string;
+			fields?: Record<string, string>;
+		}>,
 	}));
 
-	const contentResults = await validateCgContent(validatableItems, effectiveDate);
+	const contentResults = await validateCgContent(
+		validatableItems,
+		checkContext,
+	);
 
 	// 콘텐츠 검증 결과를 각 아이템에 병합
 	for (const cvResult of contentResults) {
@@ -256,9 +339,15 @@ export async function runPreflight(
 
 			// 콘텐츠 이슈로 상태 격상
 			// error급 금칙어 → 아이템 상태를 error로 상향
-			if (cvResult.issues.some((i) => i.severity === "error") && itemResult.status !== "error") {
+			if (
+				cvResult.issues.some((i) => i.severity === "error") &&
+				itemResult.status !== "error"
+			) {
 				itemResult.status = "error";
-			} else if (cvResult.issues.some((i) => i.severity === "warning") && itemResult.status === "ok") {
+			} else if (
+				cvResult.issues.some((i) => i.severity === "warning") &&
+				itemResult.status === "ok"
+			) {
 				itemResult.status = "warning";
 			}
 		}
@@ -266,7 +355,8 @@ export async function runPreflight(
 
 	// 전체 콘텐츠 이슈 카운트
 	const totalContentIssues = itemResults.reduce(
-		(sum, r) => sum + r.contentIssues.length, 0,
+		(sum, r) => sum + r.contentIssues.length,
+		0,
 	);
 
 	return {
@@ -275,6 +365,12 @@ export async function runPreflight(
 		warningCount: itemResults.filter((r) => r.status === "warning").length,
 		errorCount: itemResults.filter((r) => r.status === "error").length,
 		contentIssueCount: totalContentIssues,
+		checkContext,
+		contentHash,
+		validationStatus: getCuesheetValidationStatus({
+			errorCount: itemResults.filter((r) => r.status === "error").length,
+			warningCount: itemResults.filter((r) => r.status === "warning").length,
+		}),
 		items: itemResults,
 	};
 }

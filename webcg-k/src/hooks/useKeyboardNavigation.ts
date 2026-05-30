@@ -12,7 +12,6 @@
 
 import { useEffect } from "react";
 import {
-	broadcastToPGM,
 	clearGapSelection,
 	copySelectedBlock,
 	deleteSelectedBlock,
@@ -31,6 +30,8 @@ import {
 	setPlayheadPosition,
 	timelineStore,
 	toggleScrubbing,
+	undo,
+	redo,
 } from "../stores/timelineStore";
 
 export function useKeyboardNavigation(
@@ -39,6 +40,9 @@ export function useKeyboardNavigation(
 	onNotBroadcasting?: () => void,
 	isScrubbing = false,
 	onScrubSpaceBlocked?: () => void,
+	onBroadcastToPgm?: () => void | Promise<void>,
+	onUndo: () => void = undo,
+	onRedo: () => void = redo,
 ) {
 	useEffect(() => {
 		if (!enabled) return;
@@ -164,6 +168,20 @@ export function useKeyboardNavigation(
 				return;
 			}
 
+			// Ctrl+Z: 실행 취소 (Undo)
+			if (isModifier && !e.shiftKey && e.key === "z") {
+				e.preventDefault();
+				onUndo();
+				return;
+			}
+
+			// Ctrl+Shift+Z 또는 Ctrl+Y: 다시 실행 (Redo)
+			if (isModifier && ((e.shiftKey && e.key === "z") || e.key === "y")) {
+				e.preventDefault();
+				onRedo();
+				return;
+			}
+
 			// 일반 단축키 (Modifier 없이)
 			switch (e.key) {
 				case "ArrowRight":
@@ -184,7 +202,7 @@ export function useKeyboardNavigation(
 					} else if (!isBroadcasting) {
 						onNotBroadcasting?.();
 					} else {
-						broadcastToPGM();
+						void onBroadcastToPgm?.();
 					}
 					break;
 
@@ -227,5 +245,5 @@ export function useKeyboardNavigation(
 
 		window.addEventListener("keydown", handleKeyDown);
 		return () => window.removeEventListener("keydown", handleKeyDown);
-	}, [enabled, isBroadcasting, onNotBroadcasting, isScrubbing, onScrubSpaceBlocked]);
+	}, [enabled, isBroadcasting, onNotBroadcasting, isScrubbing, onScrubSpaceBlocked, onBroadcastToPgm, onUndo, onRedo]);
 }

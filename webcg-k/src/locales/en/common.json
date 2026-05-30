@@ -38,10 +38,12 @@
 		"loading": "Loading...",
 		"draft": "Draft",
 		"ready": "Ready",
+		"rehearsal": "Rehearsal",
 		"live": "Live",
 		"ended": "Ended",
 		"completed": "Completed",
-		"shared": "Shared"
+		"shared": "Shared",
+		"archived": "Archived"
 	},
 	"actions": {
 		"save": "Save",
@@ -57,6 +59,8 @@
 		"search": "Search",
 		"broadcast": "Broadcast",
 		"controller": "Controller",
+		"archive": "Archive",
+		"restore": "Restore",
 		"close": "Close"
 	},
 	"date": {
@@ -85,9 +89,12 @@
 		"noLogs": "No logs recorded",
 		"records": "{{count}} records",
 		"noBroadcast": "📋 No broadcast history.\nThis project has not been broadcast yet.",
-		"cannotDeleteWithLogs": "⚠️ Cannot delete projects with broadcast history.\nDeletion is restricted to preserve logs.",
+		"cannotDeleteWithLogs": "⚠️ Cannot delete projects with operation logs.\nUse archive to preserve logs and hide the project.",
 		"confirmDelete": "Are you sure you want to delete this project?",
+		"confirmArchive": "Archive this project?\nBroadcast logs will be preserved and the project will be hidden from the default list.",
+		"confirmRestore": "Restore this project from the archive?",
 		"cannotDelete": "Cannot delete (has broadcast logs)",
+		"cannotArchiveActive": "Live or rehearsal projects cannot be archived.",
 		"broadcastCount": "Action Log ({{count}} broadcasts)",
 		"noBroadcastHistory": "No broadcast history"
 	},

@@ -74,7 +74,7 @@ export function NrcsMappingPreview({ newsItem, programName: _programName }: Prop
     }
 
     return (
-        <div style={{ borderTop: "1px solid var(--border-primary)", marginTop: 12, paddingTop: 12 }}>
+        <div style={{ borderTop: "1px solid var(--border-default)", marginTop: 12, paddingTop: 12 }}>
             {/* 번들 선택 + 매핑 실행 */}
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
                 <Package size={14} style={{ color: "var(--accent-primary)" }} />
@@ -85,7 +85,7 @@ export function NrcsMappingPreview({ newsItem, programName: _programName }: Prop
                     style={{
                         flex: 1,
                         background: "var(--app-bg-muted)",
-                        border: "1px solid var(--border-primary)",
+                        border: "1px solid var(--border-default)",
                         borderRadius: 6,
                         padding: "4px 8px",
                         fontSize: 12,
@@ -153,7 +153,7 @@ function MappedCgRow({ result }: { result: MappedCgResult }) {
 
     return (
         <div style={{
-            border: "1px solid var(--border-primary)",
+            border: "1px solid var(--border-default)",
             borderRadius: 6,
             overflow: "hidden",
         }}>
@@ -197,7 +197,7 @@ function MappedCgRow({ result }: { result: MappedCgResult }) {
                             key={f.cg_field_key}
                             style={{
                                 display: "flex", gap: 8, padding: "3px 0",
-                                borderBottom: "1px solid var(--border-primary)",
+                                borderBottom: "1px solid var(--border-default)",
                             }}
                         >
                             <span style={{ fontWeight: 600, minWidth: 60 }}>{f.cg_field_key}</span>

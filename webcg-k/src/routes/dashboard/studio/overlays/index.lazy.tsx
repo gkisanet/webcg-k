@@ -4,6 +4,7 @@
  * [Lazy 로드 — 코드 스플리팅 적용]
  */
 
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createLazyFileRoute, useNavigate } from "@tanstack/react-router";
 import {
 	CheckSquare,
@@ -16,19 +17,30 @@ import {
 	Loader2,
 	MoveRight,
 	Plus,
+	Save,
+	Settings,
 	Sparkles,
 	Square,
 	Trash2,
 	X,
-	Save,
-	Settings,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useAuth } from "../../../../lib/auth";
-import { fetchOverlayTemplates, saveOverlayMeta, updateOverlayGraphics, deleteOverlayTemplate } from "../../../../services/dashboardService";
-import { updateOverlayTemplateVisibility } from "../../../../services/overlayApiService";
+import { NamingSearchBox } from "@/components/NamingSearchBox";
 import { VisibilityToggle } from "../../../../components/Common/VisibilityToggle";
+import type { GraphicElement } from "../../../../components/GraphicPreviewRenderer";
+import { GraphicPreviewRenderer } from "../../../../components/GraphicPreviewRenderer";
+import { OverlayEditor } from "../../../../components/Overlay/OverlayEditor";
+import { useAuth } from "../../../../lib/auth";
+import { assetMatchesNamingQuery } from "../../../../lib/naming/namingSuggestion";
+import { formatDateWithTime } from "../../../../lib/utils/dateFormat";
+import { buildPluginSrcdoc } from "../../../../lib/webcgkSrcdoc";
+import {
+	deleteOverlayTemplate,
+	fetchOverlayTemplates,
+	saveOverlayMeta,
+	updateOverlayGraphics,
+} from "../../../../services/dashboardService";
+import { updateOverlayTemplateVisibility } from "../../../../services/overlayApiService";
 import {
 	createOverlayFolder,
 	deleteOverlayFolder,
@@ -38,11 +50,6 @@ import {
 	type OverlayFolderRecord,
 	type OverlayFolderSelection,
 } from "../../../../services/overlayFolderService";
-import { OverlayEditor } from "../../../../components/Overlay/OverlayEditor";
-import { GraphicPreviewRenderer } from "../../../../components/GraphicPreviewRenderer";
-import type { GraphicElement } from "../../../../components/GraphicPreviewRenderer";
-import { formatDateWithTime } from "../../../../lib/utils/dateFormat";
-import { buildPluginSrcdoc } from "../../../../lib/webcgkSrcdoc";
 
 import "./index.css";
 
@@ -92,19 +99,24 @@ function OverlayPage() {
 	const { user, activeWorkspaceId } = useAuth();
 	const navigate = useNavigate();
 	const queryClient = useQueryClient();
-	const [selectedFolderId, setSelectedFolderId] = useState<OverlayFolderSelection>("all");
-	const [selectedTemplateIds, setSelectedTemplateIds] = useState<Set<string>>(new Set());
+	const [selectedFolderId, setSelectedFolderId] =
+		useState<OverlayFolderSelection>("all");
+	const [searchQuery, setSearchQuery] = useState("");
+	const [selectedTemplateIds, setSelectedTemplateIds] = useState<Set<string>>(
+		new Set(),
+	);
 	const [showFolderModal, setShowFolderModal] = useState(false);
 	const [newFolderName, setNewFolderName] = useState("");
 	const [isCreatingFolder, setIsCreatingFolder] = useState(false);
-	const [moveTargetFolderId, setMoveTargetFolderId] = useState<string>("unfiled");
+	const [moveTargetFolderId, setMoveTargetFolderId] =
+		useState<string>("unfiled");
 	const [isMovingSelection, setIsMovingSelection] = useState(false);
 
 	const { data: allTemplates = [], isLoading: loading } = useQuery({
 		queryKey: ["overlay_templates"],
 		queryFn: () => fetchOverlayTemplates<OverlayTemplate>(),
 		enabled: !!user,
-	})
+	});
 
 	const { data: folders = [], isLoading: foldersLoading } = useQuery({
 		queryKey: ["overlay_folders"],
@@ -116,21 +128,38 @@ function OverlayPage() {
 		() => filterOverlayTemplatesByFolder(allTemplates, selectedFolderId),
 		[allTemplates, selectedFolderId],
 	);
+	const visibleTemplates = useMemo(
+		() =>
+			templates.filter((template) =>
+				assetMatchesNamingQuery(template, searchQuery),
+			),
+		[templates, searchQuery],
+	);
+	const overlaySearchNames = useMemo(
+		() => templates.map((template) => template.name),
+		[templates],
+	);
 	const folderCounts = useMemo(() => {
 		const counts: Record<string, number> = {
 			all: allTemplates.length,
 			unfiled: allTemplates.filter((template) => !template.folder_id).length,
 		};
 		for (const folder of folders) {
-			counts[folder.id] = allTemplates.filter((template) => template.folder_id === folder.id).length;
+			counts[folder.id] = allTemplates.filter(
+				(template) => template.folder_id === folder.id,
+			).length;
 		}
 		return counts;
 	}, [allTemplates, folders]);
-	const selectedIds = useMemo(() => Array.from(selectedTemplateIds), [selectedTemplateIds]);
+	const selectedIds = useMemo(
+		() => Array.from(selectedTemplateIds),
+		[selectedTemplateIds],
+	);
 	const selectedCount = selectedTemplateIds.size;
 
 	// 메타 편집 모달 상태
-	const [editingTemplate, setEditingTemplate] = useState<OverlayTemplate | null>(null);
+	const [editingTemplate, setEditingTemplate] =
+		useState<OverlayTemplate | null>(null);
 	const [showCreateModal, setShowCreateModal] = useState(false);
 	const [saving, setSaving] = useState(false);
 
@@ -144,13 +173,15 @@ function OverlayPage() {
 		animation_in_duration: 500,
 		animation_out_type: "fade",
 		animation_out_duration: 300,
-	})
+	});
 
 	// 삭제 확인
 	const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
 
 	// 그래픽 편집기
-	const [editorTarget, setEditorTarget] = useState<OverlayTemplate | null>(null);
+	const [editorTarget, setEditorTarget] = useState<OverlayTemplate | null>(
+		null,
+	);
 
 	// 썸네일 호버 상태 (루프 애니메이션 트리거용)
 	const [hoveredCardId, setHoveredCardId] = useState<string | null>(null);
@@ -160,9 +191,11 @@ function OverlayPage() {
 	//   기존 모달은 메타데이터(이름, 레이어)만 입력 → 실제 코드 편집은 별도 페이지.
 	//   한 번에 코드 에디터로 이동하면 작업 흐름이 단축됨.
 	const handleCreateNew = () => {
-		navigate({ to: "/dashboard/studio/overlays/editor/$pluginId" as any, params: { pluginId: "new" } as any });
-	}
-
+		navigate({
+			to: "/dashboard/studio/overlays/editor/$pluginId" as any,
+			params: { pluginId: "new" } as any,
+		});
+	};
 
 	const handleEditMeta = (template: OverlayTemplate) => {
 		setEditingTemplate(template);
@@ -179,7 +212,6 @@ function OverlayPage() {
 		setShowCreateModal(true);
 	};
 
-
 	// 메타 저장
 	const handleSaveTemplate = async () => {
 		if (!user || !formData.name.trim()) return;
@@ -191,15 +223,26 @@ function OverlayPage() {
 				layer: formData.layer,
 				is_public: formData.is_public,
 				animation_config: {
-					in: { type: formData.animation_in_type, duration: formData.animation_in_duration },
-					out: { type: formData.animation_out_type, duration: formData.animation_out_duration },
+					in: {
+						type: formData.animation_in_type,
+						duration: formData.animation_in_duration,
+					},
+					out: {
+						type: formData.animation_out_type,
+						duration: formData.animation_out_duration,
+					},
 				},
-			}
+			};
 
 			if (editingTemplate) {
 				await saveOverlayMeta(record, editingTemplate.id);
 			} else {
-				await saveOverlayMeta({ ...record, owner_id: user.id, graphic_data: [], data_source: null });
+				await saveOverlayMeta({
+					...record,
+					owner_id: user.id,
+					graphic_data: [],
+					data_source: null,
+				});
 			}
 			setShowCreateModal(false);
 			queryClient.invalidateQueries({ queryKey: ["overlay_templates"] });
@@ -209,7 +252,7 @@ function OverlayPage() {
 		} finally {
 			setSaving(false);
 		}
-	}
+	};
 
 	// 삭제
 	const handleDeleteTemplate = async (id: string) => {
@@ -226,7 +269,7 @@ function OverlayPage() {
 			console.error("Delete overlay error:", err);
 			alert("삭제 실패");
 		}
-	}
+	};
 
 	const toggleTemplateSelection = useCallback((id: string) => {
 		setSelectedTemplateIds((prev) => {
@@ -316,7 +359,7 @@ function OverlayPage() {
 			queryClient.invalidateQueries({ queryKey: ["overlay_templates"] });
 		},
 		[editorTarget, queryClient],
-	)
+	);
 
 	// 유틸
 	const isOwner = (ownerId: string) => user?.id === ownerId;
@@ -327,18 +370,24 @@ function OverlayPage() {
 
 	if (loading) {
 		return (
-			<div style={{ display: "flex", justifyContent: "center", padding: "3rem" }}>
-				<Loader2 size={24} className="animate-spin" style={{ color: "#818cf8" }} />
+			<div
+				style={{ display: "flex", justifyContent: "center", padding: "3rem" }}
+			>
+				<Loader2
+					size={24}
+					className="animate-spin"
+					style={{ color: "#818cf8" }}
+				/>
 			</div>
-		)
+		);
 	}
 
 	// ─── 렌더링 ──────────────────────────────────────────────────
 
 	return (
-        <>
-            {/* 페이지 헤더 */}
-            <div className="dash-page-header">
+		<>
+			{/* 페이지 헤더 */}
+			<div className="dash-page-header">
 				<div>
 					<div className="dash-page-title">
 						<div className="dash-page-title-icon">
@@ -351,10 +400,7 @@ function OverlayPage() {
 					</div>
 				</div>
 				<div className="dash-page-actions">
-					<button 
-						className="dash-btn accent" 
-						onClick={handleCreateNew}
-					>
+					<button className="dash-btn accent" onClick={handleCreateNew}>
 						<Sparkles size={16} /> AI 플러그인 생성(Code)
 					</button>
 				</div>
@@ -406,7 +452,9 @@ function OverlayPage() {
 
 				{selectedCount > 0 ? (
 					<div className="overlay-selection-inline-tools">
-						<div className="overlay-selection-count">{selectedCount}개 선택됨</div>
+						<div className="overlay-selection-count">
+							{selectedCount}개 선택됨
+						</div>
 						<select
 							value={moveTargetFolderId}
 							onChange={(event) => setMoveTargetFolderId(event.target.value)}
@@ -432,7 +480,11 @@ function OverlayPage() {
 							onClick={handleMoveSelection}
 							disabled={isMovingSelection}
 						>
-							{isMovingSelection ? <Loader2 size={14} className="animate-spin" /> : <MoveRight size={14} />}
+							{isMovingSelection ? (
+								<Loader2 size={14} className="animate-spin" />
+							) : (
+								<MoveRight size={14} />
+							)}
 							이동
 						</button>
 						<button className="dash-btn" onClick={clearSelection}>
@@ -440,7 +492,10 @@ function OverlayPage() {
 						</button>
 					</div>
 				) : (
-					<div className="overlay-folder-inline-actions" style={{ display: "flex", gap: "6px" }}>
+					<div
+						className="overlay-folder-inline-actions"
+						style={{ display: "flex", gap: "6px" }}
+					>
 						{selectedFolderId !== "all" &&
 							selectedFolderId !== "unfiled" &&
 							!folders.find((f) => f.id === selectedFolderId)?.is_system && (
@@ -456,26 +511,45 @@ function OverlayPage() {
 					</div>
 				)}
 			</div>
-            {/* 카드 그리드 또는 빈 상태 */}
-            {templates.length === 0 ? (
+
+			<div className="overlay-search-toolbar">
+				<NamingSearchBox
+					ariaLabel="오버레이 이름 검색"
+					assetKind="overlay"
+					existingNames={overlaySearchNames}
+					placeholder="오버레이 검색 또는 좌상단-헤드라인-두글자..."
+					value={searchQuery}
+					onChange={setSearchQuery}
+				/>
+			</div>
+			{/* 카드 그리드 또는 빈 상태 */}
+			{visibleTemplates.length === 0 ? (
 				<div className="overlay-empty-state">
 					<div className="overlay-empty-icon">
 						<Layers size={48} />
 					</div>
-					<div className="overlay-empty-title">오버레이가 없습니다</div>
+					<div className="overlay-empty-title">
+						{searchQuery.trim()
+							? "검색 결과가 없습니다"
+							: "오버레이가 없습니다"}
+					</div>
 					<div className="overlay-empty-desc">
-						날씨 위젯, 뉴스 티커, 시계 등 자동 렌더링되는
-						방송 오버레이를 만들어보세요
+						{searchQuery.trim()
+							? "다른 네이밍 토큰이나 기존 이름 일부로 다시 검색해보세요"
+							: "날씨 위젯, 뉴스 티커, 시계 등 자동 렌더링되는 방송 오버레이를 만들어보세요"}
 					</div>
 					<div style={{ display: "flex", gap: 8 }}>
-						<button className="btn-overlay-create primary" onClick={handleCreateNew}>
+						<button
+							className="btn-overlay-create primary"
+							onClick={handleCreateNew}
+						>
 							<Sparkles size={16} /> AI 플러그인 생성(Code)
 						</button>
 					</div>
 				</div>
 			) : (
 				<div className="overlay-cards-grid">
-					{templates.map((template) => {
+					{visibleTemplates.map((template) => {
 						const elements: GraphicElement[] = template.graphic_data ?? [];
 						const hasGraphics = elements.length > 0;
 						const animIn = template.animation_config?.in;
@@ -483,7 +557,7 @@ function OverlayPage() {
 						const isSelected = selectedTemplateIds.has(template.id);
 
 						return (
-                            <div
+							<div
 								key={template.id}
 								className={`overlay-card ${isSelected ? "selected" : ""}`}
 								onClick={() => {
@@ -496,15 +570,15 @@ function OverlayPage() {
 								onMouseEnter={() => setHoveredCardId(template.id)}
 								onMouseLeave={() => setHoveredCardId(null)}
 							>
-                                {/* 썸네일 프리뷰 */}
-                                <div className="overlay-card-thumb">
+								{/* 썸네일 프리뷰 */}
+								<div className="overlay-card-thumb">
 									{template.plugin_type === "html" && template.source_code ? (
 										// HTML 플러그인: iframe 스케일 다운 미니 프리뷰
-										(<HtmlPluginThumbnail 
-											sourceCode={template.source_code} 
+										<HtmlPluginThumbnail
+											sourceCode={template.source_code}
 											replicantDefaults={template.replicant_defaults}
 											isHovered={hoveredCardId === template.id}
-										/>)
+										/>
 									) : hasGraphics ? (
 										<GraphicPreviewRenderer
 											elements={elements}
@@ -516,7 +590,7 @@ function OverlayPage() {
 											<Layers size={24} />
 											<span>프리뷰 없음</span>
 										</div>
-										)}
+									)}
 
 									{/* 뱃지 */}
 									<button
@@ -528,23 +602,29 @@ function OverlayPage() {
 										}}
 										title={isSelected ? "선택 해제" : "선택"}
 									>
-										{isSelected ? <CheckSquare size={16} /> : <Square size={16} />}
+										{isSelected ? (
+											<CheckSquare size={16} />
+										) : (
+											<Square size={16} />
+										)}
 									</button>
 									<span className="overlay-card-layer-badge">
 										Layer {template.layer}
 									</span>
 									{template.plugin_type === "html" && (
-										<span className="overlay-card-html-badge">{'</>'} HTML</span>
+										<span className="overlay-card-html-badge">
+											{"</>"} HTML
+										</span>
 									)}
-										{template.source_type === "ai" && (
-											<span className="overlay-card-ai-badge">✨ AI</span>
-										)}
-										{template.category === "ai_cuesheet_draft" && (
-											<span className="overlay-card-ai-badge">AI 큐시트</span>
-										)}
-									</div>
-                                {/* 카드 바디 */}
-                                <div className="overlay-card-body">
+									{template.source_type === "ai" && (
+										<span className="overlay-card-ai-badge">✨ AI</span>
+									)}
+									{template.category === "ai_cuesheet_draft" && (
+										<span className="overlay-card-ai-badge">AI 큐시트</span>
+									)}
+								</div>
+								{/* 카드 바디 */}
+								<div className="overlay-card-body">
 									<div className="overlay-card-name">
 										{template.name}
 										{template.is_public && (
@@ -583,40 +663,53 @@ function OverlayPage() {
 											</span>
 										)}
 										{template.is_public && (
-											<span className="overlay-card-tag public-tag">
-												공개
-											</span>
+											<span className="overlay-card-tag public-tag">공개</span>
 										)}
 									</div>
 								</div>
-                                {/* 카드 하단 */}
-                                <div className="overlay-card-footer">
+								{/* 카드 하단 */}
+								<div className="overlay-card-footer">
 									<div className="overlay-card-date">
 										<Clock size={10} />
 										{formatDateWithTime(template.created_at)}
 									</div>
-									<div className="overlay-card-actions" style={{ display: "flex", alignItems: "center", gap: 6 }}>
+									<div
+										className="overlay-card-actions"
+										style={{ display: "flex", alignItems: "center", gap: 6 }}
+									>
 										<VisibilityToggle
 											visibility={template.visibility || "workspace"}
 											onToggle={async (nextVis) => {
 												try {
-													await updateOverlayTemplateVisibility(template.id, nextVis as any);
-													queryClient.invalidateQueries({ queryKey: ["overlay_templates"] });
+													await updateOverlayTemplateVisibility(
+														template.id,
+														nextVis as any,
+													);
+													queryClient.invalidateQueries({
+														queryKey: ["overlay_templates"],
+													});
 												} catch (err) {
 													console.error("공유 설정 변경 실패:", err);
 													alert("공유 설정 변경에 실패했습니다.");
 												}
 											}}
 											size={14}
-											className={!isOwner(template.owner_id) ? "pointer-events-none opacity-60" : ""}
+											className={
+												!isOwner(template.owner_id)
+													? "pointer-events-none opacity-60"
+													: ""
+											}
 										/>
 										{isOwner(template.owner_id) && (
 											<>
 												<button
 													className="btn-overlay-action"
 													onClick={(e) => {
-														e.stopPropagation()
-														navigate({ to: "/dashboard/studio/overlays/editor/$pluginId" as any, params: { pluginId: template.id } as any });
+														e.stopPropagation();
+														navigate({
+															to: "/dashboard/studio/overlays/editor/$pluginId" as any,
+															params: { pluginId: template.id } as any,
+														});
 													}}
 													title="코드 에디터"
 												>
@@ -625,8 +718,8 @@ function OverlayPage() {
 												<button
 													className="btn-overlay-action"
 													onClick={(e) => {
-														e.stopPropagation()
-														handleEditMeta(template)
+														e.stopPropagation();
+														handleEditMeta(template);
 													}}
 													title="설정 및 메타 편집"
 												>
@@ -636,8 +729,8 @@ function OverlayPage() {
 													<button
 														className="btn-overlay-action"
 														onClick={(e) => {
-															e.stopPropagation()
-															setEditorTarget(template)
+															e.stopPropagation();
+															setEditorTarget(template);
 														}}
 														title="그래픽 편집"
 													>
@@ -647,8 +740,8 @@ function OverlayPage() {
 												<button
 													className="btn-overlay-action delete"
 													onClick={(e) => {
-														e.stopPropagation()
-														setDeleteConfirm(template.id)
+														e.stopPropagation();
+														setDeleteConfirm(template.id);
 													}}
 													title="삭제"
 												>
@@ -658,16 +751,16 @@ function OverlayPage() {
 										)}
 									</div>
 								</div>
-                                {/* 삭제 확인 오버레이 */}
-                                {deleteConfirm === template.id && (
+								{/* 삭제 확인 오버레이 */}
+								{deleteConfirm === template.id && (
 									<div className="overlay-card-delete-confirm">
 										<p>"{template.name}" 삭제?</p>
 										<div className="confirm-btns">
 											<button
 												className="btn-delete-cancel"
 												onClick={(e) => {
-													e.stopPropagation()
-													setDeleteConfirm(null)
+													e.stopPropagation();
+													setDeleteConfirm(null);
 												}}
 											>
 												취소
@@ -675,8 +768,8 @@ function OverlayPage() {
 											<button
 												className="btn-delete-confirm"
 												onClick={(e) => {
-													e.stopPropagation()
-													handleDeleteTemplate(template.id)
+													e.stopPropagation();
+													handleDeleteTemplate(template.id);
 												}}
 											>
 												삭제
@@ -684,8 +777,8 @@ function OverlayPage() {
 										</div>
 									</div>
 								)}
-                            </div>
-                        )
+							</div>
+						);
 					})}
 				</div>
 			)}
@@ -700,8 +793,7 @@ function OverlayPage() {
 					>
 						<div className="overlay-editor-header">
 							<h3>
-								<FolderPlus size={16} />
-								새 폴더
+								<FolderPlus size={16} />새 폴더
 							</h3>
 							<button
 								className="overlay-editor-close"
@@ -740,17 +832,26 @@ function OverlayPage() {
 								disabled={isCreatingFolder || !newFolderName.trim()}
 							>
 								{isCreatingFolder ? (
-									<><Loader2 size={14} className="wizard-loading-spinner" style={{ width: 14, height: 14 }} /> 생성 중...</>
+									<>
+										<Loader2
+											size={14}
+											className="wizard-loading-spinner"
+											style={{ width: 14, height: 14 }}
+										/>{" "}
+										생성 중...
+									</>
 								) : (
-									<><FolderPlus size={14} /> 생성</>
+									<>
+										<FolderPlus size={14} /> 생성
+									</>
 								)}
 							</button>
 						</div>
 					</div>
 				</div>
 			)}
-            {/* 메타 편집 모달 */}
-            {showCreateModal && (
+			{/* 메타 편집 모달 */}
+			{showCreateModal && (
 				<div
 					className="overlay-editor-backdrop"
 					onClick={() => setShowCreateModal(false)}
@@ -774,44 +875,71 @@ function OverlayPage() {
 						</div>
 
 						{/* 편집 시 썸네일 프리뷰 */}
-						{editingTemplate && (editingTemplate.graphic_data?.length ?? 0) > 0 && (
-							<div style={{
-								padding: "16px 24px 0",
-								display: "flex",
-								justifyContent: "center",
-							}}>
-								<div style={{
-									width: "100%",
-									maxWidth: 400,
-									aspectRatio: "16/9",
-									borderRadius: 8,
-									overflow: "hidden",
-									border: "1px solid rgba(255,255,255,0.06)",
-								}}>
-									<GraphicPreviewRenderer
-										elements={editingTemplate.graphic_data}
-										canvasWidth={editingTemplate.zone_bounds?.width ?? 1920}
-										canvasHeight={editingTemplate.zone_bounds?.height ?? 1080}
-									/>
+						{editingTemplate &&
+							(editingTemplate.graphic_data?.length ?? 0) > 0 && (
+								<div
+									style={{
+										padding: "16px 24px 0",
+										display: "flex",
+										justifyContent: "center",
+									}}
+								>
+									<div
+										style={{
+											width: "100%",
+											maxWidth: 400,
+											aspectRatio: "16/9",
+											borderRadius: 8,
+											overflow: "hidden",
+											border: "1px solid rgba(255,255,255,0.06)",
+										}}
+									>
+										<GraphicPreviewRenderer
+											elements={editingTemplate.graphic_data}
+											canvasWidth={editingTemplate.zone_bounds?.width ?? 1920}
+											canvasHeight={editingTemplate.zone_bounds?.height ?? 1080}
+										/>
+									</div>
 								</div>
-							</div>
-						)}
+							)}
 
 						{/* 본문 */}
-						<div style={{ padding: "16px 24px", display: "flex", flexDirection: "column", gap: 12, overflowY: "auto", flex: 1 }}>
+						<div
+							style={{
+								padding: "16px 24px",
+								display: "flex",
+								flexDirection: "column",
+								gap: 12,
+								overflowY: "auto",
+								flex: 1,
+							}}
+						>
 							<div className="csm-field">
 								<label>이름 *</label>
-								<input
+								<NamingSearchBox
+									ariaLabel="오버레이 이름"
+									assetKind="overlay"
+									className="name-builder"
+									existingNames={overlaySearchNames}
+									placeholder="예: 우상단-출처-세글자-겹침"
 									value={formData.name}
-									onChange={(e) => setFormData((p) => ({ ...p, name: e.target.value }))}
-									placeholder="예: 날씨 위젯"
+									onChange={(value) =>
+										setFormData((p) => ({ ...p, name: value }))
+									}
+									currentName={editingTemplate?.name ?? ""}
+									clearLabel="오버레이 이름 지우기"
+									showLeadingIcon={false}
+									suggestionTitle="오버레이 이름 만들기"
+									suggestionHint="추천 토큰을 선택해 운영자가 찾기 쉬운 오버레이 이름을 만듭니다."
 								/>
 							</div>
 							<div className="csm-field">
 								<label>설명</label>
 								<input
 									value={formData.description}
-									onChange={(e) => setFormData((p) => ({ ...p, description: e.target.value }))}
+									onChange={(e) =>
+										setFormData((p) => ({ ...p, description: e.target.value }))
+									}
 									placeholder="오버레이 설명"
 								/>
 							</div>
@@ -821,20 +949,41 @@ function OverlayPage() {
 									<input
 										type="number"
 										value={formData.layer}
-										onChange={(e) => setFormData((p) => ({ ...p, layer: parseInt(e.target.value, 10) || 1 }))}
+										onChange={(e) =>
+											setFormData((p) => ({
+												...p,
+												layer: parseInt(e.target.value, 10) || 1,
+											}))
+										}
 										min={1}
 										max={10}
 									/>
 								</div>
-								<div className="csm-field" style={{ flex: 1, display: "flex", alignItems: "end", gap: 6 }}>
+								<div
+									className="csm-field"
+									style={{
+										flex: 1,
+										display: "flex",
+										alignItems: "end",
+										gap: 6,
+									}}
+								>
 									<input
 										type="checkbox"
 										id="is_public"
 										checked={formData.is_public}
-										onChange={(e) => setFormData((p) => ({ ...p, is_public: e.target.checked }))}
+										onChange={(e) =>
+											setFormData((p) => ({
+												...p,
+												is_public: e.target.checked,
+											}))
+										}
 										style={{ width: "auto" }}
 									/>
-									<label htmlFor="is_public" style={{ marginBottom: 0, cursor: "pointer" }}>
+									<label
+										htmlFor="is_public"
+										style={{ marginBottom: 0, cursor: "pointer" }}
+									>
 										공개
 									</label>
 								</div>
@@ -842,16 +991,25 @@ function OverlayPage() {
 
 							{/* 애니메이션 */}
 							<div className="csm-section" style={{ marginBottom: 0 }}>
-								<div className="csm-section-title" style={{ marginTop: 4 }}>애니메이션</div>
+								<div className="csm-section-title" style={{ marginTop: 4 }}>
+									애니메이션
+								</div>
 								<div className="csm-row">
 									<div className="csm-field" style={{ flex: 1 }}>
 										<label>IN 타입</label>
 										<select
 											value={formData.animation_in_type}
-											onChange={(e) => setFormData((p) => ({ ...p, animation_in_type: e.target.value }))}
+											onChange={(e) =>
+												setFormData((p) => ({
+													...p,
+													animation_in_type: e.target.value,
+												}))
+											}
 										>
 											{ANIMATION_TYPES.map((t) => (
-												<option key={t} value={t}>{t}</option>
+												<option key={t} value={t}>
+													{t}
+												</option>
 											))}
 										</select>
 									</div>
@@ -860,7 +1018,13 @@ function OverlayPage() {
 										<input
 											type="number"
 											value={formData.animation_in_duration}
-											onChange={(e) => setFormData((p) => ({ ...p, animation_in_duration: parseInt(e.target.value, 10) || 500 }))}
+											onChange={(e) =>
+												setFormData((p) => ({
+													...p,
+													animation_in_duration:
+														parseInt(e.target.value, 10) || 500,
+												}))
+											}
 										/>
 									</div>
 								</div>
@@ -869,10 +1033,17 @@ function OverlayPage() {
 										<label>OUT 타입</label>
 										<select
 											value={formData.animation_out_type}
-											onChange={(e) => setFormData((p) => ({ ...p, animation_out_type: e.target.value }))}
+											onChange={(e) =>
+												setFormData((p) => ({
+													...p,
+													animation_out_type: e.target.value,
+												}))
+											}
 										>
 											{ANIMATION_TYPES.map((t) => (
-												<option key={t} value={t}>{t}</option>
+												<option key={t} value={t}>
+													{t}
+												</option>
 											))}
 										</select>
 									</div>
@@ -881,7 +1052,13 @@ function OverlayPage() {
 										<input
 											type="number"
 											value={formData.animation_out_duration}
-											onChange={(e) => setFormData((p) => ({ ...p, animation_out_duration: parseInt(e.target.value, 10) || 300 }))}
+											onChange={(e) =>
+												setFormData((p) => ({
+													...p,
+													animation_out_duration:
+														parseInt(e.target.value, 10) || 300,
+												}))
+											}
 										/>
 									</div>
 								</div>
@@ -890,7 +1067,11 @@ function OverlayPage() {
 
 						{/* 푸터 */}
 						<div className="overlay-editor-footer">
-							<button className="btn-modal-cancel" onClick={() => setShowCreateModal(false)} disabled={saving}>
+							<button
+								className="btn-modal-cancel"
+								onClick={() => setShowCreateModal(false)}
+								disabled={saving}
+							>
 								취소
 							</button>
 							<button
@@ -899,19 +1080,28 @@ function OverlayPage() {
 								disabled={saving || !formData.name.trim()}
 							>
 								{saving ? (
-									<><Loader2 size={14} className="wizard-loading-spinner" style={{ width: 14, height: 14 }} /> 저장 중...</>
+									<>
+										<Loader2
+											size={14}
+											className="wizard-loading-spinner"
+											style={{ width: 14, height: 14 }}
+										/>{" "}
+										저장 중...
+									</>
 								) : editingTemplate ? (
 									"저장"
 								) : (
-									<><Plus size={14} /> 생성</>
+									<>
+										<Plus size={14} /> 생성
+									</>
 								)}
 							</button>
 						</div>
 					</div>
 				</div>
 			)}
-            {/* 그래픽 편집기 */}
-            {editorTarget && (
+			{/* 그래픽 편집기 */}
+			{editorTarget && (
 				<OverlayEditor
 					name={editorTarget.name}
 					elements={editorTarget.graphic_data ?? []}
@@ -924,8 +1114,8 @@ function OverlayPage() {
 					}}
 				/>
 			)}
-        </>
-    )
+		</>
+	);
 }
 
 // ─── HtmlPluginThumbnail ───────────────────────────────────────────
@@ -955,7 +1145,7 @@ function HtmlPluginThumbnail({
 				const { width, height } = entry.contentRect;
 				setScale(Math.min(width / 1920, height / 1080));
 			}
-		})
+		});
 		observer.observe(el);
 		return () => observer.disconnect();
 	}, []);
@@ -979,12 +1169,12 @@ function HtmlPluginThumbnail({
 			const interval = setInterval(() => {
 				isShowing = !isShowing;
 				iframeWin.postMessage({ type: isShowing ? "SHOW" : "HIDE" }, "*");
-			}, 2000)
+			}, 2000);
 			return () => {
 				clearInterval(interval);
 				// 호버 아웃 시 다시 SHOW 호출하여 썸네일에 내용이 남도록 보장
 				iframeWin.postMessage({ type: "SHOW" }, "*");
-			}
+			};
 		}
 	}, [isHovered, replicantDefaults]);
 
@@ -1002,7 +1192,8 @@ function HtmlPluginThumbnail({
 				width: "100%",
 				height: "100%",
 				backgroundColor: "#808080",
-				backgroundImage: "linear-gradient(45deg,#555 25%,transparent 25%),linear-gradient(-45deg,#555 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#555 75%),linear-gradient(-45deg,transparent 75%,#555 75%)",
+				backgroundImage:
+					"linear-gradient(45deg,#555 25%,transparent 25%),linear-gradient(-45deg,#555 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#555 75%),linear-gradient(-45deg,transparent 75%,#555 75%)",
 				backgroundSize: "12px 12px",
 				backgroundPosition: "0 0,0 6px,6px -6px,-6px 0px",
 				position: "relative",
@@ -1028,5 +1219,5 @@ function HtmlPluginThumbnail({
 				title="Plugin Thumbnail"
 			/>
 		</div>
-	)
+	);
 }

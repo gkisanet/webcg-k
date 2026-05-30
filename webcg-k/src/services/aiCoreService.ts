@@ -144,11 +144,17 @@ const PROVIDER_STRATEGIES: Record<string, ProviderReasoningStrategy> = {
 			return /kimi|qwq|r1|reasoner|o1|o3/.test(c.modelId);
 		},
 		applyToBody: (body, c) => {
-			const reasoningConfig: Record<string, unknown> = (c.generationConfig as any).reasoning || {};
-			// OpenRouter reasoning API: reasoning.enabled + optional effort/max_tokens
+			const gc = c.generationConfig as any;
+			const reasoningConfig: Record<string, unknown> = gc.reasoning || {};
+			
+			// OpenRouter 공식 가이드에 따른 추론 설정 정규화
 			body.reasoning = {
 				enabled: true,
-				...(reasoningConfig.max_tokens !== undefined ? { max_tokens: reasoningConfig.max_tokens } : {}),
+				// 만약 Kimi 2.6처럼 생각이 너무 길어지면 reasoning 내부 토큰을 제한하여
+				// 최종 content가 출력될 공간(컨텍스트)을 강제로 확보합니다.
+				...(reasoningConfig.max_tokens !== undefined
+					? { max_tokens: reasoningConfig.max_tokens }
+					: { max_tokens: 16384 }), // 기본 추론 상한선을 16k 정도로 제약
 				...(reasoningConfig.effort ? { effort: reasoningConfig.effort } : {}),
 			};
 		},
@@ -535,12 +541,23 @@ export async function callAI(
 	const config = await getActiveConfig();
 	const apiKey = await getApiKey(config);
 
-	const maxTokens = options?.maxOutputTokens ?? (config.generationConfig as any).maxOutputTokens ?? 8192;
+	// [개선] 현재 모델이 추론형 모델이면 maxOutputTokens 기본값을 65536(모델 최대치)으로 확장하여
+	// 씽킹 토큰 과다 사용으로 인한 본문 잘림을 방지
+	const isReasoning = isCurrentModelReasoning(config);
+	const defaultMaxTokens = isReasoning ? 65536 : 8192;
+
+	const maxTokens = options?.maxOutputTokens ?? (config.generationConfig as any).maxOutputTokens ?? defaultMaxTokens;
 	const temperature = options?.temperature ?? (config.generationConfig as any).temperature ?? 0.9;
+
+	// 시스템 프롬프트 보완 가드 (Kimi 다이어트용)
+	let finalSystemPrompt = systemPrompt;
+	if (isReasoning && config.modelId.toLowerCase().includes("kimi")) {
+		finalSystemPrompt += "\n\n[System Guard: Do not over-think. Keep your reasoning concise and focus on generating the final output or code accurately within reasonable token limits.]";
+	}
 
 	// 모든 프로바이더 통합 — Gemini도 OpenAI 호환 엔드포인트 사용
 	const result = await callOpenAICompatible(
-		systemPrompt,
+		finalSystemPrompt,
 		userPrompt,
 		config,
 		apiKey,

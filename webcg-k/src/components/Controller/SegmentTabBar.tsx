@@ -31,10 +31,12 @@ function ProgressDots({
 	blocks,
 	completedBlockIds,
 	pgmBlockIds,
+	skippedBlockIds,
 }: {
 	blocks: GraphicBlock[];
 	completedBlockIds: Set<string>;
 	pgmBlockIds: Set<string>;
+	skippedBlockIds: Set<string>;
 }) {
 	if (blocks.length === 0) return <span className="seg-tab-status">—</span>;
 	return (
@@ -42,6 +44,7 @@ function ProgressDots({
 			{blocks.map((b) => {
 				if (completedBlockIds.has(b.id)) return <span key={b.id} className="dot done">✓</span>;
 				if (pgmBlockIds.has(b.id)) return <span key={b.id} className="dot onair">●</span>;
+				if (skippedBlockIds.has(b.id)) return <span key={b.id} className="dot skipped">▲</span>;
 				return <span key={b.id} className="dot idle">○</span>;
 			})}
 		</span>
@@ -59,7 +62,9 @@ interface SegmentTabBarProps {
 	blocks: GraphicBlock[];
 	completedBlockIds: Set<string>;
 	pgmBlockIds: Set<string>;
+	skippedBlockIds: Set<string>;
 	onReorderSegments?: (reordered: Segment[]) => void;
+	readOnly?: boolean;
 }
 
 export function SegmentTabBar({
@@ -70,7 +75,9 @@ export function SegmentTabBar({
 	blocks,
 	completedBlockIds,
 	pgmBlockIds,
+	skippedBlockIds,
 	onReorderSegments,
+	readOnly = false,
 }: SegmentTabBarProps) {
 	const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -114,12 +121,17 @@ export function SegmentTabBar({
 
 	// ─── 드래그 앤 드롭 핸들러 ─────────────────────────────────
 	const handleDragStart = useCallback((e: React.DragEvent, segId: string) => {
+		if (readOnly) {
+			e.preventDefault();
+			return;
+		}
 		setDragId(segId);
 		e.dataTransfer.effectAllowed = "move";
 		e.dataTransfer.setData("text/plain", segId);
-	}, []);
+	}, [readOnly]);
 
 	const handleDragOver = useCallback((e: React.DragEvent, segId: string) => {
+		if (readOnly) return;
 		e.preventDefault();
 		e.dataTransfer.dropEffect = "move";
 		if (segId === dragId) return;
@@ -127,7 +139,7 @@ export function SegmentTabBar({
 		const midX = rect.left + rect.width / 2;
 		setDragOverId(segId);
 		setDragSide(e.clientX < midX ? "left" : "right");
-	}, [dragId]);
+	}, [dragId, readOnly]);
 
 	const handleDragLeave = useCallback(() => {
 		setDragOverId(null);
@@ -135,6 +147,7 @@ export function SegmentTabBar({
 	}, []);
 
 	const handleDrop = useCallback((e: React.DragEvent, targetSegId: string) => {
+		if (readOnly) return;
 		e.preventDefault();
 		const sourceId = e.dataTransfer.getData("text/plain");
 		if (!sourceId || sourceId === targetSegId || !onReorderSegments) {
@@ -151,7 +164,7 @@ export function SegmentTabBar({
 		onReorderSegments(reordered.map((s, i) => ({ ...s, order: i })));
 
 		setDragId(null); setDragOverId(null); setDragSide(null);
-	}, [sorted, dragSide, onReorderSegments]);
+	}, [sorted, dragSide, onReorderSegments, readOnly]);
 
 	const handleDragEnd = useCallback(() => {
 		setDragId(null); setDragOverId(null); setDragSide(null);
@@ -170,7 +183,10 @@ export function SegmentTabBar({
 				<button
 					type="button"
 					className={`seg-tab ${activeTab === null ? "active" : ""}`}
-					onClick={() => onTabClick ? onTabClick(null) : onTabChange(null)}
+					onClick={() => {
+						if (readOnly) return;
+						onTabClick ? onTabClick(null) : onTabChange(null);
+					}}
 				>
 					<div className="seg-tab-row1">
 						<span className="seg-tab-order">●</span>
@@ -194,7 +210,7 @@ export function SegmentTabBar({
 							key={seg.id}
 							type="button"
 							data-seg-id={seg.id}
-							draggable
+							draggable={!readOnly}
 							className={[
 								"seg-tab",
 								isActive && "active",
@@ -204,7 +220,10 @@ export function SegmentTabBar({
 								isOverLeft && "drag-over-left",
 								isOverRight && "drag-over-right",
 							].filter(Boolean).join(" ")}
-							onClick={() => onTabClick ? onTabClick(seg.id) : onTabChange(seg.id)}
+							onClick={() => {
+								if (readOnly) return;
+								onTabClick ? onTabClick(seg.id) : onTabChange(seg.id);
+							}}
 							onDragStart={(e) => handleDragStart(e, seg.id)}
 							onDragOver={(e) => handleDragOver(e, seg.id)}
 							onDragLeave={handleDragLeave}
@@ -227,6 +246,7 @@ export function SegmentTabBar({
 									blocks={segBlocks}
 									completedBlockIds={completedBlockIds}
 									pgmBlockIds={pgmBlockIds}
+									skippedBlockIds={skippedBlockIds}
 								/>
 							</div>
 						</button>

@@ -45,6 +45,12 @@
   width: 100%;
 }
 
+.monitors-container-readonly {
+  /* 읽기 전용 참여자는 액션 바가 없으므로 PVW | PGM 2열로 고정한다. */
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+}
+
 /* ─── 모니터 사이 액션 버튼 바 ────────────────────────────────── */
 /* 비유: TV 스위처의 트랜지션 버튼 행 — PVW(좌)와 PGM(우) 사이에 위치 */
 .monitor-action-bar {
@@ -229,7 +235,7 @@
 /* 타임라인 스크롤 영역 — 수평 스크롤바 */
 .timeline-scroll-area {
   scrollbar-width: thin;
-  scrollbar-color: var(--border-primary) transparent;
+  scrollbar-color: var(--border-default) transparent;
 }
 
 .timeline-scroll-area::-webkit-scrollbar {
@@ -241,7 +247,7 @@
 }
 
 .timeline-scroll-area::-webkit-scrollbar-thumb {
-  background: var(--border-primary);
+  background: var(--border-default);
   border-radius: 4px;
 }
 
@@ -485,7 +491,7 @@
 .input:focus {
   outline: none;
   border-color: var(--accent-primary);
-  box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.1);
+  box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.1);
 }
 
 /* 전역 select/option 다크모드 — fallback은 DESIGN.md 토큰 실제 값 */
@@ -589,4 +595,3 @@ option:checked {
 .border-subtle {
   border-color: var(--border-subtle);
 }
-

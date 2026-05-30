@@ -59,7 +59,7 @@ export function NrcsTrack({
     return (
         <div style={{
             background: "var(--app-bg-secondary)",
-            border: "1px solid var(--border-primary)",
+            border: "1px solid var(--border-default)",
             borderRadius: 8,
             overflow: "hidden",
         }}>
@@ -70,7 +70,7 @@ export function NrcsTrack({
                 justifyContent: "space-between",
                 padding: "8px 12px",
                 background: "linear-gradient(135deg, #1e3a5f 0%, #0f172a 100%)",
-                borderBottom: "1px solid var(--border-primary)",
+                borderBottom: "1px solid var(--border-default)",
             }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                     <Newspaper size={14} style={{ color: "#60a5fa" }} />
@@ -155,7 +155,7 @@ function NrcsTrackItem({
     return (
         <div
             style={{
-                borderBottom: "1px solid var(--border-primary)",
+                borderBottom: "1px solid var(--border-default)",
                 borderLeft: isActive ? "3px solid #ef4444" : "3px solid transparent",
                 background: isActive ? "rgba(239, 68, 68, 0.05)" : "transparent",
                 transition: "all 0.15s",
@@ -248,7 +248,7 @@ function NrcsTrackItem({
                                 style={{
                                     display: "flex", alignItems: "center", gap: 8,
                                     padding: "3px 0",
-                                    borderBottom: "1px solid var(--border-primary)",
+                                    borderBottom: "1px solid var(--border-default)",
                                 }}
                             >
                                 <span style={{

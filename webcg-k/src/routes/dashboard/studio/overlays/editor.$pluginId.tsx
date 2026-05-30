@@ -33,6 +33,7 @@ import {
 	Settings,
 	X,
 } from "lucide-react";
+import { NamingSearchBox } from "@/components/NamingSearchBox";
 import { Button } from "@/components/ui/button";
 import { supabase } from "../../../../lib/supabase";
 import { useAuth } from "../../../../lib/auth";
@@ -44,7 +45,9 @@ import type {
 
 import "./pluginEditor.css";
 
-export const Route = createFileRoute("/dashboard/studio/overlays/editor/$pluginId")({
+export const Route = createFileRoute(
+	"/dashboard/studio/overlays/editor/$pluginId",
+)({
 	component: PluginEditorPage,
 });
 
@@ -74,9 +77,16 @@ function PluginEditorPage() {
 	});
 
 	// ─── 코드 에디터 데이터 ───
-	const [initialCode, setInitialCode] = useState<PluginSourceCode | undefined>();
-	const [initialSchema, setInitialSchema] = useState<DashboardSchema | null>(null);
-	const [initialDefaults, setInitialDefaults] = useState<Record<string, unknown> | null>(null);
+	const [initialCode, setInitialCode] = useState<
+		PluginSourceCode | undefined
+	>();
+	const [initialSchema, setInitialSchema] = useState<DashboardSchema | null>(
+		null,
+	);
+	const [initialDefaults, setInitialDefaults] = useState<Record<
+		string,
+		unknown
+	> | null>(null);
 
 	// ─── 커맨드 팔레트 (글로벌 설정) ───
 	// ■ Why 커맨드 팔레트?
@@ -152,7 +162,10 @@ function PluginEditorPage() {
 	useEffect(() => {
 		if (!showPalette) return;
 		const handler = (e: MouseEvent) => {
-			if (paletteRef.current && !paletteRef.current.contains(e.target as Node)) {
+			if (
+				paletteRef.current &&
+				!paletteRef.current.contains(e.target as Node)
+			) {
 				setShowPalette(false);
 			}
 		};
@@ -163,7 +176,11 @@ function PluginEditorPage() {
 	// Ctrl+Shift+P 커맨드 팔레트 단축키
 	useEffect(() => {
 		const handler = (e: KeyboardEvent) => {
-			if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === "p") {
+			if (
+				(e.ctrlKey || e.metaKey) &&
+				e.shiftKey &&
+				e.key.toLowerCase() === "p"
+			) {
 				e.preventDefault();
 				setShowPalette((prev) => !prev);
 			}
@@ -178,14 +195,17 @@ function PluginEditorPage() {
 			code: PluginSourceCode,
 			schema: DashboardSchema | null,
 			defaults: Record<string, unknown>,
-			isSaveAs?: boolean
+			isSaveAs?: boolean,
 		) => {
 			if (!user) return;
 			setSaving(true);
 
 			try {
-				const finalName = isSaveAs ? `${pluginName || "새 플러그인"} (복사본)` : (pluginName || "새 플러그인");
-				
+				const normalizedPluginName = pluginName.trim() || "새 플러그인";
+				const finalName = isSaveAs
+					? `${normalizedPluginName} (복사본)`
+					: normalizedPluginName;
+
 				const payload: Record<string, unknown> = {
 					name: finalName,
 					description: description || null,
@@ -198,7 +218,10 @@ function PluginEditorPage() {
 					is_public: isPublic,
 					animation_config: {
 						in: { type: animConfig.in_type, duration: animConfig.in_duration },
-						out: { type: animConfig.out_type, duration: animConfig.out_duration },
+						out: {
+							type: animConfig.out_type,
+							duration: animConfig.out_duration,
+						},
 					},
 					updated_at: new Date().toISOString(),
 				};
@@ -244,7 +267,17 @@ function PluginEditorPage() {
 				setSaving(false);
 			}
 		},
-		[pluginId, pluginName, description, layer, isPublic, animConfig, isNew, user, navigate],
+		[
+			pluginId,
+			pluginName,
+			description,
+			layer,
+			isPublic,
+			animConfig,
+			isNew,
+			user,
+			navigate,
+		],
 	);
 
 	if (loading) {
@@ -273,12 +306,17 @@ function PluginEditorPage() {
 
 					{/* 인라인 제목 편집 */}
 					<div className="pe-title-group">
-						<input
-							type="text"
-							className="pe-title-input"
+						<NamingSearchBox
+							ariaLabel="오버레이 플러그인 이름"
+							assetKind="overlay"
+							className="overlay-title"
 							value={pluginName}
-							onChange={(e) => setPluginName(e.target.value)}
-							placeholder="플러그인 이름"
+							onChange={setPluginName}
+							placeholder="좌상단-속보-두글자..."
+							clearLabel="오버레이 플러그인 이름 지우기"
+							showLeadingIcon={false}
+							suggestionTitle="오버레이 이름 만들기"
+							suggestionHint="방송 그래픽 위치와 역할 토큰을 조합해 검색 가능한 이름을 만듭니다."
 						/>
 						<span className="pe-plugin-badge">HTML Plugin</span>
 					</div>
@@ -293,9 +331,7 @@ function PluginEditorPage() {
 							style={{ color: "var(--text-tertiary)" }}
 						/>
 					)}
-					{saveFlash && (
-						<span className="pe-save-flash">✓ 저장됨</span>
-					)}
+					{saveFlash && <span className="pe-save-flash">✓ 저장됨</span>}
 
 					{/* 커맨드 팔레트 트리거 */}
 					{/* ■ Why 이 버튼?
@@ -326,7 +362,10 @@ function PluginEditorPage() {
 			     코딩 흐름을 끊지 않고 인라인으로 변경.
 			     모달보다 가볍고, 별도 탭보다 접근성이 좋다. */}
 			{showPalette && (
-				<div className="pe-palette-backdrop" onClick={() => setShowPalette(false)}>
+				<div
+					className="pe-palette-backdrop"
+					onClick={() => setShowPalette(false)}
+				>
 					<div
 						ref={paletteRef}
 						className="pe-palette"
@@ -346,11 +385,17 @@ function PluginEditorPage() {
 							{/* 이름 */}
 							<div className="pe-palette-field">
 								<label>이름</label>
-								<input
-									type="text"
+								<NamingSearchBox
+									ariaLabel="오버레이 플러그인 설정 이름"
+									assetKind="overlay"
+									className="name-builder"
 									value={pluginName}
-									onChange={(e) => setPluginName(e.target.value)}
-									placeholder="플러그인 이름"
+									onChange={setPluginName}
+									placeholder="예: 우상단-출처-세글자-겹침"
+									clearLabel="오버레이 플러그인 이름 지우기"
+									showLeadingIcon={false}
+									suggestionTitle="오버레이 이름 만들기"
+									suggestionHint="추천 토큰을 순서대로 선택해 표준 이름을 만듭니다."
 								/>
 							</div>
 							{/* 설명 */}
@@ -370,7 +415,9 @@ function PluginEditorPage() {
 									<input
 										type="number"
 										value={layer}
-										onChange={(e) => setLayer(parseInt(e.target.value, 10) || 2)}
+										onChange={(e) =>
+											setLayer(parseInt(e.target.value, 10) || 2)
+										}
 										min={1}
 										max={10}
 									/>

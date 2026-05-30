@@ -42,8 +42,8 @@ const HANDLES: HandleDef[] = [
     height: CORNER_SIZE,
     isCorner: true,
     borderStyle: {
-      borderTop: "2.5px solid #00d4ff",
-      borderLeft: "2.5px solid #00d4ff",
+      borderTop: "2.5px solid var(--accent-primary)",
+      borderLeft: "2.5px solid var(--accent-primary)",
     },
   },
   {
@@ -55,8 +55,8 @@ const HANDLES: HandleDef[] = [
     height: CORNER_SIZE,
     isCorner: true,
     borderStyle: {
-      borderTop: "2.5px solid #00d4ff",
-      borderRight: "2.5px solid #00d4ff",
+      borderTop: "2.5px solid var(--accent-primary)",
+      borderRight: "2.5px solid var(--accent-primary)",
     },
   },
   {
@@ -68,8 +68,8 @@ const HANDLES: HandleDef[] = [
     height: CORNER_SIZE,
     isCorner: true,
     borderStyle: {
-      borderBottom: "2.5px solid #00d4ff",
-      borderRight: "2.5px solid #00d4ff",
+      borderBottom: "2.5px solid var(--accent-primary)",
+      borderRight: "2.5px solid var(--accent-primary)",
     },
   },
   {
@@ -81,8 +81,8 @@ const HANDLES: HandleDef[] = [
     height: CORNER_SIZE,
     isCorner: true,
     borderStyle: {
-      borderBottom: "2.5px solid #00d4ff",
-      borderLeft: "2.5px solid #00d4ff",
+      borderBottom: "2.5px solid var(--accent-primary)",
+      borderLeft: "2.5px solid var(--accent-primary)",
     },
   },
   // 2. 엣지 - 가로/세로 방향에 맞춰 정교하게 설계된 미니 캡슐 슬릿 핸들
@@ -98,6 +98,7 @@ interface InteractionLayerProps {
   zoom: number;
   canvasWidth: number;
   canvasHeight: number;
+  activeResize: { id: string; handle: string } | null;
   onResizeStart: (e: React.MouseEvent, id: string, handle: string) => void;
   snapVLinesRef: RefObject<HTMLDivElement | null>;
   snapHLinesRef: RefObject<HTMLDivElement | null>;
@@ -109,6 +110,7 @@ export function InteractionLayer({
   zoom,
   canvasWidth,
   canvasHeight,
+  activeResize,
   onResizeStart,
   snapVLinesRef,
   snapHLinesRef,
@@ -143,47 +145,53 @@ export function InteractionLayer({
             top: el.y * zoom,
             width: el.width * zoom,
             height: el.height * zoom,
-            border: "2px solid #00d4ff",
+            border: "2px solid var(--accent-primary)",
             borderRadius: el.type === "rect" && el.borderRadius ? el.borderRadius * zoom : 0,
             transform: `rotate(${el.rotation}deg)`,
             transformOrigin: "center center",
             pointerEvents: "none",
           }}
         >
-          {HANDLES.map(({ handle, cursor, top, left, width, height, isCorner, borderStyle }) => (
-            <div
-              key={handle}
-              onMouseDown={(e) => {
-                e.stopPropagation();
-                e.preventDefault();
-                onResizeStart(e, el.id, handle);
-              }}
-              style={{
-                position: "absolute",
-                top,
-                left,
-                width,
-                height,
-                cursor,
-                pointerEvents: "auto",
-                zIndex: 20,
-                transform: "translate(-50%, -50%)",
-                // L자형 코너 꺾쇠와 변 알약 캡슐의 세련된 조건부 디자인
-                ...(isCorner
-                  ? {
-                      backgroundColor: "transparent",
-                      boxSizing: "border-box",
-                      ...borderStyle,
-                    }
-                  : {
-                      backgroundColor: "#fff",
-                      border: "1.5px solid #00d4ff",
-                      borderRadius: "3px",
-                      boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
-                    }),
-              }}
-            />
-          ))}
+          {HANDLES.map(({ handle, cursor, top, left, width, height, isCorner, borderStyle }) => {
+            const isActive = activeResize?.id === el.id && activeResize.handle === handle;
+            const activeColor = "#f59e0b";
+            return (
+              <div
+                key={handle}
+                onMouseDown={(e) => {
+                  e.stopPropagation();
+                  e.preventDefault();
+                  onResizeStart(e, el.id, handle);
+                }}
+                style={{
+                  position: "absolute",
+                  top,
+                  left,
+                  width,
+                  height,
+                  cursor,
+                  pointerEvents: "auto",
+                  zIndex: 20,
+                  transform: "translate(-50%, -50%)",
+                  filter: isActive ? "drop-shadow(0 0 4px rgba(245,158,11,0.75))" : undefined,
+                  // L자형 코너 꺾쇠와 변 알약 캡슐의 세련된 조건부 디자인
+                  ...(isCorner
+                    ? {
+                        backgroundColor: "transparent",
+                        boxSizing: "border-box",
+                        ...borderStyle,
+                        borderColor: isActive ? activeColor : undefined,
+                      }
+                    : {
+                        backgroundColor: isActive ? activeColor : "#fff",
+                        border: `1.5px solid ${isActive ? activeColor : "var(--accent-primary)"}`,
+                        borderRadius: "0.25rem",
+                        boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
+                      }),
+                }}
+              />
+            );
+          })}
         </div>
       ))}
     </div>

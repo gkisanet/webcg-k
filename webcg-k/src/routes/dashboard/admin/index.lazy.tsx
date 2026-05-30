@@ -8,13 +8,7 @@
  */
 
 import { createLazyFileRoute } from "@tanstack/react-router";
-import {
-	Bot,
-	Key,
-	Shield,
-	Sparkles,
-	Users,
-} from "lucide-react";
+import { Bot, Key, Shield, Sparkles, Tags, Users } from "lucide-react";
 import { useState, useMemo, useCallback } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "../../../lib/auth";
@@ -37,13 +31,17 @@ import {
 	deleteApiKey as deleteApiKeyService,
 } from "../../../services/adminService";
 
-import { invalidateModelCache, testApiConnection } from "../../../services/aiCgService";
+import {
+	invalidateModelCache,
+	testApiConnection,
+} from "../../../services/aiCgService";
 import { fetchAllWorkspaces } from "../../../services/workspaceService";
 import type { AdminTab, ModelConfig, ApiKey } from "./-adminTypes";
 import { PROVIDERS } from "./-adminTypes";
 import { AdminUsersTab } from "./-AdminUsersTab";
 import { AdminAiTab } from "./-AdminAiTab";
 import { AdminApiKeysTab } from "./-AdminApiKeysTab";
+import { AdminNamingTab } from "./-AdminNamingTab";
 import { AdminWorkspacesTab } from "./-AdminWorkspacesTab";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -56,50 +54,69 @@ export const Route = createLazyFileRoute("/dashboard/admin/")({
 // ─── 메인 컴포넌트 ───────────────────────────────────────────────
 
 function AdminPage() {
-	const { profile, user } = useAuth();
+	const { activeWorkspaceId, profile, user } = useAuth();
 	const queryClient = useQueryClient();
 	const { t } = useTranslation("admin");
 	const [activeTab, setActiveTab] = useState<AdminTab>("users");
-
 
 	// ─── 사용자 관리 상태 (워크스페이스 멤버십 포함) ────────────────
 	const { data: profiles = [], isLoading: loading } = useQuery({
 		queryKey: ["admin_profiles"],
 		queryFn: fetchProfilesWithMemberships,
-	})
+	});
 	const [globalFilter, setGlobalFilter] = useState("");
 
 	// ─── AI 관리 상태 ───────────────────────────────────────────
 	const { data: models = [], isLoading: modelsLoading } = useQuery({
 		queryKey: ["admin_ai_models"],
 		queryFn: () => fetchModels<ModelConfig>(),
-	})
-	const { data: usageSummary = { totalRequests: 0, totalTokens: 0, todayRequests: 0, todayTokens: 0 } } = useQuery({
+	});
+	const {
+		data: usageSummary = {
+			totalRequests: 0,
+			totalTokens: 0,
+			todayRequests: 0,
+			todayTokens: 0,
+		},
+	} = useQuery({
 		queryKey: ["admin_ai_usage"],
 		queryFn: fetchUsageSummary,
-	})
+	});
 	const { data: usageByModel = {} } = useQuery({
 		queryKey: ["admin_ai_usage_by_model"],
 		queryFn: fetchUsageByModel,
-	})
+	});
 	const [showModelModal, setShowModelModal] = useState(false);
-	const [modelForm, setModelForm] = useState({ model_id: "", display_name: "", provider: "gemini", base_url: "", tier: "free", rpm_limit: 30, rpd_limit: 1500, description: "" });
+	const [modelForm, setModelForm] = useState({
+		model_id: "",
+		display_name: "",
+		provider: "gemini",
+		base_url: "",
+		tier: "free",
+		rpm_limit: 30,
+		rpd_limit: 1500,
+		description: "",
+	});
 
 	// ─── API 키 상태 ────────────────────────────────────────────
 	const { data: apiKeys = [] } = useQuery({
 		queryKey: ["admin_api_keys"],
 		queryFn: () => fetchApiKeys<ApiKey>(),
 		enabled: !!user,
-	})
+	});
 
 	// ─── 워크스페이스 관리 ────────────────────────────────────────
 	const { data: workspaces = [] } = useQuery({
 		queryKey: ["admin", "workspaces"],
 		queryFn: fetchAllWorkspaces,
 		enabled: !!user,
-	})
+	});
 	const [showApiKeyModal, setShowApiKeyModal] = useState(false);
-	const [apiKeyForm, setApiKeyForm] = useState({ name: "", service: "gemini", key: "" });
+	const [apiKeyForm, setApiKeyForm] = useState({
+		name: "",
+		service: "gemini",
+		key: "",
+	});
 	const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
 
 	// ─── 사용자 CRUD ────────────────────────────────────────────
@@ -115,7 +132,7 @@ function AdminPage() {
 			}
 		},
 		[user, queryClient],
-	)
+	);
 
 	// ─── AI 모델 관리 ──────────────────────────────────────
 
@@ -130,9 +147,7 @@ function AdminPage() {
 			}
 		},
 		[queryClient],
-	)
-
-
+	);
 
 	const addModel = useCallback(async () => {
 		if (!modelForm.model_id || !modelForm.display_name) return;
@@ -143,7 +158,7 @@ function AdminPage() {
 				groq: "https://api.groq.com/openai/v1",
 				github: "https://models.inference.ai.azure.com",
 				openrouter: "https://openrouter.ai/api/v1",
-			}
+			};
 			await addModelService({
 				model_id: modelForm.model_id,
 				display_name: modelForm.display_name,
@@ -154,9 +169,18 @@ function AdminPage() {
 				rpd_limit: modelForm.rpd_limit,
 				description: modelForm.description || null,
 				is_active: false,
-			})
+			});
 			setShowModelModal(false);
-			setModelForm({ model_id: "", display_name: "", provider: "gemini", base_url: "", tier: "free", rpm_limit: 30, rpd_limit: 1500, description: "" });
+			setModelForm({
+				model_id: "",
+				display_name: "",
+				provider: "gemini",
+				base_url: "",
+				tier: "free",
+				rpm_limit: 30,
+				rpd_limit: 1500,
+				description: "",
+			});
 			queryClient.invalidateQueries({ queryKey: ["admin_ai_models"] });
 		} catch (err) {
 			console.error("[Admin] 모델 추가 실패:", err);
@@ -164,44 +188,56 @@ function AdminPage() {
 		}
 	}, [modelForm, queryClient]);
 
-	const deleteModel = useCallback(async (modelId: string) => {
-		try {
-			await deleteModelService(modelId);
-			queryClient.invalidateQueries({ queryKey: ["admin_ai_models"] });
-		} catch (err) {
-			console.error("[Admin] 모델 삭제 실패:", err);
-		}
-	}, [queryClient]);
+	const deleteModel = useCallback(
+		async (modelId: string) => {
+			try {
+				await deleteModelService(modelId);
+				queryClient.invalidateQueries({ queryKey: ["admin_ai_models"] });
+			} catch (err) {
+				console.error("[Admin] 모델 삭제 실패:", err);
+			}
+		},
+		[queryClient],
+	);
 
-	const saveSystemPrompt = useCallback(async (modelId: string, prompt: string) => {
-		try {
-			await saveSystemPromptService(modelId, prompt);
-			invalidateModelCache();
-			queryClient.invalidateQueries({ queryKey: ["admin_ai_models"] });
-		} catch (err) {
-			console.error("[Admin] 프롬프트 저장 실패:", err);
-		}
-	}, [queryClient]);
+	const saveSystemPrompt = useCallback(
+		async (modelId: string, prompt: string) => {
+			try {
+				await saveSystemPromptService(modelId, prompt);
+				invalidateModelCache();
+				queryClient.invalidateQueries({ queryKey: ["admin_ai_models"] });
+			} catch (err) {
+				console.error("[Admin] 프롬프트 저장 실패:", err);
+			}
+		},
+		[queryClient],
+	);
 
-	const saveGenerationConfig = useCallback(async (modelId: string, config: Record<string, unknown>) => {
-		try {
-			await saveGenerationConfigService(modelId, config);
-			invalidateModelCache();
-			queryClient.invalidateQueries({ queryKey: ["admin_ai_models"] });
-		} catch (err) {
-			console.error("[Admin] 설정 저장 실패:", err);
-		}
-	}, [queryClient]);
+	const saveGenerationConfig = useCallback(
+		async (modelId: string, config: Record<string, unknown>) => {
+			try {
+				await saveGenerationConfigService(modelId, config);
+				invalidateModelCache();
+				queryClient.invalidateQueries({ queryKey: ["admin_ai_models"] });
+			} catch (err) {
+				console.error("[Admin] 설정 저장 실패:", err);
+			}
+		},
+		[queryClient],
+	);
 
-	const linkApiKey = useCallback(async (modelId: string, apiKeyId: string | null) => {
-		try {
-			await linkApiKeyService(modelId, apiKeyId);
-			invalidateModelCache();
-			queryClient.invalidateQueries({ queryKey: ["admin_ai_models"] });
-		} catch (err) {
-			console.error("[Admin] API 키 연결 실패:", err);
-		}
-	}, [queryClient]);
+	const linkApiKey = useCallback(
+		async (modelId: string, apiKeyId: string | null) => {
+			try {
+				await linkApiKeyService(modelId, apiKeyId);
+				invalidateModelCache();
+				queryClient.invalidateQueries({ queryKey: ["admin_ai_models"] });
+			} catch (err) {
+				console.error("[Admin] API 키 연결 실패:", err);
+			}
+		},
+		[queryClient],
+	);
 
 	// ─── API 키 CRUD ────────────────────────────────────────────
 
@@ -213,7 +249,7 @@ function AdminPage() {
 				name: apiKeyForm.name,
 				service: apiKeyForm.service || "custom",
 				encrypted_key: apiKeyForm.key,
-			})
+			});
 			setShowApiKeyModal(false);
 			setApiKeyForm({ name: "", service: "", key: "" });
 			queryClient.invalidateQueries({ queryKey: ["admin_api_keys"] });
@@ -234,7 +270,7 @@ function AdminPage() {
 			}
 		},
 		[queryClient],
-	)
+	);
 
 	// ─── 파생 값 ────────────────────────────────────────────────
 
@@ -249,18 +285,32 @@ function AdminPage() {
 
 	if (!profile?.is_admin && profile?.role !== "system_admin") {
 		return (
-			<div className="flex flex-col items-center justify-center h-full text-center" style={{ padding: 80 }}>
-				<Shield size={56} className="text-accent-destructive" style={{ marginBottom: 16, opacity: 0.5 }} />
-				<h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 8 }}>{t("noPermissionTitle")}</h2>
-				<p style={{ color: "var(--text-secondary)" }}>{t("noPermissionDesc")}</p>
+			<div
+				className="flex flex-col items-center justify-center h-full text-center"
+				style={{ padding: 80 }}
+			>
+				<Shield
+					size={56}
+					className="text-accent-destructive"
+					style={{ marginBottom: 16, opacity: 0.5 }}
+				/>
+				<h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 8 }}>
+					{t("noPermissionTitle")}
+				</h2>
+				<p style={{ color: "var(--text-secondary)" }}>
+					{t("noPermissionDesc")}
+				</p>
 			</div>
-		)
+		);
 	}
 
 	// ─── 렌더링 ─────────────────────────────────────────────────
 
 	return (
-		<div className="page-content" style={{ display: "flex", flexDirection: "column", height: "100%" }}>
+		<div
+			className="page-content"
+			style={{ display: "flex", flexDirection: "column", height: "100%" }}
+		>
 			{/* 헤더 */}
 			<div className="page-header">
 				<div className="page-header-left">
@@ -295,6 +345,13 @@ function AdminPage() {
 					{t("tabs.ai")}
 				</button>
 				<button
+					className={`admin-tab ${activeTab === "naming" ? "active" : ""}`}
+					onClick={() => setActiveTab("naming")}
+				>
+					<Tags size={15} />
+					네이밍 사전
+				</button>
+				<button
 					className={`admin-tab ${activeTab === "api-keys" ? "active" : ""}`}
 					onClick={() => setActiveTab("api-keys")}
 				>
@@ -318,9 +375,7 @@ function AdminPage() {
 			)}
 
 			{/* ─── 워크스페이스 탭 ── */}
-			{activeTab === "workspaces" && (
-				<AdminWorkspacesTab />
-			)}
+			{activeTab === "workspaces" && <AdminWorkspacesTab />}
 
 			{/* ─── AI 관리 탭 ── */}
 			{activeTab === "ai" && (
@@ -341,6 +396,14 @@ function AdminPage() {
 				/>
 			)}
 
+			{activeTab === "naming" && (
+				<AdminNamingTab
+					workspaces={workspaces}
+					activeWorkspaceId={activeWorkspaceId}
+					userId={user?.id}
+				/>
+			)}
+
 			{activeTab === "api-keys" && (
 				<AdminApiKeysTab
 					apiKeys={apiKeys}
@@ -357,61 +420,129 @@ function AdminPage() {
 
 			{/* ─── 모델 추가 모달 ── */}
 			{showModelModal && (
-				<div className="admin-modal-overlay" onClick={() => setShowModelModal(false)}>
-					<div className="admin-modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 520 }}>
-						<h3><Bot size={18} /> {t("aiTab.addModel")}</h3>
+				<div
+					className="admin-modal-overlay"
+					onClick={() => setShowModelModal(false)}
+				>
+					<div
+						className="admin-modal"
+						onClick={(e) => e.stopPropagation()}
+						style={{ maxWidth: 520 }}
+					>
+						<h3>
+							<Bot size={18} /> {t("aiTab.addModel")}
+						</h3>
 						<div className="input-group">
 							<label>{t("aiTab.provider")} *</label>
-							<select value={modelForm.provider}
-								onChange={(e) => setModelForm((f) => ({ ...f, provider: e.target.value }))}>
+							<select
+								value={modelForm.provider}
+								onChange={(e) =>
+									setModelForm((f) => ({ ...f, provider: e.target.value }))
+								}
+							>
 								{Object.entries(PROVIDERS).map(([key, meta]) => (
-									<option key={key} value={key}>{meta.label}</option>
+									<option key={key} value={key}>
+										{meta.label}
+									</option>
 								))}
 							</select>
 						</div>
 						<div className="input-group">
 							<label>{t("aiTab.thModelName")} ID *</label>
-							<Input type="text" placeholder={t("aiTab.modelIdPlaceholder")} value={modelForm.model_id}
-								onChange={(e) => setModelForm((f) => ({ ...f, model_id: e.target.value }))} />
+							<Input
+								type="text"
+								placeholder={t("aiTab.modelIdPlaceholder")}
+								value={modelForm.model_id}
+								onChange={(e) =>
+									setModelForm((f) => ({ ...f, model_id: e.target.value }))
+								}
+							/>
 						</div>
 						<div className="input-group">
 							<label>{t("apiKeysTab.name")}</label>
-							<Input type="text" placeholder={t("aiTab.modelDisplayNamePlaceholder")} value={modelForm.display_name}
-								onChange={(e) => setModelForm((f) => ({ ...f, display_name: e.target.value }))} />
+							<Input
+								type="text"
+								placeholder={t("aiTab.modelDisplayNamePlaceholder")}
+								value={modelForm.display_name}
+								onChange={(e) =>
+									setModelForm((f) => ({ ...f, display_name: e.target.value }))
+								}
+							/>
 						</div>
-						<div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
+						<div
+							style={{
+								display: "grid",
+								gridTemplateColumns: "1fr 1fr 1fr",
+								gap: 12,
+							}}
+						>
 							<div className="input-group">
 								<label>{t("aiTab.thTier")}</label>
-								<select value={modelForm.tier}
-									onChange={(e) => setModelForm((f) => ({ ...f, tier: e.target.value }))}>
+								<select
+									value={modelForm.tier}
+									onChange={(e) =>
+										setModelForm((f) => ({ ...f, tier: e.target.value }))
+									}
+								>
 									<option value="free">Free</option>
 									<option value="paid">Paid</option>
 								</select>
 							</div>
 							<div className="input-group">
 								<label>{t("aiTab.thRpm")} Limit</label>
-								<Input type="number" value={modelForm.rpm_limit}
-									onChange={(e) => setModelForm((f) => ({ ...f, rpm_limit: parseInt(e.target.value) || 30 }))} />
+								<Input
+									type="number"
+									value={modelForm.rpm_limit}
+									onChange={(e) =>
+										setModelForm((f) => ({
+											...f,
+											rpm_limit: parseInt(e.target.value) || 30,
+										}))
+									}
+								/>
 							</div>
 							<div className="input-group">
 								<label>{t("aiTab.thRpd")} Limit</label>
-								<Input type="number" value={modelForm.rpd_limit}
-									onChange={(e) => setModelForm((f) => ({ ...f, rpd_limit: parseInt(e.target.value) || 1500 }))} />
+								<Input
+									type="number"
+									value={modelForm.rpd_limit}
+									onChange={(e) =>
+										setModelForm((f) => ({
+											...f,
+											rpd_limit: parseInt(e.target.value) || 1500,
+										}))
+									}
+								/>
 							</div>
 						</div>
 						<div className="input-group">
 							<label>{t("workspacesTab.description")}</label>
-							<Input type="text" placeholder={t("workspacesTab.descriptionOptional")} value={modelForm.description}
-								onChange={(e) => setModelForm((f) => ({ ...f, description: e.target.value }))} />
+							<Input
+								type="text"
+								placeholder={t("workspacesTab.descriptionOptional")}
+								value={modelForm.description}
+								onChange={(e) =>
+									setModelForm((f) => ({ ...f, description: e.target.value }))
+								}
+							/>
 						</div>
 						<div className="admin-modal-actions">
-							<Button variant="secondary" onClick={() => setShowModelModal(false)}>{t("aiTab.cancel")}</Button>
-							<Button onClick={addModel}
-								disabled={!modelForm.model_id || !modelForm.display_name}>{t("aiTab.addModel")}</Button>
+							<Button
+								variant="secondary"
+								onClick={() => setShowModelModal(false)}
+							>
+								{t("aiTab.cancel")}
+							</Button>
+							<Button
+								onClick={addModel}
+								disabled={!modelForm.model_id || !modelForm.display_name}
+							>
+								{t("aiTab.addModel")}
+							</Button>
 						</div>
 					</div>
 				</div>
 			)}
 		</div>
-	)
+	);
 }

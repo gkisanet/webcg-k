@@ -39,7 +39,7 @@ export function StepSourceInput({
         value={sourceMaterial}
         onChange={(e) => onChange(e.target.value)}
         placeholder={t("aiCuesheet.stepSource.placeholder")}
-        className="flex-1 min-h-[200px] p-3 rounded-lg bg-[var(--app-bg)] border border-[var(--border-primary)] text-[var(--text-primary)] text-xs leading-relaxed resize-y placeholder:text-[var(--text-muted)]"
+        className="flex-1 min-h-[200px] p-3 rounded-lg bg-[var(--app-bg)] border border-[var(--border-default)] text-[var(--text-primary)] text-xs leading-relaxed resize-y placeholder:text-[var(--text-muted)]"
       />
 
       <div className="flex justify-end gap-2 shrink-0">

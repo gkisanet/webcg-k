@@ -142,7 +142,7 @@ export const OverlayCard = React.memo(function OverlayCard({
 
     // ■ CQRS 시각적 피드백: renderPhase에 따른 border 스타일
     const getBorderStyle = (): string => {
-        if (!isActive) return hasPendingData ? "#f59e0b" : "var(--border-primary)";
+        if (!isActive) return hasPendingData ? "#f59e0b" : "var(--border-default)";
         if (renderPhase === "entering") return "#3b82f6"; // blue — entering
         if (renderPhase === "leaving") return "#ef4444";   // red — exiting
         return "var(--accent-primary)"; // blue — stable default
@@ -189,7 +189,7 @@ export const OverlayCard = React.memo(function OverlayCard({
                             display: "inline-flex",
                             alignItems: "center",
                             padding: "1px 5px",
-                            borderRadius: "3px",
+                            borderRadius: "0.25rem",
                             fontSize: "0.5625rem",
                             fontWeight: 600,
                             backgroundColor: renderPhase === "entering" ? "rgba(59,130,246,0.15)" : "rgba(239,68,68,0.15)",
@@ -205,7 +205,7 @@ export const OverlayCard = React.memo(function OverlayCard({
                             alignItems: "center",
                             gap: "2px",
                             padding: "1px 5px",
-                            borderRadius: "3px",
+                            borderRadius: "0.25rem",
                             fontSize: "0.5625rem",
                             fontWeight: 700,
                             fontFamily: "monospace",
@@ -238,7 +238,7 @@ export const OverlayCard = React.memo(function OverlayCard({
                             alignItems: "center",
                             gap: "2px",
                             padding: "1px 5px",
-                            borderRadius: "3px",
+                            borderRadius: "0.25rem",
                             fontSize: "0.5625rem",
                             fontWeight: 700,
                             fontFamily: "monospace",
@@ -257,7 +257,7 @@ export const OverlayCard = React.memo(function OverlayCard({
                             alignItems: "center",
                             gap: "2px",
                             padding: "1px 5px",
-                            borderRadius: "3px",
+                            borderRadius: "0.25rem",
                             fontSize: "0.5rem",
                             fontWeight: 600,
                             fontFamily: "monospace",
@@ -374,7 +374,7 @@ export const OverlayCard = React.memo(function OverlayCard({
                             onClick={() => setShowDashboard(!showDashboard)}
                             style={{
                                 background: "none",
-                                border: "1px solid var(--border-primary)",
+                                border: "1px solid var(--border-default)",
                                 cursor: "pointer",
                                 color: showDashboard ? "var(--accent-primary)" : "var(--text-tertiary)",
                                 fontSize: "0.6875rem",
@@ -395,7 +395,7 @@ export const OverlayCard = React.memo(function OverlayCard({
                             onClick={() => setShowTagEditor(!showTagEditor)}
                             style={{
                                 background: "none",
-                                border: "1px solid var(--border-primary)",
+                                border: "1px solid var(--border-default)",
                                 cursor: "pointer",
                                 color: showTagEditor ? "#a855f7" : "var(--text-tertiary)",
                                 fontSize: "0.6875rem",
@@ -477,7 +477,7 @@ export const OverlayCard = React.memo(function OverlayCard({
                                 flex: 1,
                                 padding: "3px 6px",
                                 borderRadius: "4px",
-                                border: "1px solid var(--border-primary)",
+                                border: "1px solid var(--border-default)",
                                 backgroundColor: "var(--app-bg-alt)",
                                 color: "var(--text-primary)",
                                 fontSize: "0.6875rem",
@@ -510,7 +510,7 @@ export const OverlayCard = React.memo(function OverlayCard({
                                 flex: 1,
                                 padding: "3px 6px",
                                 borderRadius: "4px",
-                                border: "1px solid var(--border-primary)",
+                                border: "1px solid var(--border-default)",
                                 backgroundColor: "var(--app-bg-alt)",
                                 color: "var(--text-primary)",
                                 fontSize: "0.6875rem",
@@ -533,7 +533,7 @@ export const OverlayCard = React.memo(function OverlayCard({
                             style={{
                                 padding: "3px 10px",
                                 borderRadius: "4px",
-                                border: "1px solid var(--border-primary)",
+                                border: "1px solid var(--border-default)",
                                 background: "none",
                                 color: "var(--text-tertiary)",
                                 fontSize: "0.625rem",
@@ -682,7 +682,7 @@ export const OverlayCard = React.memo(function OverlayCard({
                         onClick={handleSendData}
                         style={{
                             padding: "5px 12px",
-                            borderRadius: "5px",
+                            borderRadius: "0.375rem",
                             border: "none",
                             cursor: "pointer",
                             fontSize: "0.6875rem",
@@ -742,7 +742,7 @@ export const OverlayCard = React.memo(function OverlayCard({
                         style={{
                             padding: "2px 8px",
                             borderRadius: "4px",
-                            border: "1px solid var(--border-primary)",
+                            border: "1px solid var(--border-default)",
                             cursor: "pointer",
                             fontSize: "0.625rem",
                             fontWeight: 600,
@@ -770,7 +770,7 @@ export const OverlayCard = React.memo(function OverlayCard({
                                 padding: "3px 10px",
                                 fontSize: "0.625rem",
                                 fontWeight: 600,
-                                border: "1px solid var(--border-primary)",
+                                border: "1px solid var(--border-default)",
                                 borderRadius: "4px",
                                 cursor: "pointer",
                                 background: action.color || "var(--app-bg-muted)",
@@ -841,7 +841,7 @@ function DashboardField({
         flexShrink: 0,
         padding: "4px 8px",
         borderRadius: "4px",
-        border: "1px solid var(--border-primary)",
+        border: "1px solid var(--border-default)",
         backgroundColor: "var(--app-bg)",
         color: "var(--text-primary)",
         fontSize: "0.75rem",
@@ -980,8 +980,8 @@ function DashboardField({
 const stepperBtnStyle: React.CSSProperties = {
     width: "22px",
     height: "22px",
-    borderRadius: "3px",
-    border: "1px solid var(--border-primary)",
+    borderRadius: "0.25rem",
+    border: "1px solid var(--border-default)",
     backgroundColor: "var(--app-bg-muted)",
     color: "var(--text-secondary)",
     cursor: "pointer",

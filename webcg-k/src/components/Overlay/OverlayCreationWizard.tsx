@@ -22,6 +22,7 @@ import { CgVariationGallery } from "./CgVariationGallery";
 import { generateCgVariations } from "../../services/aiCgService";
 import { saveOverlayTemplate, addToGallery } from "../../services/overlayApiService";
 import { supabase } from "../../lib/supabase";
+import { useAuth } from "../../lib/auth";
 
 import "./OverlayCreationWizard.css";
 
@@ -89,6 +90,7 @@ interface OverlayCreationWizardProps {
 
 export function OverlayCreationWizard({ onClose, onAddToSession, onSaveVariation }: OverlayCreationWizardProps) {
     const queryClient = useQueryClient();
+    const { activeWorkspaceId } = useAuth();
 
     // 백업에서 초기값 복원
     const backup = _wizardBackup && (Date.now() - _wizardBackup.timestamp < BACKUP_TTL_MS)
@@ -240,6 +242,7 @@ export function OverlayCreationWizard({ onClose, onAddToSession, onSaveVariation
 
                 const template = await saveOverlayTemplate({
                     owner_id: user.id,
+                    workspace_id: activeWorkspaceId,
                     name: variation.name,
                     description: variation.description,
                     layer: 2,
@@ -300,6 +303,7 @@ export function OverlayCreationWizard({ onClose, onAddToSession, onSaveVariation
 
                 const template = await saveOverlayTemplate({
                     owner_id: user.id,
+                    workspace_id: activeWorkspaceId,
                     name: variation.name,
                     description: variation.description,
                     layer: 2,

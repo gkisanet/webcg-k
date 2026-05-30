@@ -38,10 +38,12 @@
 		"loading": "로딩 중...",
 		"draft": "초안",
 		"ready": "준비됨",
+		"rehearsal": "리허설",
 		"live": "송출중",
 		"ended": "송출완료",
 		"completed": "완료",
-		"shared": "공유"
+		"shared": "공유",
+		"archived": "보관됨"
 	},
 	"actions": {
 		"save": "저장",
@@ -57,6 +59,8 @@
 		"search": "검색",
 		"broadcast": "송출",
 		"controller": "컨트롤러",
+		"archive": "아카이브",
+		"restore": "복원",
 		"close": "닫기"
 	},
 	"date": {
@@ -85,9 +89,12 @@
 		"noLogs": "기록된 로그가 없습니다",
 		"records": "{{count}}개 기록",
 		"noBroadcast": "📋 송출한적이 없습니다.\n이 프로젝트는 아직 송출된 기록이 없습니다.",
-		"cannotDeleteWithLogs": "⚠️ 송출 기록이 있는 프로젝트는 삭제할 수 없습니다.\n로그 보존을 위해 삭제가 제한됩니다.",
+		"cannotDeleteWithLogs": "⚠️ 운영 기록이 있는 프로젝트는 삭제할 수 없습니다.\n로그 보존을 위해 아카이브를 사용하세요.",
 		"confirmDelete": "이 프로젝트를 삭제하시겠습니까?",
+		"confirmArchive": "이 프로젝트를 아카이브하시겠습니까?\n송출 기록은 보존되고 기본 목록에서 숨겨집니다.",
+		"confirmRestore": "이 프로젝트를 아카이브에서 복원하시겠습니까?",
 		"cannotDelete": "송출 기록이 있어 삭제 불가",
+		"cannotArchiveActive": "송출중이거나 리허설 중인 프로젝트는 아카이브할 수 없습니다.",
 		"broadcastCount": "액션 로그 ({{count}}회 송출)",
 		"noBroadcastHistory": "송출한적 없음"
 	},

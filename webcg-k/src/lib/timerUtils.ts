@@ -10,18 +10,26 @@ export interface TimerReplicant {
   running: boolean;
   startedAt: number;
   duration: number;
+  [key: string]: unknown;
 }
 
 export function computeRemaining(
   replicant: Partial<TimerReplicant>,
   clockOffset = 0,
 ): number {
+  const base = typeof replicant.remaining === "number"
+    ? replicant.remaining
+    : typeof replicant.duration === "number"
+      ? replicant.duration
+      : typeof replicant.timerDuration === "number"
+        ? replicant.timerDuration
+        : 0;
   if (!replicant.running || !replicant.startedAt) {
-    return replicant.remaining ?? replicant.duration ?? 0;
+    return base;
   }
   const now = Date.now() + clockOffset;
   const elapsed = (now - replicant.startedAt) / 1000;
-  return Math.max(0, (replicant.remaining ?? replicant.duration ?? 0) - elapsed);
+  return Math.max(0, base - elapsed);
 }
 
 export function isTimerReplicant(
@@ -29,5 +37,6 @@ export function isTimerReplicant(
 ): data is TimerReplicant {
   if (!data || typeof data !== "object") return false;
   const d = data as Record<string, unknown>;
-  return typeof d.remaining === "number" && typeof d.duration === "number";
+  const hasDuration = typeof d.duration === "number" || typeof d.timerDuration === "number";
+  return typeof d.remaining === "number" || hasDuration;
 }

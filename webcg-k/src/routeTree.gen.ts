@@ -102,7 +102,9 @@ const ControllerSessionIdRoute = ControllerSessionIdRouteImport.update({
   id: '/$sessionId',
   path: '/$sessionId',
   getParentRoute: () => ControllerRoute,
-} as any)
+} as any).lazy(() =>
+  import('./routes/controller/$sessionId.lazy').then((d) => d.Route),
+)
 const DashboardRundownsIndexRoute = DashboardRundownsIndexRouteImport.update({
   id: '/rundowns/',
   path: '/rundowns/',
@@ -150,7 +152,9 @@ const DashboardRundownsRundownIdRoute =
     id: '/rundowns/$rundownId',
     path: '/rundowns/$rundownId',
     getParentRoute: () => DashboardRoute,
-  } as any)
+  } as any).lazy(() =>
+    import('./routes/dashboard/rundowns/$rundownId.lazy').then((d) => d.Route),
+  )
 const DashboardCuesheetsCuesheetIdRoute =
   DashboardCuesheetsCuesheetIdRouteImport.update({
     id: '/cuesheets/$cuesheetId',

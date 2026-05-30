@@ -10,8 +10,8 @@
 		"editCuesheets": "큐시트 편집",
 		"editCuesheetsDesc": "송출 순서 편집"
 	},
-	"liveProjects": "송출중인 프로젝트",
-	"noLiveProjects": "현재 송출중인 프로젝트가 없습니다",
+	"liveProjects": "송출/리허설 중인 프로젝트",
+	"noLiveProjects": "현재 송출 또는 리허설 중인 프로젝트가 없습니다",
 	"recentProjects": "최근 프로젝트",
 	"noProjects": "아직 생성한 프로젝트가 없습니다.",
 	"createFromCuesheet": "큐시트 편집기",

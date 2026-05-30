@@ -8,11 +8,11 @@
  *   insert/update 시 컬럼 존재 여부를 컴파일 타임에 검증.
  */
 
-import { supabase } from "@/lib/supabase";
 import type { Json } from "@/lib/database.types";
-import type { NrcsNewsItem, NewsProgram } from "@/lib/nrcsTypes";
-import { mapArticleToCg } from "./nrcsMappingService";
+import type { NewsProgram, NrcsNewsItem } from "@/lib/nrcsTypes";
+import { supabase } from "@/lib/supabase";
 import type { ArticleMappingResult } from "./nrcsMappingService";
+import { mapArticleToCg } from "./nrcsMappingService";
 
 // ─── 타입 정의 ────────────────────────────────────────────────────
 
@@ -23,6 +23,7 @@ export type CuesheetItemStatus = "pending" | "mapped" | "approved" | "aired";
 export interface NrcsCuesheet {
 	id: string;
 	owner_id: string;
+	workspace_id: string | null;
 	program_name: string;
 	program_date: string;
 	bundle_id: string | null;
@@ -58,16 +59,31 @@ export interface NrcsCuesheetItem {
 	updated_at: string;
 }
 
+export interface CuesheetRundownValidationSnapshot {
+	reportId: string;
+	contentHash: string;
+	status: string;
+	checkedAt: string;
+}
+
 // ─── 큐시트 CRUD ──────────────────────────────────────────────────
 
 /** 큐시트 목록 조회 */
-export async function fetchCuesheets(workspaceId: string): Promise<NrcsCuesheet[]> {
-	if (!workspaceId) return [];
-	const { data, error } = await supabase
+export async function fetchCuesheets(
+	workspaceId?: string | null,
+	includeAllWorkspaces = false,
+): Promise<NrcsCuesheet[]> {
+	if (!includeAllWorkspaces && !workspaceId) return [];
+	let query = supabase
 		.from("nrcs_cuesheets")
 		.select("*")
-		.eq("workspace_id", workspaceId)
 		.order("program_date", { ascending: false });
+
+	if (!includeAllWorkspaces && workspaceId) {
+		query = query.eq("workspace_id", workspaceId);
+	}
+
+	const { data, error } = await query;
 	if (error) throw error;
 	return (data || []) as unknown as NrcsCuesheet[];
 }
@@ -104,7 +120,9 @@ export async function createCuesheet(params: {
 	workspace_id: string;
 }): Promise<NrcsCuesheet> {
 	if (!params.workspace_id) throw new Error("workspace_id is required");
-	const { data: { user } } = await supabase.auth.getUser();
+	const {
+		data: { user },
+	} = await supabase.auth.getUser();
 	if (!user) throw new Error("인증 필요");
 
 	const { data, error } = await supabase
@@ -170,7 +188,7 @@ export async function deleteCuesheet(cuesheetId: string): Promise<void> {
  * 프로그램의 모든 기사를 순회하여 큐시트 아이템으로 변환 + 매핑
  */
 export async function generateCuesheetFromNrcs(
-		workspaceId: string,
+	workspaceId: string,
 	program: NewsProgram,
 	newsItems: NrcsNewsItem[],
 	bundleId: string,
@@ -180,7 +198,7 @@ export async function generateCuesheetFromNrcs(
 		program_name: program.name,
 		program_date: program.date,
 		bundle_id: bundleId,
-			workspace_id: workspaceId,
+		workspace_id: workspaceId,
 	});
 
 	// 2. 각 기사를 큐시트 아이템으로 변환
@@ -237,6 +255,7 @@ export async function generateCuesheetFromNrcs(
 export async function linkCuesheetToRundown(
 	cuesheetId: string,
 	rundownId: string,
+	validationSnapshot?: CuesheetRundownValidationSnapshot,
 ): Promise<void> {
 	// 1. 큐시트 연결 정보 업데이트
 	const { error: linkError } = await supabase
@@ -266,6 +285,9 @@ export async function linkCuesheetToRundown(
 	const maxOrder = existingItems?.[0]?.item_order ?? -1;
 
 	// 4. 큐시트 아이템 → rundown_items 변환 + 삽입
+	const validationData = validationSnapshot
+		? { validation_snapshot: validationSnapshot }
+		: {};
 	const rundownInserts = (csItems || []).map((ci, i) => ({
 		rundown_id: rundownId,
 		data: {
@@ -277,6 +299,7 @@ export async function linkCuesheetToRundown(
 			article_type: ci.article_type,
 			cg_data: ci.cg_data,
 			mapping_result: ci.mapping_result,
+			...validationData,
 		} as unknown as Json,
 		item_order: maxOrder + 1 + i,
 		duration: 10, // 기본 10초
@@ -332,12 +355,13 @@ export async function syncItemOrder(
 		await Promise.all(
 			items
 				.filter((i) => i.linked_rundown_item_id)
-				.map((i) =>
-					supabase
+				.map((i) => {
+					if (!i.linked_rundown_item_id) return Promise.resolve();
+					return supabase
 						.from("rundown_items")
 						.update({ item_order: i.item_order ?? 0 })
-						.eq("id", i.linked_rundown_item_id!),
-				),
+						.eq("id", i.linked_rundown_item_id);
+				}),
 		);
 	}
 }
@@ -362,6 +386,7 @@ export interface PropagateResult {
 
 export async function propagateToRundown(
 	cuesheetId: string,
+	validationSnapshot?: CuesheetRundownValidationSnapshot,
 ): Promise<PropagateResult> {
 	// 1. 큐시트 상태 확인
 	const { data: cuesheet } = await supabase
@@ -379,19 +404,25 @@ export async function propagateToRundown(
 		return {
 			propagated: 0,
 			blocked: true,
-			blockReason: "🔒 송출 중(ONAIR) — 변경사항은 방송 종료 후 수동 동기화해 주세요",
+			blockReason:
+				"🔒 송출 중(ONAIR) — 변경사항은 방송 종료 후 수동 동기화해 주세요",
 		};
 	}
 
 	// 3. 큐시트 아이템 중 linked_rundown_item_id가 있는 것만 조회
 	const { data: items } = await supabase
 		.from("nrcs_cuesheet_items")
-		.select("id, linked_rundown_item_id, cg_data, slug, title, reporter, article_type")
+		.select(
+			"id, linked_rundown_item_id, cg_data, slug, title, reporter, article_type",
+		)
 		.eq("cuesheet_id", cuesheetId);
 
 	if (!items) return { propagated: 0, blocked: false };
 
 	let propagated = 0;
+	const validationData = validationSnapshot
+		? { validation_snapshot: validationSnapshot }
+		: {};
 	for (const item of items) {
 		if (!item.linked_rundown_item_id) continue;
 
@@ -407,6 +438,7 @@ export async function propagateToRundown(
 					reporter: item.reporter,
 					article_type: item.article_type,
 					cg_data: item.cg_data,
+					...validationData,
 				} as unknown as Json,
 			})
 			.eq("id", item.linked_rundown_item_id);

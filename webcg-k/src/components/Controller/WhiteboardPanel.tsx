@@ -5,20 +5,37 @@
  * PGM 송출 ON/OFF 제어를 수행한다.
  * 실제 드로잉/편집은 /dashboard/studio/whiteboards/$id 에서 수행.
  */
-import { useMemo } from "react";
+
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useStore } from "@tanstack/react-store";
-import { Eye, ExternalLink, Loader2, Monitor, PenTool, RefreshCw, StopCircle } from "lucide-react";
+import {
+	ExternalLink,
+	Eye,
+	Loader2,
+	Monitor,
+	PenTool,
+	RefreshCw,
+	StopCircle,
+} from "lucide-react";
+import { useMemo } from "react";
 import { useAuth } from "../../lib/auth";
-import { fetchWhiteboards, updateWhiteboardVisibility, type WhiteboardMeta } from "../../services/whiteboardService";
-import { timelineStore, type GraphicBlock } from "../../stores/timelineStore";
+import {
+	fetchWhiteboards,
+	updateWhiteboardVisibility,
+	type WhiteboardMeta,
+} from "../../services/whiteboardService";
+import {
+	type GraphicBlock,
+	pushToHistory,
+	timelineStore,
+} from "../../stores/timelineStore";
 import { VisibilityToggle } from "../Common/VisibilityToggle";
 
 const WB_TRACK_ID = 99; // dedicated top-most whiteboard bus
 const WB_PREVIEW_PREFIX = "wb-pvw-";
 const WB_PROGRAM_PREFIX = "wb-pgm-";
 
-type WhiteboardPlayoutState = "off" | "preview" | "program";
+export type WhiteboardPlayoutState = "off" | "preview" | "program";
 
 function makeWhiteboardBlock(
 	board: WhiteboardMeta,
@@ -43,9 +60,17 @@ function makeWhiteboardBlock(
 
 interface WhiteboardPanelProps {
 	sessionId?: string | null;
+	isPlayoutActive?: boolean;
+	onPlayoutStateChange?: (
+		nextState: WhiteboardPlayoutState,
+	) => void | Promise<void>;
 }
 
-export function WhiteboardPanel({ sessionId }: WhiteboardPanelProps) {
+export function WhiteboardPanel({
+	sessionId,
+	isPlayoutActive = false,
+	onPlayoutStateChange,
+}: WhiteboardPanelProps) {
 	const { activeWorkspaceId } = useAuth();
 	const queryClient = useQueryClient();
 	const blocks = useStore(timelineStore, (state) => state.blocks);
@@ -85,7 +110,10 @@ export function WhiteboardPanel({ sessionId }: WhiteboardPanelProps) {
 
 	const toggleVisibility = async (boardId: string, nextVis: string) => {
 		try {
-			await updateWhiteboardVisibility(boardId, nextVis as "private" | "workspace" | "public");
+			await updateWhiteboardVisibility(
+				boardId,
+				nextVis as "private" | "workspace" | "public",
+			);
 			queryClient.invalidateQueries({ queryKey: ["whiteboards"] });
 		} catch (e) {
 			console.error("Failed to update visibility", e);
@@ -96,6 +124,9 @@ export function WhiteboardPanel({ sessionId }: WhiteboardPanelProps) {
 		board: WhiteboardMeta,
 		nextState: WhiteboardPlayoutState,
 	) => {
+		// [의도 기반 방어 로직] 판서 송출 상태 변경 전에 히스토리에 현재 상태 기록 (Undo 가능하도록 백업)
+		pushToHistory();
+
 		timelineStore.setState((state) => {
 			const idsForBoard = new Set([
 				`${WB_PREVIEW_PREFIX}${board.id}`,
@@ -103,8 +134,10 @@ export function WhiteboardPanel({ sessionId }: WhiteboardPanelProps) {
 			]);
 			const nextBlocks = state.blocks.filter((block) => {
 				if (idsForBoard.has(block.id)) return false;
-				if (nextState === "preview" && block.id.startsWith(WB_PREVIEW_PREFIX)) return false;
-				if (nextState === "program" && block.id.startsWith(WB_PROGRAM_PREFIX)) return false;
+				if (nextState === "preview" && block.id.startsWith(WB_PREVIEW_PREFIX))
+					return false;
+				if (nextState === "program" && block.id.startsWith(WB_PROGRAM_PREFIX))
+					return false;
 				return true;
 			});
 			const newPgmIds = new Map(state.pgmBlockIds);
@@ -119,17 +152,25 @@ export function WhiteboardPanel({ sessionId }: WhiteboardPanelProps) {
 			}
 
 			if (nextState === "preview") {
-				nextBlocks.push(makeWhiteboardBlock(board, "preview", state.playheadPosition));
+				nextBlocks.push(
+					makeWhiteboardBlock(board, "preview", state.playheadPosition),
+				);
 			}
 
 			if (nextState === "program") {
-				const programBlock = makeWhiteboardBlock(board, "program", state.playheadPosition);
+				const programBlock = makeWhiteboardBlock(
+					board,
+					"program",
+					state.playheadPosition,
+				);
 				nextBlocks.push(programBlock);
 				newPgmIds.set(WB_TRACK_ID, programBlock.id);
 			}
 
 			return { ...state, blocks: nextBlocks, pgmBlockIds: newPgmIds };
 		});
+
+		void onPlayoutStateChange?.(nextState);
 	};
 
 	if (isLoading) {
@@ -166,7 +207,7 @@ export function WhiteboardPanel({ sessionId }: WhiteboardPanelProps) {
 					justifyContent: "space-between",
 					alignItems: "center",
 					padding: "0.75rem 1rem",
-					borderBottom: "1px solid var(--border-primary)",
+					borderBottom: "1px solid var(--border-default)",
 				}}
 			>
 				<div
@@ -183,7 +224,9 @@ export function WhiteboardPanel({ sessionId }: WhiteboardPanelProps) {
 					판서 레이어 ({whiteboards.length})
 				</div>
 				<div style={{ display: "flex", alignItems: "center", gap: "0.375rem" }}>
-					<span style={{ fontSize: "0.6875rem", color: "var(--text-tertiary)" }}>
+					<span
+						style={{ fontSize: "0.6875rem", color: "var(--text-tertiary)" }}
+					>
 						PVW 확인 후 PGM 송출
 					</span>
 					<button
@@ -193,7 +236,7 @@ export function WhiteboardPanel({ sessionId }: WhiteboardPanelProps) {
 						}
 						style={{
 							background: "none",
-							border: "1px solid var(--border-primary)",
+							border: "1px solid var(--border-default)",
 							cursor: "pointer",
 							padding: "4px",
 							color: "var(--text-tertiary)",
@@ -236,8 +279,7 @@ export function WhiteboardPanel({ sessionId }: WhiteboardPanelProps) {
 					<div
 						style={{
 							display: "grid",
-							gridTemplateColumns:
-								"repeat(auto-fill, minmax(280px, 1fr))",
+							gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
 							gap: "0.5rem",
 						}}
 					>
@@ -258,12 +300,12 @@ export function WhiteboardPanel({ sessionId }: WhiteboardPanelProps) {
 											? "1px solid var(--accent-primary)"
 											: isPreview
 												? "1px solid #f59e0b"
-											: "1px solid var(--border-primary)",
+												: "1px solid var(--border-default)",
 										backgroundColor: isOnAir
 											? "var(--accent-muted)"
 											: isPreview
 												? "rgba(245, 158, 11, 0.08)"
-											: "var(--app-bg-alt)",
+												: "var(--app-bg-alt)",
 									}}
 								>
 									{/* 상단: 이름 + 상태 + 가시성 */}
@@ -323,9 +365,11 @@ export function WhiteboardPanel({ sessionId }: WhiteboardPanelProps) {
 												PVW
 											</span>
 										)}
-										<VisibilityToggle 
+										<VisibilityToggle
 											visibility={board.visibility || "workspace"}
-											onToggle={(nextVis) => toggleVisibility(board.id, nextVis)}
+											onToggle={(nextVis) =>
+												toggleVisibility(board.id, nextVis)
+											}
 											size={14}
 										/>
 									</div>
@@ -356,7 +400,9 @@ export function WhiteboardPanel({ sessionId }: WhiteboardPanelProps) {
 												cursor: "pointer",
 												fontSize: "0.75rem",
 												fontWeight: 700,
-												backgroundColor: isPreview ? "#f59e0b" : "var(--app-bg-muted)",
+												backgroundColor: isPreview
+													? "#f59e0b"
+													: "var(--app-bg-muted)",
 												color: isPreview ? "#000" : "var(--text-tertiary)",
 											}}
 											title="PVW 모니터에만 표시"
@@ -372,6 +418,7 @@ export function WhiteboardPanel({ sessionId }: WhiteboardPanelProps) {
 													isOnAir ? "off" : "program",
 												)
 											}
+											disabled={!isPlayoutActive}
 											style={{
 												display: "flex",
 												alignItems: "center",
@@ -380,13 +427,20 @@ export function WhiteboardPanel({ sessionId }: WhiteboardPanelProps) {
 												padding: "0.5rem",
 												borderRadius: "6px",
 												border: "none",
-												cursor: "pointer",
+												cursor: !isPlayoutActive ? "not-allowed" : "pointer",
 												fontSize: "0.75rem",
 												fontWeight: 700,
-												backgroundColor: isOnAir ? "#ef4444" : "var(--accent-primary)",
+												backgroundColor: isOnAir
+													? "#ef4444"
+													: "var(--accent-primary)",
 												color: isOnAir ? "#fff" : "#fff",
+												opacity: !isPlayoutActive ? 0.45 : 1,
 											}}
-											title="PGM과 renderer에 송출"
+											title={
+												!isPlayoutActive
+													? "리허설 중이거나 실제 송출 중일 때만 PGM 반영이 가능합니다"
+													: "PGM과 renderer에 송출"
+											}
 										>
 											<Monitor size={14} />
 											PGM
@@ -402,12 +456,16 @@ export function WhiteboardPanel({ sessionId }: WhiteboardPanelProps) {
 												gap: "0.25rem",
 												padding: "0.5rem",
 												borderRadius: "6px",
-												border: "1px solid var(--border-primary)",
-												cursor: playoutState === "off" ? "not-allowed" : "pointer",
+												border: "1px solid var(--border-default)",
+												cursor:
+													playoutState === "off" ? "not-allowed" : "pointer",
 												fontSize: "0.75rem",
 												fontWeight: 700,
 												backgroundColor: "transparent",
-												color: playoutState === "off" ? "var(--text-tertiary)" : "var(--text-danger)",
+												color:
+													playoutState === "off"
+														? "var(--text-tertiary)"
+														: "var(--text-danger)",
 												opacity: playoutState === "off" ? 0.45 : 1,
 											}}
 											title="PVW/PGM에서 제거"
@@ -429,7 +487,7 @@ export function WhiteboardPanel({ sessionId }: WhiteboardPanelProps) {
 												justifyContent: "center",
 												width: "34px",
 												borderRadius: "6px",
-												border: "1px solid var(--border-primary)",
+												border: "1px solid var(--border-default)",
 												color: "var(--text-tertiary)",
 												textDecoration: "none",
 											}}

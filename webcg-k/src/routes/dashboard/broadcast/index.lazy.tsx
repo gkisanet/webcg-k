@@ -6,12 +6,14 @@
 
 import { createLazyFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import {
+	Archive,
 	Calendar,
 	Check,
 	Clock,
 	Copy,
 	ExternalLink,
 	FolderOpen,
+	HelpCircle,
 	Loader2,
 	MonitorPlay,
 	Play,
@@ -19,15 +21,22 @@ import {
 	Search,
 	ShieldAlert,
 	Trash2,
+	RotateCcw,
 	X,
 } from "lucide-react";
-import { Fragment, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "../../../lib/auth";
 import { supabase } from "../../../lib/supabase";
 import { ACTION_LABELS, type ActionType } from "../../../stores/actionLogStore";
-import { fetchAllSessions, deleteSession, type BroadcastSessionWithLogs } from "../../../services/dashboardService";
+import {
+	archiveSession,
+	deleteSession,
+	fetchAllSessions,
+	restoreArchivedSession,
+	type BroadcastSessionWithLogs,
+} from "../../../services/dashboardService";
 import type { SessionStatus, SessionLog } from "../../../lib/types/broadcast";
 import { formatDateTime, formatRelativeTime, formatLogTime } from "../../../lib/utils/dateFormat";
 import { useTranslation } from "react-i18next";
@@ -36,10 +45,13 @@ import { fetchCuesheets } from "../../../services/cuesheetService";
 import type { NrcsCuesheet } from "../../../services/cuesheetService";
 
 import "../dashboard-common.css";
+import { BroadcastGuideModal } from "@/components/Broadcast/BroadcastGuideModal";
 
 export const Route = createLazyFileRoute("/dashboard/broadcast/")({
 	component: BroadcastPage,
 });
+
+const PROJECTS_PER_PAGE = 8;
 
 // 타입은 lib/types/broadcast.ts에서 import
 // BroadcastSessionWithLogs는 services/dashboardService에서 import
@@ -50,8 +62,9 @@ function StatusBadge({ status }: { status: SessionStatus }) {
 	const config: Record<SessionStatus, { labelKey: string; color: string; bg: string }> = {
 		draft: { labelKey: "status.draft", color: "var(--text-tertiary)", bg: "var(--app-bg-muted)" },
 		ready: { labelKey: "status.ready", color: "var(--accent-primary)", bg: "rgba(59,130,246,0.15)" },
-		live: { labelKey: "status.live", color: "#EF4444", bg: "rgba(239, 68, 68, 0.15)" },
-		ended: { labelKey: "status.ended", color: "#f59e0b", bg: "rgba(245, 158, 11, 0.15)" },
+		rehearsal: { labelKey: "status.rehearsal", color: "var(--accent-primary)", bg: "var(--accent-subtle-bg)" },
+		live: { labelKey: "status.live", color: "var(--accent-danger)", bg: "rgba(239, 68, 68, 0.15)" },
+		ended: { labelKey: "status.ended", color: "var(--accent-warning)", bg: "rgba(245, 158, 11, 0.15)" },
 		completed: { labelKey: "status.completed", color: "var(--text-secondary)", bg: "var(--app-bg-alt)" },
 	}
 	const c = config[status] ?? config.draft;
@@ -61,11 +74,13 @@ function StatusBadge({ status }: { status: SessionStatus }) {
 			color: c.color, background: c.bg, borderRadius: "4px",
 			display: "inline-flex", alignItems: "center", gap: "0.375rem",
 		}}>
-			{status === "live" && (
+			{(status === "live" || status === "rehearsal") && (
 				<span style={{
 					width: "6px", height: "6px", borderRadius: "50%",
-					backgroundColor: "#EF4444",
-					boxShadow: "0 0 6px 2px rgba(239, 68, 68, 0.6)",
+					backgroundColor: status === "live" ? "var(--accent-danger)" : "var(--accent-primary)",
+					boxShadow: status === "live"
+						? "0 0 6px 2px rgba(239, 68, 68, 0.6)"
+						: "0 0 6px 2px rgba(96, 165, 250, 0.38)",
 					animation: "livePulse 1.5s ease-in-out infinite",
 					flexShrink: 0,
 				}} />
@@ -75,21 +90,36 @@ function StatusBadge({ status }: { status: SessionStatus }) {
 	)
 }
 
+function canPhysicallyDeleteSession(session: BroadcastSessionWithLogs): boolean {
+	return session.actionLogCount === 0 && (session.status === "draft" || session.status === "ready");
+}
+
+function canArchiveSession(session: BroadcastSessionWithLogs): boolean {
+	return session.status !== "live" && session.status !== "rehearsal";
+}
+
 function BroadcastPage() {
 	const { user, activeWorkspaceId } = useAuth();
 	const navigate = useNavigate();
 	const { t } = useTranslation(["broadcast", "common"]);
 	const { copyToClipboard: clipboardCopy } = useClipboard();
 	const [copiedKey, setCopiedKey] = useState<string | null>(null);
+	const [isGuideOpen, setIsGuideOpen] = useState(false);
 
 	// 확장된 세션 ID (렌더 URL 표시용)
 	const [expandedSessionId, setExpandedSessionId] = useState<string | null>(null);
 
 	// 검색 & 필터 상태
 	const [searchQuery, setSearchQuery] = useState("");
-	const [dateFrom, setDateFrom] = useState("");
-	const [dateTo, setDateTo] = useState("");
+	const today = new Date();
+	const twoWeeksAgo = new Date();
+	twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
+	const fmt = (d: Date) => d.toISOString().split("T")[0];
+	const [dateFrom, setDateFrom] = useState(fmt(twoWeeksAgo));
+	const [dateTo, setDateTo] = useState(fmt(today));
 	const [statusFilter, setStatusFilter] = useState<SessionStatus | "all">("all");
+	const [archiveFilter, setArchiveFilter] = useState<"active" | "archived">("active");
+	const [currentPage, setCurrentPage] = useState(1);
 
 	// 로그 모달 상태
 	const [logSessionId, setLogSessionId] = useState<string | null>(null);
@@ -99,16 +129,17 @@ function BroadcastPage() {
 	// 세션 목록 로드
 	const queryClient = useQueryClient();
 	const { data: sessions = [], isLoading: loading } = useQuery({
-		queryKey: ["broadcast_sessions", "all", user?.id],
-		queryFn: () => fetchAllSessions(user!.id),
+		queryKey: ["broadcast_sessions", "all", user?.id, archiveFilter],
+		queryFn: () => user ? fetchAllSessions(user.id, { archiveMode: archiveFilter }) : Promise.resolve([]),
 		enabled: !!user,
 	})
 
 	// 큐시트 변경 대기 조회 — 데이터 연동형(nrcs/csv) 중 draft/ready 상태
 	const { data: pendingCuesheets = [] } = useQuery({
-		queryKey: ["cuesheets_pending"],
+		queryKey: ["cuesheets_pending", activeWorkspaceId],
 		queryFn: async () => {
-			const cuesheets = await fetchCuesheets(activeWorkspaceId!);
+			if (!activeWorkspaceId) return [];
+			const cuesheets = await fetchCuesheets(activeWorkspaceId);
 			return cuesheets.filter((cs: NrcsCuesheet) => {
 				const st = cs.source_type || "manual";
 				return (st === "nrcs" || st === "csv") &&
@@ -116,13 +147,14 @@ function BroadcastPage() {
 					(cs.status === "draft" || cs.status === "ready");
 			})
 		},
+		enabled: !!activeWorkspaceId,
 		refetchInterval: 30000, // 30초마다 자동 폴링
 	})
 
-	// 세션 삭제 (송출 기록이 없는 경우만)
+	// 세션 삭제 (미사용 draft/ready만) 또는 아카이브 (운영 기록 보존)
 	const deleteSessionMutation = useMutation({
 		mutationFn: async (session: BroadcastSessionWithLogs) => {
-			if (session.broadcastLogCount > 0) {
+			if (!canPhysicallyDeleteSession(session)) {
 				throw new Error(t("common:actionLog.cannotDeleteWithLogs"));
 			}
 			await deleteSession(session.id);
@@ -132,13 +164,44 @@ function BroadcastPage() {
 		},
 	})
 
-	const handleDeleteSession = async (session: BroadcastSessionWithLogs) => {
-		if (session.broadcastLogCount > 0) {
-			alert(t("common:actionLog.cannotDeleteWithLogs"));
-			return
+	const archiveSessionMutation = useMutation({
+		mutationFn: async (session: BroadcastSessionWithLogs) => {
+			if (!canArchiveSession(session)) {
+				throw new Error(t("common:actionLog.cannotArchiveActive"));
+			}
+			await archiveSession(session.id);
+		},
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ["broadcast_sessions"] });
+		},
+	});
+
+	const restoreSessionMutation = useMutation({
+		mutationFn: async (session: BroadcastSessionWithLogs) => {
+			await restoreArchivedSession(session.id);
+		},
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ["broadcast_sessions"] });
+		},
+	});
+
+	const handleProjectDisposition = async (session: BroadcastSessionWithLogs) => {
+		if (session.archived_at) {
+			if (!confirm(t("common:actionLog.confirmRestore"))) return;
+			restoreSessionMutation.mutate(session);
+			return;
 		}
-		if (!confirm(t("common:actionLog.confirmDelete"))) return;
-		deleteSessionMutation.mutate(session);
+		if (canPhysicallyDeleteSession(session)) {
+			if (!confirm(t("common:actionLog.confirmDelete"))) return;
+			deleteSessionMutation.mutate(session);
+			return;
+		}
+		if (!canArchiveSession(session)) {
+			alert(t("common:actionLog.cannotArchiveActive"));
+			return;
+		}
+		if (!confirm(t("common:actionLog.confirmArchive"))) return;
+		archiveSessionMutation.mutate(session);
 	}
 
 	// 컨트롤러로 이동
@@ -174,7 +237,7 @@ function BroadcastPage() {
 			.order("created_at", { ascending: false })
 			.limit(100);
 
-		setLogEntries((data || []) as any);
+		setLogEntries((data || []) as SessionLog[]);
 		setLogLoading(false);
 	}
 
@@ -197,6 +260,26 @@ function BroadcastPage() {
 		})
 	}, [sessions, searchQuery, statusFilter, dateFrom, dateTo]);
 
+	const totalPages = Math.max(1, Math.ceil(filteredSessions.length / PROJECTS_PER_PAGE));
+	const paginatedSessions = useMemo(() => {
+		const start = (currentPage - 1) * PROJECTS_PER_PAGE;
+		return filteredSessions.slice(start, start + PROJECTS_PER_PAGE);
+	}, [filteredSessions, currentPage]);
+	const paginationStart = filteredSessions.length === 0 ? 0 : (currentPage - 1) * PROJECTS_PER_PAGE + 1;
+	const paginationEnd = Math.min(currentPage * PROJECTS_PER_PAGE, filteredSessions.length);
+
+	useEffect(() => {
+		setCurrentPage(1);
+		setExpandedSessionId(null);
+	}, [searchQuery, statusFilter, archiveFilter, dateFrom, dateTo]);
+
+	useEffect(() => {
+		if (currentPage > totalPages) {
+			setCurrentPage(totalPages);
+			setExpandedSessionId(null);
+		}
+	}, [currentPage, totalPages]);
+
 	const logSession = logSessionId ? sessions.find((s) => s.id === logSessionId) : null;
 
 	return (
@@ -214,7 +297,7 @@ function BroadcastPage() {
 				}}>
 					<span style={{ fontSize: 18 }}>📋</span>
 					<div style={{ flex: 1 }}>
-						<span style={{ fontWeight: 600, color: "#f59e0b" }}>
+						<span style={{ fontWeight: 600, color: "var(--accent-warning)" }}>
 							큐시트 변경 대기 {pendingCuesheets.length}건
 						</span>
 						<span style={{ color: "var(--text-tertiary)", marginLeft: 8, fontSize: "0.75rem" }}>
@@ -240,7 +323,15 @@ function BroadcastPage() {
 					</div>
 					<div className="dash-page-subtitle">{t("broadcast:pageSubtitle")}</div>
 				</div>
-				<div className="dash-page-actions">
+				<div className="dash-page-actions" style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+					<Button
+						variant="outline"
+						className="gap-1.5"
+						onClick={() => setIsGuideOpen(true)}
+						style={{ fontSize: 13, height: 36 }}
+					>
+						<HelpCircle size={16} /> {t("broadcast:guide.title")}
+					</Button>
 					<Link to="/dashboard/rundowns" className="dash-btn accent">
 						<FolderOpen size={16} /> {t("broadcast:cuesheetEditor")}
 					</Link>
@@ -275,9 +366,20 @@ function BroadcastPage() {
 					<option value="all">{t("broadcast:filter.allStatus")}</option>
 					<option value="draft">{t("broadcast:filter.draft")}</option>
 					<option value="ready">{t("broadcast:filter.ready")}</option>
+					<option value="rehearsal">{t("broadcast:filter.rehearsal")}</option>
 					<option value="live">{t("broadcast:filter.live")}</option>
 					<option value="ended">{t("broadcast:filter.ended")}</option>
 					<option value="completed">{t("broadcast:filter.completed")}</option>
+				</select>
+
+				{/* 보관 상태 필터 */}
+				<select
+					className="dash-filter-select"
+					value={archiveFilter}
+					onChange={(e) => setArchiveFilter(e.target.value as "active" | "archived")}
+				>
+					<option value="active">{t("broadcast:filter.activeProjects")}</option>
+					<option value="archived">{t("broadcast:filter.archivedProjects")}</option>
 				</select>
 
 				{/* 날짜 범위 */}
@@ -316,13 +418,14 @@ function BroadcastPage() {
 							)}
 						</div>
 					) : (
+						<>
 						<table style={{
 							width: "100%", borderCollapse: "collapse", fontSize: "0.8125rem",
 						}}>
 							<thead>
 								<tr style={{
-									borderBottom: "1px solid rgba(255, 255, 255, 0.05)",
-									background: "rgba(255, 255, 255, 0.025)",
+									borderBottom: "1px solid var(--border-subtle)",
+									background: "var(--glass-bg-hover)",
 								}}>
 									<th style={{ ...thStyle, width: "40%" }}>{t("broadcast:table.projectName")}</th>
 									<th style={{ ...thStyle, width: "10%" }}>{t("broadcast:table.status")}</th>
@@ -333,7 +436,7 @@ function BroadcastPage() {
 								</tr>
 							</thead>
 							<tbody>
-								{filteredSessions.map((session) => (
+								{paginatedSessions.map((session) => (
 									<Fragment key={session.id}>
 										<tr
 											style={{
@@ -349,11 +452,13 @@ function BroadcastPage() {
 											{/* 프로젝트명 */}
 											<td style={tdStyle}>
 												<div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-													{session.status === "live" ? (
+													{session.status === "live" || session.status === "rehearsal" ? (
 														<span style={{
 															width: "10px", height: "10px", borderRadius: "50%",
-															backgroundColor: "#EF4444",
-															boxShadow: "0 0 8px 3px rgba(239, 68, 68, 0.6)",
+															backgroundColor: session.status === "live" ? "var(--accent-danger)" : "var(--accent-primary)",
+															boxShadow: session.status === "live"
+																? "0 0 8px 3px rgba(239, 68, 68, 0.6)"
+																: "0 0 8px 3px rgba(96, 165, 250, 0.38)",
 															animation: "livePulse 1.5s ease-in-out infinite",
 															flexShrink: 0,
 														}} />
@@ -362,7 +467,10 @@ function BroadcastPage() {
 														{session.title}
 													</span>
 													{session.isShared && (
-														<span style={{ padding: "0.0625rem 0.375rem", fontSize: "0.625rem", fontWeight: 500, color: "var(--accent-warning)", background: "rgba(245,158,11,0.15)", borderRadius: "3px" }}>{t("common:status.shared")}</span>
+														<span style={{ padding: "0.0625rem 0.375rem", fontSize: "0.625rem", fontWeight: 500, color: "var(--accent-warning)", background: "rgba(245,158,11,0.15)", borderRadius: "0.25rem" }}>{t("common:status.shared")}</span>
+													)}
+													{session.archived_at && (
+														<span style={{ padding: "0.0625rem 0.375rem", fontSize: "0.625rem", fontWeight: 500, color: "var(--text-tertiary)", background: "var(--app-bg-muted)", borderRadius: "0.25rem" }}>{t("common:status.archived")}</span>
 													)}
 												</div>
 											</td>
@@ -381,12 +489,12 @@ function BroadcastPage() {
 													<Button
 														variant="secondary"
 														size="icon"
-														onClick={() => session.broadcastLogCount > 0 ? openLogModal(session.id) : alert(t("common:actionLog.noBroadcast"))}
+														onClick={() => session.actionLogCount > 0 ? openLogModal(session.id) : alert(t("common:actionLog.noBroadcast"))}
 														style={{ position: "relative" }}
-														title={session.broadcastLogCount > 0 ? t("common:actionLog.broadcastCount", { count: session.broadcastLogCount }) : t("common:actionLog.noBroadcastHistory")}
+														title={session.actionLogCount > 0 ? t("common:actionLog.records", { count: session.actionLogCount }) : t("common:actionLog.noBroadcastHistory")}
 													>
 														<ScrollText size={14} />
-														{session.broadcastLogCount > 0 && (
+														{session.actionLogCount > 0 && (
 															<span style={{
 																position: "absolute", top: "-3px", right: "-3px",
 																width: "6px", height: "6px", borderRadius: "50%",
@@ -395,19 +503,35 @@ function BroadcastPage() {
 														)}
 													</Button>
 
-													{/* 삭제 버튼 (송출 기록 없는 경우만) */}
+													{/* 삭제/아카이브 버튼 */}
 													{!session.isShared && (
 														<Button
 															variant="secondary"
 															size="icon"
-															onClick={() => handleDeleteSession(session)}
+															onClick={() => handleProjectDisposition(session)}
 															style={{
-																opacity: session.broadcastLogCount > 0 ? 0.4 : 1,
-																cursor: session.broadcastLogCount > 0 ? "not-allowed" : "pointer",
+																opacity: canArchiveSession(session) ? 1 : 0.4,
+																cursor: canArchiveSession(session) ? "pointer" : "not-allowed",
 															}}
-															title={session.broadcastLogCount > 0 ? t("common:actionLog.cannotDelete") : t("common:actions.delete")}
+															title={
+																session.archived_at
+																	? t("common:actions.restore")
+																	: canPhysicallyDeleteSession(session)
+																		? t("common:actions.delete")
+																		: canArchiveSession(session)
+																			? t("common:actions.archive")
+																			: t("common:actionLog.cannotArchiveActive")
+															}
 														>
-															{session.broadcastLogCount > 0 ? <ShieldAlert size={14} /> : <Trash2 size={14} />}
+															{session.archived_at ? (
+																<RotateCcw size={14} />
+															) : canPhysicallyDeleteSession(session) ? (
+																<Trash2 size={14} />
+															) : canArchiveSession(session) ? (
+																<Archive size={14} />
+															) : (
+																<ShieldAlert size={14} />
+															)}
 														</Button>
 													)}
 
@@ -435,7 +559,7 @@ function BroadcastPage() {
 														<RenderUrlCard
 															label="1080p (Full HD)"
 															url={getRendererUrl(session.id, "1080p")}
-															copyKey={"${session.id}-1080p"}
+															copyKey={`${session.id}-1080p`}
 															copied={copiedKey}
 															onCopy={handleCopyUrl}
 														/>
@@ -443,7 +567,7 @@ function BroadcastPage() {
 														<RenderUrlCard
 															label="4K (Ultra HD)"
 															url={getRendererUrl(session.id, "4k")}
-															copyKey={"${session.id}-4k"}
+															copyKey={`${session.id}-4k`}
 															copied={copiedKey}
 															onCopy={handleCopyUrl}
 														/>
@@ -455,6 +579,31 @@ function BroadcastPage() {
 								))}
 							</tbody>
 						</table>
+						{filteredSessions.length > PROJECTS_PER_PAGE && (
+							<div style={{
+								padding: "0.875rem 1rem",
+								display: "flex",
+								alignItems: "center",
+								justifyContent: "space-between",
+								gap: "0.75rem",
+								borderTop: "1px solid var(--border-subtle)",
+								color: "var(--text-tertiary)",
+								fontSize: "0.75rem",
+								flexWrap: "wrap",
+							}}>
+								<span>{t("broadcast:pagination.summary", { start: paginationStart, end: paginationEnd, total: filteredSessions.length })}</span>
+								<div style={{ display: "flex", alignItems: "center", gap: "0.375rem" }}>
+									<Button variant="secondary" size="sm" disabled={currentPage === 1} onClick={() => { setCurrentPage((page) => Math.max(1, page - 1)); setExpandedSessionId(null); }}>
+										{t("broadcast:pagination.prev")}
+									</Button>
+									<span style={{ minWidth: "3.25rem", textAlign: "center", color: "var(--text-secondary)", fontVariantNumeric: "tabular-nums" }}>{currentPage} / {totalPages}</span>
+									<Button variant="secondary" size="sm" disabled={currentPage === totalPages} onClick={() => { setCurrentPage((page) => Math.min(totalPages, page + 1)); setExpandedSessionId(null); }}>
+										{t("broadcast:pagination.next")}
+									</Button>
+								</div>
+							</div>
+						)}
+						</>
 					)}
 				</div>
 			</div>
@@ -544,40 +693,14 @@ function BroadcastPage() {
 				</div>
 			)}
 
-			{/* 사용 가이드 */}
-			<div className="dash-surface" style={{ marginTop: "1.5rem", padding: "1.25rem" }}>
-				<div style={{ fontWeight: 600, color: "var(--text-primary)", marginBottom: "0.75rem" }}>
-					{t("broadcast:guide.title")}
-				</div>
-				<div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", fontSize: "0.8125rem" }}>
-					<div>
-						<div style={{ color: "var(--text-secondary)", marginBottom: "0.5rem", fontWeight: 500 }}>{t("broadcast:guide.basicFlow")}</div>
-						<ol style={{ margin: 0, paddingLeft: "1.25rem", color: "var(--text-tertiary)", lineHeight: 1.8 }}>
-							<li>{t("broadcast:guide.step1")} <strong style={{ color: "var(--text-secondary)" }}>{t("broadcast:guide.step1Bold")}</strong></li>
-							<li>{t("broadcast:guide.step2")}</li>
-							<li><strong style={{ color: "var(--text-secondary)" }}>{t("broadcast:guide.step3Bold")}</strong> {t("broadcast:guide.step3")}</li>
-							<li>{t("broadcast:guide.step4")}</li>
-						</ol>
-					</div>
-					<div>
-						<div style={{ color: "var(--text-secondary)", marginBottom: "0.5rem", fontWeight: 500 }}>{t("broadcast:guide.shortcuts")}</div>
-						<div style={{ display: "flex", flexDirection: "column", gap: "0.25rem", color: "var(--text-tertiary)" }}>
-							<div><kbd style={kbdStyle}>←</kbd> <kbd style={kbdStyle}>→</kbd> {t("broadcast:guide.keyArrows")}</div>
-							<div><kbd style={kbdStyle}>↑</kbd> {t("broadcast:guide.keyUp")}</div>
-							<div><kbd style={kbdStyle}>Space</kbd> <strong style={{ color: "var(--accent-success)" }}>{t("broadcast:guide.keySpace")}</strong></div>
-							<div><kbd style={kbdStyle}>Del</kbd> {t("broadcast:guide.keyDel")}</div>
-							<div><kbd style={kbdStyle}>Ctrl+←→</kbd> {t("broadcast:guide.keyCtrlArrows")}</div>
-							<div><kbd style={kbdStyle}>Ctrl+🖱</kbd> {t("broadcast:guide.keyCtrlWheel")}</div>
-						</div>
-					</div>
-				</div>
-			</div>
 			<LivePulseStyle />
+			<BroadcastGuideModal isOpen={isGuideOpen} onClose={() => setIsGuideOpen(false)} />
 		</>
 	)
 }
 
 // ===== 유틸 컴포넌트 =====
+
 
 /** 렌더러 URL 카드 */
 function RenderUrlCard({ label, url, copyKey, copied, onCopy }: {
@@ -618,20 +741,7 @@ const tdStyle: React.CSSProperties = {
 	padding: "0.625rem 1rem",
 };
 
-const kbdStyle: React.CSSProperties = {
-	display: "inline-flex",
-	alignItems: "center",
-	justifyContent: "center",
-	padding: "0.125rem 0.375rem",
-	background: "var(--app-bg-alt)",
-	border: "1px solid var(--border-default)",
-	borderRadius: "4px",
-	fontSize: "0.75rem",
-	fontFamily: "'JetBrains Mono', monospace",
-	lineHeight: 1,
-	boxShadow: "0 1px 0 var(--border-subtle)",
-	minWidth: "1.25rem",
-};
+
 
 // 글로벌 CSS: 송출 중 펄스 애니메이션
 const LivePulseStyle = () => (

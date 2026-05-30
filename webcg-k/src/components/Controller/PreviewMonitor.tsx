@@ -55,13 +55,15 @@ interface LayerState {
 	animationPhase: "none" | "fading-in" | "fading-out" | "stable";
 }
 
-export function PreviewMonitor({ sessionId: _sessionId, videoRef, previewOverlays, onPluginAction, isScrubbing = false }: {
+export function PreviewMonitor({ sessionId: _sessionId, videoRef, previewOverlays, onPluginAction, previewPosition, isScrubbing = false }: {
 	sessionId?: string;
 	/** 외부에서 전달받은 ref — VideoInputLayer의 <video>에 연결 (클린 영상 캡쳐용) */
 	videoRef?: React.RefObject<HTMLVideoElement | null>;
 	previewOverlays?: OverlayStateItem[];
 	/** iframe PluginAction 콜백 — 부모(Controller)의 handlePluginAction에 연결 */
 	onPluginAction?: (overlayId: string, action: PluginAction) => void;
+	/** 읽기 전용 팔로우 화면처럼 로컬 playhead 대신 사용할 preview 위치 */
+	previewPosition?: number;
 	/** 스크러빙 모드 여부 — true일 때 PVW에 SCRUB MODE 뱃지 + 주황 테두리 */
 	isScrubbing?: boolean;
 }) {
@@ -72,6 +74,7 @@ export function PreviewMonitor({ sessionId: _sessionId, videoRef, previewOverlay
 		(state) => state.playheadPosition,
 	);
 	const fadeDuration = useStore(timelineStore, (state) => state.fadeDuration);
+	const effectivePlayheadPosition = previewPosition ?? playheadPosition;
 
 	// 영상 입력 설정 (localStorage에서 불러오기)
 	const [videoInputConfig, setVideoInputConfig] = useState(() => loadVideoInputConfig());
@@ -97,13 +100,13 @@ export function PreviewMonitor({ sessionId: _sessionId, videoRef, previewOverlay
 
 	// 현재 위치의 블록 IDs
 	const activeBlockIds = useMemo(() => {
-		const activeBlocks = getBlocksAtPosition(blocks, playheadPosition);
+		const activeBlocks = getBlocksAtPosition(blocks, effectivePlayheadPosition);
 		return new Set(
 			activeBlocks
 				.filter((block) => !block.id.startsWith(WB_PROGRAM_PREFIX))
 				.map((block) => block.id),
 		);
-	}, [blocks, playheadPosition]);
+	}, [blocks, effectivePlayheadPosition]);
 
 	// 레이어 상태 관리
 	const [layerStates, setLayerStates] = useState<Map<string, LayerState>>(

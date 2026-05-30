@@ -19,6 +19,7 @@
  * ■ 비유: "같은 레시피(API 스펙)로 요리해야 같은 맛(동작)이 나온다"
  */
 
+import { WEBCGK_MOTION_INLINE } from "./webcgk-motion";
 import { WEBCGK_REACTIVE_INLINE } from "./webcgk-reactive";
 
 // ─── webcgk API 인라인 코드 (모든 렌더러 공통) ─────────────────
@@ -57,9 +58,9 @@ export const WEBCGK_API_INLINE = `
     /** 타이머 replicant 데이터로 현재 remaining(초) 계산. startedAt이 서버 보정값이므로 iframe 내부에서도 정확. */
     computeTimerRemaining: function(data) {
       if (!data || typeof data !== "object") return 0;
-      if (!data.running || !data.startedAt) return data.remaining || data.duration || 0;
+      if (!data.running || !data.startedAt) return data.remaining || data.duration || data.timerDuration || 0;
       var elapsed = (Date.now() - data.startedAt) / 1000;
-      var base = data.remaining || data.duration || 0;
+      var base = data.remaining || data.duration || data.timerDuration || 0;
       return Math.max(0, base - elapsed);
     }
   };
@@ -100,7 +101,11 @@ export type PluginAction =
 	| { type: "action"; action: "RESET_TIMER" }
 	| { type: "action"; action: "INCREMENT_SCORE"; payload: { delta?: number } }
 	| { type: "action"; action: "DECREMENT_SCORE"; payload: { delta?: number } }
-	| { type: "action"; action: "SET_VALUE"; payload: { key: string; value: unknown } };
+	| {
+			type: "action";
+			action: "SET_VALUE";
+			payload: { key: string; value: unknown };
+	  };
 
 /** iframe → 부모 postMessage 원본 형식 (sendToParent가 생성) */
 export interface PluginMessage {
@@ -170,12 +175,13 @@ export function buildPluginSrcdoc({
 	// ■ Step 2: 공통 애니메이션 키프레임 (플러그인 코드에서 자유롭게 사용)
 	// ■ Step 3: 플러그인 커스텀 CSS
 	// ■ Step 4: 플러그인 HTML 본문
-	// ■ Step 5: webcgk API 주입
+	// ■ Step 5: webcgk API + reactive/motion 런타임 주입
 	// ■ Step 6: 플러그인 커스텀 JS (try-catch로 에러 격리)
 	// ■ Step 7: (선택) 자동 SHOW 트리거
 
-	const htmlBackground = previewBackground === "checkerboard"
-		? `html {
+	const htmlBackground =
+		previewBackground === "checkerboard"
+			? `html {
   background-color: #666;
   background-image:
     linear-gradient(45deg, #444 25%, transparent 25%),
@@ -186,8 +192,11 @@ export function buildPluginSrcdoc({
   background-position: 0 0, 0 8px, 8px -8px, -8px 0px;
   color-scheme: normal;
 }`
-		: "html { background: transparent !important; color-scheme: normal; }";
-	const extraScripts = extraBodyScripts.map((script) => `<script>${script}</script>`).join("\n");
+			: "html { background: transparent !important; color-scheme: normal; }";
+	const extraScripts = extraBodyScripts
+		.map((script) => `<script>${script}</script>`)
+		.join("\n");
+	const safeHtml = stripPluginHtmlScripts(html);
 
 	return `<!DOCTYPE html>
 <html>
@@ -195,23 +204,34 @@ export function buildPluginSrcdoc({
 <meta charset="utf-8">
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
-${htmlBackground}
-body { width: ${width}px; height: ${height}px; overflow: hidden; background: transparent !important; }
 @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes fadeOutDown { from { opacity: 1; transform: translateY(0); } to { opacity: 0; transform: translateY(20px); } }
 ${css}
+
+/* [Single Source of Truth] Forced Transparency Override (Cascading Priority Guard) */
+${htmlBackground}
+body { width: ${width}px; height: ${height}px; overflow: hidden; background: transparent !important; }
 </style>
 </head>
 <body>
-${html}
+${safeHtml}
 <script>${WEBCGK_API_INLINE}</script>
 <script>${WEBCGK_REACTIVE_INLINE}</script>
+<script>${WEBCGK_MOTION_INLINE}</script>
 ${extraScripts}
-<script>try { ${js} } catch(e) { console.error("[webcgk-plugin]", e); }</script>${autoShow ? `
+<script>try { ${js} } catch(e) { console.error("[webcgk-plugin]", e); }</script>${
+		autoShow
+			? `
 <script>
 // 에디터 프리뷰용: 외부 SHOW 메시지가 없으므로 자체 발행
 setTimeout(function() { window.postMessage({ type: "SHOW" }, "*"); }, 50);
-</script>` : ""}
+</script>`
+			: ""
+	}
 </body>
 </html>`;
+}
+
+function stripPluginHtmlScripts(html: string): string {
+	return html.replace(/<script\b[^>]*>[\s\S]*?<\/script\s*>/gi, "");
 }

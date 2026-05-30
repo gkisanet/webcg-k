@@ -60,23 +60,42 @@ export async function fetchProfilesWithMemberships(): Promise<ProfileWithMembers
 		supabase.from("workspaces").select("id, name"),
 	]);
 
-	const wsMap = new Map((workspaces || []).map((w: any) => [w.id, w.name]));
+	// 1. 워크스페이스 ID 매핑 폴리필 (w.id 또는 w.workspaceId 지원)
+	const wsMap = new Map((workspaces || []).map((w: any) => {
+		const wsId = w.id || w.workspaceId;
+		return [wsId, w.name];
+	}));
 
+	// 2. 명시적 참조 분리 및 snake_case / camelCase 완벽 폴리필 매핑
 	const membershipMap = new Map<string, MembershipInfo[]>();
 	for (const m of memberships || []) {
-		const list = membershipMap.get(m.user_id) || [];
+		const mUserId = m.user_id || m.userId;
+		const mWorkspaceId = m.workspace_id || m.workspaceId;
+		const mRole = m.role;
+
+		if (!mUserId) {
+			console.warn("[AdminService] workspace_member row missing user identity:", m);
+			continue; // 오염된 undefined 키 누적 원천 차단 (다중 테넌트 렌더링 오염 해결 핵심)
+		}
+
+		// shallow copy를 통한 참조 공유 방지
+		const list = membershipMap.has(mUserId) ? [...membershipMap.get(mUserId)!] : [];
 		list.push({
-			workspace_id: m.workspace_id,
-			workspace_name: wsMap.get(m.workspace_id) || "Unknown",
-			role: (m.role || "viewer") as "owner" | "admin" | "member" | "viewer",
+			workspace_id: mWorkspaceId,
+			workspace_name: wsMap.get(mWorkspaceId) || "Unknown",
+			role: (mRole || "viewer") as "owner" | "admin" | "member" | "viewer",
 		});
-		membershipMap.set(m.user_id, list);
+		membershipMap.set(mUserId, list);
 	}
 
-	return (profiles || []).map((p: any) => ({
-		...p,
-		memberships: membershipMap.get(p.id) || [],
-	}));
+	// 3. 프로필에 memberships 맵핑시 id 및 userId 폴리필 지원
+	return (profiles || []).map((p: any) => {
+		const pId = p.id || p.userId;
+		return {
+			...p,
+			memberships: pId ? (membershipMap.get(pId) || []) : [],
+		};
+	});
 }
 
 /** 관리자 권한 토글 (하위 호환) */

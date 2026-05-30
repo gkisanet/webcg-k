@@ -87,7 +87,7 @@ export function StepContentReview({
               className={cn(
                 "flex items-center gap-1 px-3 py-1.5 rounded-md text-xs transition-all",
                 viewMode === "gui"
-                  ? "bg-[var(--bg-primary)] text-[var(--text-primary)] ring-1 ring-[var(--border-primary)]"
+                  ? "bg-[var(--bg-primary)] text-[var(--text-primary)] ring-1 ring-[var(--border-default)]"
                   : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]",
               )}
             >
@@ -98,7 +98,7 @@ export function StepContentReview({
               className={cn(
                 "flex items-center gap-1 px-3 py-1.5 rounded-md text-xs transition-all",
                 viewMode === "json"
-                  ? "bg-[var(--bg-primary)] text-[var(--text-primary)] ring-1 ring-[var(--border-primary)]"
+                  ? "bg-[var(--bg-primary)] text-[var(--text-primary)] ring-1 ring-[var(--border-default)]"
                   : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]",
               )}
             >
@@ -150,7 +150,7 @@ export function StepContentReview({
           <textarea
             value={rawJson}
             onChange={(e) => onJsonChange(e.target.value)}
-            className="w-full h-full min-h-[300px] p-3 rounded-lg bg-[var(--app-bg)] border border-[var(--border-primary)] text-[var(--text-primary)] text-xs font-mono leading-relaxed resize-y"
+            className="w-full h-full min-h-[300px] p-3 rounded-lg bg-[var(--app-bg)] border border-[var(--border-default)] text-[var(--text-primary)] text-xs font-mono leading-relaxed resize-y"
             placeholder="Paste JSON here..."
           />
         ) : scenes.length > 0 ? (
@@ -197,7 +197,7 @@ function SceneContentCards({
   return (
     <div className="space-y-3">
       {scenes.map((scene, si) => (
-        <div key={si} className="p-3.5 rounded-xl bg-[var(--app-bg)] border border-[var(--border-primary)]">
+        <div key={si} className="p-3.5 rounded-xl bg-[var(--app-bg)] border border-[var(--border-default)]">
           {/* Scene Header — editable */}
           <div className="flex items-center gap-2 mb-2.5">
             <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-blue-500/15 text-blue-400 shrink-0">
@@ -207,14 +207,14 @@ function SceneContentCards({
             <input
               value={scene.trigger}
               onChange={(e) => dispatch({ type: "UPDATE_SCENE", sceneIdx: si, patch: { trigger: e.target.value } })}
-              className="flex-1 bg-transparent text-sm font-semibold text-[var(--text-primary)] outline-none border-b border-transparent hover:border-[var(--border-primary)] focus:border-blue-500/50 px-1 py-0.5 min-w-0"
+              className="flex-1 bg-transparent text-sm font-semibold text-[var(--text-primary)] outline-none border-b border-transparent hover:border-[var(--border-default)] focus:border-blue-500/50 px-1 py-0.5 min-w-0"
             />
 
             <input
               type="number"
               value={scene.duration}
               onChange={(e) => dispatch({ type: "UPDATE_SCENE", sceneIdx: si, patch: { duration: Math.max(1, parseInt(e.target.value) || 15) } })}
-              className="w-12 text-center bg-[var(--bg-primary)] text-[10px] text-[var(--text-muted)] rounded px-1 py-0.5 outline-none border border-transparent hover:border-[var(--border-primary)] focus:border-blue-500/50"
+              className="w-12 text-center bg-[var(--bg-primary)] text-[10px] text-[var(--text-muted)] rounded px-1 py-0.5 outline-none border border-transparent hover:border-[var(--border-default)] focus:border-blue-500/50"
               min={1} max={120}
             />
             <span className="text-[10px] text-[var(--text-muted)]">s</span>
@@ -234,13 +234,13 @@ function SceneContentCards({
             value={scene.graphic_intent}
             onChange={(e) => dispatch({ type: "UPDATE_SCENE", sceneIdx: si, patch: { graphic_intent: e.target.value } })}
             placeholder="그래픽 의도..."
-            className="w-full bg-transparent text-[11px] text-[var(--text-secondary)] mb-2.5 outline-none border-b border-transparent hover:border-[var(--border-primary)] focus:border-blue-500/50 px-1 py-0.5 leading-relaxed"
+            className="w-full bg-transparent text-[11px] text-[var(--text-secondary)] mb-2.5 outline-none border-b border-transparent hover:border-[var(--border-default)] focus:border-blue-500/50 px-1 py-0.5 leading-relaxed"
           />
 
           {/* Text Slots Table */}
           <table className="w-full text-[11px]">
             <thead>
-              <tr className="text-[var(--text-muted)] border-b border-[var(--border-primary)]">
+              <tr className="text-[var(--text-muted)] border-b border-[var(--border-default)]">
                 <th className="text-left py-1 font-medium w-24">Role</th>
                 <th className="text-left py-1 font-medium">Value</th>
                 <th className="text-center py-1 font-medium w-8">Imp</th>
@@ -293,7 +293,7 @@ function SceneContentCards({
       {/* Add scene button */}
       <button
         onClick={() => dispatch({ type: "ADD_SCENE" })}
-        className="w-full py-2.5 rounded-xl border border-dashed border-[var(--border-primary)] text-[11px] text-[var(--text-muted)] hover:text-[var(--text-secondary)] hover:border-[var(--text-secondary)]/30 transition-colors flex items-center justify-center gap-1.5"
+        className="w-full py-2.5 rounded-xl border border-dashed border-[var(--border-default)] text-[11px] text-[var(--text-muted)] hover:text-[var(--text-secondary)] hover:border-[var(--text-secondary)]/30 transition-colors flex items-center justify-center gap-1.5"
       >
         <Plus size={12} /> Add Scene
       </button>
@@ -321,17 +321,17 @@ function SlotRow({
   return (
     <>
       <tr className={cn(
-        "border-b border-[var(--border-primary)]/30 group",
+        "border-b border-[var(--border-default)]/30 group",
         isHallucination && "bg-red-500/5",
         isLowConfidence && "bg-amber-500/5",
       )}>
         {/* Role select */}
         <td className="py-1">
           <Select value={slot.semantic_role} onValueChange={(v) => update({ semantic_role: v })}>
-            <SelectTrigger className="w-full h-5 min-h-5 px-1 py-0 text-[10px] border-[var(--border-primary)]/50 bg-transparent text-[var(--text-primary)] focus:ring-0 focus:ring-offset-0">
+            <SelectTrigger className="w-full h-5 min-h-5 px-1 py-0 text-[10px] border-[var(--border-default)]/50 bg-transparent text-[var(--text-primary)] focus:ring-0 focus:ring-offset-0">
               <SelectValue />
             </SelectTrigger>
-            <SelectContent className="bg-[var(--bg-primary)] border-[var(--border-primary)] text-[var(--text-primary)]">
+            <SelectContent className="bg-[var(--bg-primary)] border-[var(--border-default)] text-[var(--text-primary)]">
               {SEMANTIC_ROLE_DEFS.map((d) => (
                 <SelectItem key={d.role} value={d.role} className="text-[10px] py-1 px-1.5">{d.label}</SelectItem>
               ))}
@@ -345,7 +345,7 @@ function SlotRow({
             <input
               value={slot.value}
               onChange={(e) => update({ value: e.target.value, display_value: e.target.value })}
-              className="flex-1 bg-transparent font-medium text-[var(--text-primary)] text-[11px] outline-none border-b border-transparent hover:border-[var(--border-primary)] focus:border-blue-500/50 px-0.5 py-0.5 min-w-0"
+              className="flex-1 bg-transparent font-medium text-[var(--text-primary)] text-[11px] outline-none border-b border-transparent hover:border-[var(--border-default)] focus:border-blue-500/50 px-0.5 py-0.5 min-w-0"
             />
             {warning && <span className="text-[10px] text-amber-400 shrink-0" title={warning}>⚠</span>}
             {hallCheck?.warning && (
@@ -359,10 +359,10 @@ function SlotRow({
         {/* Importance select */}
         <td className="py-1 text-center">
           <Select value={String(slot.importance)} onValueChange={(v) => update({ importance: parseInt(v) })}>
-            <SelectTrigger className="w-full h-5 min-h-5 px-1 py-0 text-[10px] border-[var(--border-primary)]/50 bg-transparent text-[var(--text-muted)] focus:ring-0 focus:ring-offset-0">
+            <SelectTrigger className="w-full h-5 min-h-5 px-1 py-0 text-[10px] border-[var(--border-default)]/50 bg-transparent text-[var(--text-muted)] focus:ring-0 focus:ring-offset-0">
               <SelectValue />
             </SelectTrigger>
-            <SelectContent className="bg-[var(--bg-primary)] border-[var(--border-primary)] text-[var(--text-primary)]">
+            <SelectContent className="bg-[var(--bg-primary)] border-[var(--border-default)] text-[var(--text-primary)]">
               {[1, 2, 3, 4, 5].map((v) => (
                 <SelectItem key={v} value={String(v)} className="text-[10px] py-1 px-1.5">{v}</SelectItem>
               ))}
@@ -373,10 +373,10 @@ function SlotRow({
         {/* Zone select */}
         <td className="py-1">
           <Select value={slot.zone_hint} onValueChange={(v) => update({ zone_hint: v as ZoneHint })}>
-            <SelectTrigger className="w-full h-5 min-h-5 px-1 py-0 text-[10px] border-[var(--border-primary)]/50 bg-transparent text-[var(--text-muted)] focus:ring-0 focus:ring-offset-0">
+            <SelectTrigger className="w-full h-5 min-h-5 px-1 py-0 text-[10px] border-[var(--border-default)]/50 bg-transparent text-[var(--text-muted)] focus:ring-0 focus:ring-offset-0">
               <SelectValue />
             </SelectTrigger>
-            <SelectContent className="bg-[var(--bg-primary)] border-[var(--border-primary)] text-[var(--text-primary)]">
+            <SelectContent className="bg-[var(--bg-primary)] border-[var(--border-default)] text-[var(--text-primary)]">
               {ZONES.map((z) => (
                 <SelectItem key={z} value={z} className="text-[10px] py-1 px-1.5">{z}</SelectItem>
               ))}
@@ -388,12 +388,12 @@ function SlotRow({
         <td className="py-1">
           <Select value={slot.style_hint} onValueChange={(v) => update({ style_hint: v as StyleHint })}>
             <SelectTrigger className={cn(
-              "w-full h-5 min-h-5 px-1 py-0 text-[10px] border-[var(--border-primary)]/50 bg-transparent focus:ring-0 focus:ring-offset-0",
+              "w-full h-5 min-h-5 px-1 py-0 text-[10px] border-[var(--border-default)]/50 bg-transparent focus:ring-0 focus:ring-offset-0",
               slot.style_hint === "emphasis" ? "text-yellow-400" : slot.style_hint === "muted" ? "text-gray-500" : "text-[var(--text-primary)]",
             )}>
               <SelectValue />
             </SelectTrigger>
-            <SelectContent className="bg-[var(--bg-primary)] border-[var(--border-primary)] text-[var(--text-primary)]">
+            <SelectContent className="bg-[var(--bg-primary)] border-[var(--border-default)] text-[var(--text-primary)]">
               {STYLES.map((s) => (
                 <SelectItem
                   key={s}

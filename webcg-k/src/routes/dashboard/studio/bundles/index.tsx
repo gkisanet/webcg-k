@@ -130,7 +130,7 @@ function BundlesPage() {
           <div
             style={{
               background: "var(--app-bg-secondary)", borderRadius: 12, padding: 24,
-              width: 420, border: "1px solid var(--border-primary)",
+              width: 420, border: "1px solid var(--border-default)",
             }}
             onClick={(e) => e.stopPropagation()}
           >
@@ -181,7 +181,7 @@ function BundleCard({
 
   return (
     <div style={{
-      background: "var(--app-bg-secondary)", border: "1px solid var(--border-primary)",
+      background: "var(--app-bg-secondary)", border: "1px solid var(--border-default)",
       borderRadius: 10, padding: 16, display: "flex", flexDirection: "column", gap: 10,
     }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>

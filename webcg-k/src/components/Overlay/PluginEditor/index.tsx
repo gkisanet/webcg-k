@@ -201,11 +201,11 @@ export function PluginEditor({
           onMouseDown={handleResizeStart}
           style={{
             width: "5px", cursor: "col-resize",
-            background: isDragging ? "var(--accent-primary, #00d4ff)" : "rgba(255, 255, 255, 0.04)",
+            background: isDragging ? "var(--accent-primary, #60a5fa)" : "rgba(255, 255, 255, 0.04)",
             transition: isDragging ? "none" : "background 0.2s",
             flexShrink: 0, position: "relative", zIndex: 5,
           }}
-          onMouseEnter={(e) => { if (!isDragging) (e.currentTarget as HTMLDivElement).style.background = "rgba(0, 212, 255, 0.3)"; }}
+          onMouseEnter={(e) => { if (!isDragging) (e.currentTarget as HTMLDivElement).style.background = "rgba(96, 165, 250, 0.3)"; }}
           onMouseLeave={(e) => { if (!isDragging) (e.currentTarget as HTMLDivElement).style.background = "rgba(255, 255, 255, 0.04)"; }}
         />
 
@@ -240,7 +240,7 @@ export function PluginEditor({
                   ...styles.testBtn,
                   background: visualEditMode ? "rgba(0,212,255,0.2)" : styles.testBtn.background,
                   borderColor: visualEditMode ? "rgba(0,212,255,0.6)" : "rgba(139, 92, 246, 0.4)",
-                  color: visualEditMode ? "#22d3ee" : "#8b5cf6",
+                  color: visualEditMode ? "var(--accent-primary)" : "#8b5cf6",
                 }}
                 title="프리뷰에서 요소를 클릭/드래그/리사이즈하여 CSS 수정"
               >
@@ -295,11 +295,11 @@ export function PluginEditor({
             onMouseDown={handleVResizeStart}
             style={{
               height: "5px", cursor: "row-resize",
-              background: isVDragging ? "var(--accent-primary, #00d4ff)" : "rgba(255, 255, 255, 0.04)",
+              background: isVDragging ? "var(--accent-primary, #60a5fa)" : "rgba(255, 255, 255, 0.04)",
               transition: isVDragging ? "none" : "background 0.2s",
               flexShrink: 0, zIndex: 5,
             }}
-            onMouseEnter={(e) => { if (!isVDragging) (e.currentTarget as HTMLDivElement).style.background = "rgba(0, 212, 255, 0.3)"; }}
+            onMouseEnter={(e) => { if (!isVDragging) (e.currentTarget as HTMLDivElement).style.background = "rgba(96, 165, 250, 0.3)"; }}
             onMouseLeave={(e) => { if (!isVDragging) (e.currentTarget as HTMLDivElement).style.background = "rgba(255, 255, 255, 0.04)"; }}
           />
 
@@ -326,21 +326,21 @@ export function PluginEditor({
                 background: bottomTab === "dashboard" ? "rgba(6,182,212,0.1)" : "transparent",
                 border: "none",
                 borderBottom: bottomTab === "dashboard" ? "2px solid #06b6d4" : "2px solid transparent",
-                color: bottomTab === "dashboard" ? "#22d3ee" : "#94a3b8",
+                color: bottomTab === "dashboard" ? "var(--accent-primary)" : "#94a3b8",
                 cursor: "pointer", fontSize: "0.75rem", fontWeight: 600,
                 display: "flex", alignItems: "center", gap: "4px",
               }}>
                 <Settings size={12} /> 대시보드
-                {bindingValidation.warnings.length > 0 && (
-                  <span style={styles.warningBadge}>{bindingValidation.warnings.length}</span>
+                {(bindingValidation.errors.length > 0 || bindingValidation.warnings.length > 0) && (
+                  <span style={styles.warningBadge}>{bindingValidation.errors.length + bindingValidation.warnings.length}</span>
                 )}
               </button>
               <button type="button" onClick={() => setBottomTab("visual")} style={{
                 padding: "8px 14px",
-                background: bottomTab === "visual" ? "rgba(0,212,255,0.1)" : "transparent",
+                background: bottomTab === "visual" ? "rgba(96,165,250,0.1)" : "transparent",
                 border: "none",
-                borderBottom: bottomTab === "visual" ? "2px solid #00d4ff" : "2px solid transparent",
-                color: bottomTab === "visual" ? "#22d3ee" : "#94a3b8",
+                borderBottom: bottomTab === "visual" ? "2px solid #60a5fa" : "2px solid transparent",
+                color: bottomTab === "visual" ? "var(--accent-primary)" : "#94a3b8",
                 cursor: "pointer", fontSize: "0.75rem", fontWeight: 600,
                 display: "flex", alignItems: "center", gap: "4px",
               }}>
@@ -424,13 +424,13 @@ export function PluginEditor({
                 </div>
                 {!visualEditMode && (
                   <div style={{ ...styles.emptyDashboard, padding: "1rem" }}>
-                    <MousePointer2 size={24} style={{ opacity: 0.4, color: "#00d4ff" }} />
+                    <MousePointer2 size={24} style={{ opacity: 0.4, color: "var(--accent-primary)" }} />
                     <p style={{ marginTop: 8 }}>프리뷰 상단의 <strong>"시각 편집"</strong> 버튼을 눌러 요소를 선택하세요</p>
                   </div>
                 )}
                 {visualEditMode && !selectedVizElement && (
                   <div style={{ ...styles.emptyDashboard, padding: "1rem" }}>
-                    <MousePointer2 size={24} style={{ opacity: 0.4, color: "#00d4ff" }} />
+                    <MousePointer2 size={24} style={{ opacity: 0.4, color: "var(--accent-primary)" }} />
                     <p style={{ marginTop: 8 }}>프리뷰에서 요소를 <strong>클릭</strong>하여 선택하세요</p>
                   </div>
                 )}
@@ -439,7 +439,7 @@ export function PluginEditor({
                     <div style={{ fontSize: "0.75rem", color: "#94a3b8", wordBreak: "break-all" }}>
                       <strong style={{ color: "#e2e8f0" }}>{selectedVizElement.tagName.toLowerCase()}</strong>
                       {selectedVizElement.id && <span style={{ color: "#a78bfa" }}> #{selectedVizElement.id}</span>}
-                      {selectedVizElement.className && <span style={{ color: "#22d3ee" }}> .{selectedVizElement.className.split(/\s+/).join(".")}</span>}
+                      {selectedVizElement.className && <span style={{ color: "var(--accent-primary)" }}> .{selectedVizElement.className.split(/\s+/).join(".")}</span>}
                     </div>
                     <div style={{ fontSize: "0.65rem", color: "#64748b", fontFamily: "monospace" }}>
                       {selectedVizElement.selector}
@@ -564,10 +564,10 @@ const styles: Record<string, React.CSSProperties> = {
   visualHistoryBtn: {
     width: "26px",
     height: "24px",
-    borderRadius: "5px",
+    borderRadius: "0.375rem",
     border: "1px solid rgba(34, 211, 238, 0.24)",
     background: "rgba(34, 211, 238, 0.08)",
-    color: "#22d3ee",
+    color: "var(--accent-primary)",
     display: "inline-flex",
     alignItems: "center",
     justifyContent: "center",

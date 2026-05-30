@@ -40,7 +40,7 @@ function DashboardHome() {
 		enabled: !!user,
 	});
 
-	// 송출중 프로젝트 (모든 live 상태)
+	// 활성 playout 프로젝트 (실송출 + 리허설)
 	const { data: liveProjects = [], isLoading: liveLoading } = useQuery({
 		queryKey: ["broadcast_sessions", "live"],
 		queryFn: fetchLiveProjects,
@@ -138,8 +138,12 @@ function DashboardHome() {
 							key={project.id}
 							className="card"
 							style={{
-								border: "1px solid var(--accent-success)",
-								background: "linear-gradient(135deg, rgba(16, 185, 129, 0.05), transparent)",
+								border: project.status === "rehearsal"
+									? "1px solid var(--accent-subtle-border)"
+									: "1px solid var(--accent-success)",
+								background: project.status === "rehearsal"
+									? "linear-gradient(135deg, var(--accent-subtle-bg), transparent)"
+									: "linear-gradient(135deg, rgba(16, 185, 129, 0.05), transparent)",
 							}}
 						>
 							<div className="card-body">
@@ -153,14 +157,16 @@ function DashboardHome() {
 												padding: "0.125rem 0.5rem",
 												fontSize: "0.6875rem",
 												fontWeight: 500,
-												color: "var(--accent-success)",
-												background: "rgba(16, 185, 129, 0.15)",
+												color: project.status === "rehearsal" ? "var(--accent-primary)" : "var(--accent-success)",
+												background: project.status === "rehearsal"
+													? "var(--accent-subtle-bg)"
+													: "rgba(16, 185, 129, 0.15)",
 												borderRadius: "4px",
 												marginBottom: "0.5rem",
 											}}
 										>
 											<Radio size={10} />
-											LIVE
+											{project.status === "rehearsal" ? "REHEARSAL" : "LIVE"}
 										</span>
 										<h3 style={{ fontSize: "0.9375rem", fontWeight: 600, color: "var(--text-primary)", margin: 0 }}>
 											{project.title}
@@ -265,7 +271,7 @@ function DashboardHome() {
 									<h3 style={{ fontSize: "0.9375rem", fontWeight: 600, color: "var(--text-primary)", margin: 0 }}>
 										{project.title}
 									</h3>
-									{project.status === "live" && (
+									{(project.status === "live" || project.status === "rehearsal") && (
 										<span
 											style={{
 												display: "inline-flex",
@@ -274,13 +280,15 @@ function DashboardHome() {
 												padding: "0.125rem 0.375rem",
 												fontSize: "0.625rem",
 												fontWeight: 500,
-												color: "var(--accent-success)",
-												background: "rgba(16, 185, 129, 0.15)",
+												color: project.status === "rehearsal" ? "var(--accent-primary)" : "var(--accent-success)",
+												background: project.status === "rehearsal"
+													? "var(--accent-subtle-bg)"
+													: "rgba(16, 185, 129, 0.15)",
 												borderRadius: "4px",
 											}}
 										>
 											<Radio size={8} />
-											LIVE
+											{project.status === "rehearsal" ? "REHEARSAL" : "LIVE"}
 										</span>
 									)}
 								</div>
@@ -320,7 +328,7 @@ function QuickStartCard({ to, icon, title, description }: QuickStartCardProps) {
 							height: 48,
 							borderRadius: 10,
 							background:
-								"linear-gradient(135deg, rgba(0, 212, 255, 0.1), rgba(124, 58, 237, 0.1))",
+								"linear-gradient(135deg, rgba(96, 165, 250, 0.1), rgba(124, 58, 237, 0.1))",
 							display: "flex",
 							alignItems: "center",
 							justifyContent: "center",

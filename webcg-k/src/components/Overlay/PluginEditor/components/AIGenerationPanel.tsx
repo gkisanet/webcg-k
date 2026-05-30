@@ -6,7 +6,7 @@ import {
 const MAX_AI_ITERATIONS = 2;
 
 const aiSelect: React.CSSProperties = {
-  flex: 1, padding: "5px 8px", borderRadius: "5px",
+  flex: 1, padding: "5px 8px", borderRadius: "0.375rem",
   border: "1px solid rgba(255,255,255,0.1)",
   background: "rgba(0,0,0,0.3)", color: "#e2e8f0",
   fontSize: "0.75rem", outline: "none", cursor: "pointer",
@@ -61,7 +61,7 @@ export function AIGenerationPanel(props: AIGenerationPanelProps) {
       {/* Phase badge */}
       <div style={{
         display: "flex", alignItems: "center", justifyContent: "space-between",
-        padding: "4px 8px", borderRadius: "5px",
+        padding: "4px 8px", borderRadius: "0.375rem",
         background: limitReached ? "rgba(239,68,68,0.1)" : aiHasGenerated ? "rgba(34,197,94,0.1)" : "rgba(99,102,241,0.1)",
         border: `1px solid ${limitReached ? "rgba(239,68,68,0.2)" : aiHasGenerated ? "rgba(34,197,94,0.2)" : "rgba(99,102,241,0.2)"}`,
         fontSize: "0.6875rem", fontWeight: 600,
@@ -76,7 +76,7 @@ export function AIGenerationPanel(props: AIGenerationPanelProps) {
 
       {/* Prompt history */}
       {aiPromptHistory.length > 0 && (
-        <div style={{ padding: "6px 8px", borderRadius: "5px", background: "rgba(0,0,0,0.2)", border: "1px solid rgba(255,255,255,0.05)", fontSize: "0.6875rem", color: "#94a3b8", maxHeight: "60px", overflowY: "auto" }}>
+        <div style={{ padding: "6px 8px", borderRadius: "0.375rem", background: "rgba(0,0,0,0.2)", border: "1px solid rgba(255,255,255,0.05)", fontSize: "0.6875rem", color: "#94a3b8", maxHeight: "60px", overflowY: "auto" }}>
           {aiPromptHistory.map((p, i) => (
             <div key={i} style={{ display: "flex", gap: "4px", marginBottom: i < aiPromptHistory.length - 1 ? "3px" : 0 }}>
               <span style={{ color: "#6366f1", flexShrink: 0 }}>{i + 1}.</span>
@@ -94,7 +94,7 @@ export function AIGenerationPanel(props: AIGenerationPanelProps) {
           {gridTemplates.map((g: any) => (<option key={g.id} value={g.id}>{g.name}</option>))}
         </select>
         {zones.length > 0 && (
-          <div style={{ fontSize: "0.75rem", color: "#e2e8f0", background: "rgba(0,0,0,0.3)", padding: "5px 8px", borderRadius: "5px", border: "1px solid rgba(255,255,255,0.1)" }}>
+          <div style={{ fontSize: "0.75rem", color: "#e2e8f0", background: "rgba(0,0,0,0.3)", padding: "5px 8px", borderRadius: "0.375rem", border: "1px solid rgba(255,255,255,0.1)" }}>
             {selectedZoneIds.length === 0 ? "프리뷰 화면에서 영역을 클릭하세요" : `${selectedZoneIds.length}개 영역 선택됨`}
           </div>
         )}
@@ -104,7 +104,7 @@ export function AIGenerationPanel(props: AIGenerationPanelProps) {
           <button
             type="button" onClick={onCopySystemPrompt}
             style={{
-              padding: "5px 10px", borderRadius: "5px",
+              padding: "5px 10px", borderRadius: "0.375rem",
               border: "1px solid rgba(139, 92, 246, 0.3)",
               background: copiedPrompt ? "rgba(34, 197, 94, 0.15)" : "rgba(139, 92, 246, 0.1)",
               color: copiedPrompt ? "#4ade80" : "#a78bfa",
@@ -161,7 +161,7 @@ export function AIGenerationPanel(props: AIGenerationPanelProps) {
       </div>
 
       {selectedZoneIds.length > 0 && zones.length > 0 && (
-        <div style={{ padding: "6px 10px", borderRadius: "6px", background: "rgba(0, 212, 255, 0.1)", border: "1px solid rgba(0, 212, 255, 0.2)", fontSize: "0.7rem", color: "#00d4ff" }}>
+        <div style={{ padding: "6px 10px", borderRadius: "6px", background: "rgba(96, 165, 250, 0.1)", border: "1px solid rgba(96, 165, 250, 0.2)", fontSize: "0.7rem", color: "#60a5fa" }}>
           <strong>선택된 영역:</strong> {zones.filter((z: any) => selectedZoneIds.includes(z.id)).map((z: any) => z.name).join(", ")}
         </div>
       )}

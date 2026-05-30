@@ -7,9 +7,12 @@
 		"allStatus": "All Status",
 		"draft": "Draft",
 		"ready": "Ready",
+		"rehearsal": "Rehearsal",
 		"live": "Live",
 		"ended": "Ended",
-		"completed": "Completed"
+		"completed": "Completed",
+		"activeProjects": "Active Projects",
+		"archivedProjects": "Archive"
 	},
 	"table": {
 		"projectName": "Project Name",
@@ -28,20 +31,53 @@
 		"title": "OBS Browser Source URL (click to copy)"
 	},
 	"guide": {
-		"title": "📖 Controller Guide",
-		"basicFlow": "Basic Flow",
-		"step1": "Click project row →",
-		"step1Bold": "Copy Renderer URL",
-		"step2": "Paste URL into OBS browser source",
-		"step3Bold": "\"Broadcast\"",
-		"step3": "click → Open controller",
-		"step4": "Select graphic from timeline and broadcast",
-		"shortcuts": "⌨️ Keyboard Shortcuts",
-		"keyArrows": "Move block boundary",
-		"keyUp": "Return to last broadcast",
-		"keySpace": "PGM Broadcast",
-		"keyDel": "Delete block/gap",
-		"keyCtrlArrows": "Jump to start/end",
-		"keyCtrlWheel": "Zoom in/out"
+		"title": "Controller Guide",
+		"intro": "A numbered operating checklist for setup, live playout, checking, collaboration, and recovery.",
+		"prepTitle": "Pre-Live Setup",
+		"prepItems": [
+			"Copy the **renderer URL** into an OBS browser source.",
+			"Open the controller and verify the first broadcast graphic in **PVW**.",
+			"Use **←/→ and Ctrl+wheel** to check block edges and missing graphics."
+		],
+		"liveTitle": "Live Playout",
+		"liveItems": [
+			"**Space**: send the current playhead graphic to PGM and the renderer.",
+			"**↑**: return to the last broadcast point.",
+			"Use **progress counters and ▲ markers** to track aired, skipped, and remaining items."
+		],
+		"scrubTitle": "Scrubbing Check",
+		"scrubItems": [
+			"**S**: enter scrubbing mode and inspect the timeline privately.",
+			"**Space is blocked while scrubbing** to prevent accidental playout.",
+			"Press **S** again to return to normal playout control."
+		],
+		"multiTitle": "Multi-User Work",
+		"multiItems": [
+			"Treat the **last sender** as the primary operator reference.",
+			"Supporting users should use **scrubbing** to check upcoming graphics.",
+			"If positions drift, press **↑** to align to the last broadcast point."
+		],
+		"recoverTitle": "Recovery",
+		"recoverItems": [
+			"**Ctrl+Z/Y**: restore or reapply timeline state.",
+			"Restored **PGM is not resent automatically** while live.",
+			"**Del** deletion also adjusts playhead and last broadcast position."
+		],
+		"quickTitle": "Quick Keys",
+		"keyArrows": "Move between block edges",
+		"keyScrub": "Toggle scrubbing",
+		"keySpace": "PGM playout",
+		"keyUp": "Last broadcast point",
+		"keyUndo": "Recover, confirm resend while live",
+		"prepSummary": "Connect the renderer URL and verify PVW first.",
+		"liveSummary": "Send with Space and verify against the last broadcast marker.",
+		"scrubSummary": "Inspect upcoming states without affecting live output.",
+		"multiSummary": "Keep one playout reference and let others inspect safely.",
+		"recoverSummary": "After Undo/Redo, confirm whether live output should be resent."
+	},
+	"pagination": {
+		"summary": "{{start}}-{{end}} of {{total}} projects",
+		"prev": "Previous",
+		"next": "Next"
 	}
 }

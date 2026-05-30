@@ -150,7 +150,7 @@ export const GroupOverlayCard = React.memo(function GroupOverlayCard({
         <div
             style={{
                 padding: "0.75rem",
-                borderRadius: "10px",
+                borderRadius: "0.75rem",
                 border: `1.5px solid ${anyProgram ? "var(--accent-primary)" : "rgba(168, 85, 247, 0.35)"}`,
                 backgroundColor: anyProgram ? "rgba(59, 130, 246, 0.06)" : "rgba(168, 85, 247, 0.04)",
                 transition: "all 0.25s",
@@ -231,7 +231,7 @@ export const GroupOverlayCard = React.memo(function GroupOverlayCard({
                                 gap: "4px",
                                 padding: "6px 8px",
                                 borderRadius: "6px",
-                                border: `1px solid ${state === "program" ? "var(--accent-primary)" : state === "preview" ? "#22c55e" : "var(--border-primary)"}`,
+                                border: `1px solid ${state === "program" ? "var(--accent-primary)" : state === "preview" ? "#22c55e" : "var(--border-default)"}`,
                                 backgroundColor: state === "program" ? "rgba(59,130,246,0.1)" : "var(--app-bg-alt)",
                                 fontSize: "0.8125rem",
                                 transition: "all 0.15s",
@@ -246,7 +246,7 @@ export const GroupOverlayCard = React.memo(function GroupOverlayCard({
                                     <span style={{
                                         fontSize: "0.625rem",
                                         padding: "0 4px",
-                                        borderRadius: "3px",
+                                        borderRadius: "0.25rem",
                                         backgroundColor: "var(--app-bg-muted)",
                                         color: "var(--text-tertiary)",
                                         flexShrink: 0,
@@ -306,7 +306,7 @@ export const GroupOverlayCard = React.memo(function GroupOverlayCard({
                                                 style={{
                                                     flex: 1,
                                                     padding: "2px 0",
-                                                    borderRadius: "3px",
+                                                    borderRadius: "0.25rem",
                                                     border: "none",
                                                     cursor: "pointer",
                                                     fontSize: "0.625rem",
@@ -337,7 +337,7 @@ export const GroupOverlayCard = React.memo(function GroupOverlayCard({
                                             gap: "3px",
                                             width: "100%",
                                             padding: "2px 6px",
-                                            borderRadius: "3px",
+                                            borderRadius: "0.25rem",
                                             border: "1px dashed rgba(34,197,94,0.3)",
                                             backgroundColor: "rgba(34,197,94,0.04)",
                                             color: "#22c55e",
@@ -367,7 +367,7 @@ export const GroupOverlayCard = React.memo(function GroupOverlayCard({
                         onClick={() => setShowDashboard(!showDashboard)}
                         style={{
                             background: "none",
-                            border: "1px solid var(--border-primary)",
+                            border: "1px solid var(--border-default)",
                             cursor: "pointer",
                             color: showDashboard ? "#06b6d4" : "var(--text-tertiary)",
                             fontSize: "0.6875rem",
@@ -431,7 +431,7 @@ export const GroupOverlayCard = React.memo(function GroupOverlayCard({
                         onClick={handleSendGroupData}
                         style={{
                             padding: "5px 12px",
-                            borderRadius: "5px",
+                            borderRadius: "0.375rem",
                             border: "none",
                             cursor: "pointer",
                             fontSize: "0.6875rem",
@@ -489,7 +489,7 @@ function GroupDashboardField({
         flexShrink: 0,
         padding: "4px 8px",
         borderRadius: "4px",
-        border: "1px solid var(--border-primary)",
+        border: "1px solid var(--border-default)",
         backgroundColor: "var(--app-bg)",
         color: "var(--text-primary)",
         fontSize: "0.75rem",
@@ -500,8 +500,8 @@ function GroupDashboardField({
     const stepperBtnStyle: React.CSSProperties = {
         width: "22px",
         height: "22px",
-        borderRadius: "3px",
-        border: "1px solid var(--border-primary)",
+        borderRadius: "0.25rem",
+        border: "1px solid var(--border-default)",
         backgroundColor: "var(--app-bg-muted)",
         color: "var(--text-secondary)",
         cursor: "pointer",

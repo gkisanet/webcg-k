@@ -1,9 +1,8 @@
-import { TanStackDevtools } from "@tanstack/react-devtools";
 import { createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
-import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 import { AuthProvider } from "../lib/auth";
+import { TooltipProvider } from "../components/ui/tooltip";
 
 // i18n 초기화 — 앱 로드 전에 실행되어야 하므로 여기서 import (side-effect)
 import "../lib/i18n";
@@ -57,25 +56,16 @@ export const Route = createRootRoute({
 
 function RootDocument({ children }: { children: React.ReactNode }) {
 	return (
-		<html lang="ko">
+		<html lang="ko" suppressHydrationWarning>
 			<head>
 				<HeadContent />
 			</head>
 			<body>
 				<QueryClientProvider client={queryClient}>
-					<AuthProvider>{children}</AuthProvider>
+					<AuthProvider>
+					<TooltipProvider>{children}</TooltipProvider>
+				</AuthProvider>
 				</QueryClientProvider>
-				<TanStackDevtools
-					config={{
-						position: "bottom-right",
-					}}
-					plugins={[
-						{
-							name: "Tanstack Router",
-							render: <TanStackRouterDevtoolsPanel />,
-						},
-					]}
-				/>
 				<Scripts />
 			</body>
 		</html>

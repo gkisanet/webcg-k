@@ -14,7 +14,8 @@ import {
     Repeat,
 } from "lucide-react";
 import type { GraphicElement } from "../GraphicPreviewRenderer";
-import type { OverlayActionType } from "../../lib/overlayTypes";
+import type { OverlayActionType, DashboardSchema, DashboardSchemaProperty } from "../../lib/overlayTypes";
+export type { DashboardSchema, DashboardSchemaProperty };
 
 
 // ─── RenderState: Renderer 실제 상태 (CQRS Query 채널) ─────────
@@ -80,23 +81,7 @@ export interface OverlayTemplate {
     replicant_defaults?: Record<string, unknown> | null;
 }
 
-// ─── 대시보드 스키마 (JSON Schema 기반 자동 폼 생성) ─────────
-// ■ Why JSON Schema?
-//   플러그인 개발자가 dashboard_schema를 정의하면
-//   컨트롤러 카드에서 자동으로 폼 UI가 생성됨.
-//   NodeCG의 dashboard panel과 같은 개념.
-export interface DashboardSchemaProperty {
-    type: string;       // "string" | "number" | "boolean"
-    title: string;      // 표시 라벨
-    default?: unknown;
-    enum?: string[];    // 선택 목록
-    minimum?: number;
-    maximum?: number;
-}
-
-export interface DashboardSchema {
-    properties: Record<string, DashboardSchemaProperty>;
-}
+// ─── 대시보드 스키마는 lib/overlayTypes.ts의 DashboardSchema / DashboardSchemaProperty를 사용 ─
 
 export interface LogEntry {
     id: string;
@@ -143,7 +128,7 @@ export const CARD_STYLES = {
     } as React.CSSProperties,
     layerBadge: {
         padding: "1px 6px",
-        borderRadius: "3px",
+        borderRadius: "0.25rem",
         fontSize: "0.625rem",
         backgroundColor: "var(--app-bg-muted)",
         color: "var(--text-tertiary)",
@@ -159,7 +144,7 @@ export const CARD_STYLES = {
         height: "68px",
         borderRadius: "4px",
         overflow: "hidden" as const,
-        border: "1px solid var(--border-primary)",
+        border: "1px solid var(--border-default)",
         backgroundColor: "#000",
     } as React.CSSProperties,
     previewFull: { width: "100%", height: "100%" } as React.CSSProperties,
@@ -177,7 +162,7 @@ export const CARD_STYLES = {
         gap: "4px",
         padding: "4px 12px",
         borderRadius: "6px",
-        border: "1px dashed var(--border-primary)",
+        border: "1px dashed var(--border-default)",
         cursor: "pointer",
         fontSize: "0.6875rem",
         fontWeight: 600,

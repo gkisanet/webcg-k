@@ -7,6 +7,7 @@
 
 import { SYSTEM_FONTS } from "@/lib/fontRegistry";
 import type { TabCommonProps } from "./DesignTab";
+import { NumberInput } from "@/components/ui/number-input";
 
 /** Weight 라벨 매핑 */
 const WEIGHT_LABELS: Record<number, string> = {
@@ -75,11 +76,9 @@ export function TextTab({
                 </div>
                 <div className="ins-row-2col">
                     <span className="ins-label">Size</span>
-                    <input
-                        type="number"
-                        className="ins-input"
+                    <NumberInput
                         value={element.fontSize || 24}
-                        onChange={(e) => handleChange("fontSize", parseFloat(e.target.value) || 24)}
+                        onChange={(val) => handleChange("fontSize", val)}
                         min={1}
                     />
                     <span className="ins-label">Wt</span>
@@ -99,20 +98,16 @@ export function TextTab({
                 </div>
                 <div className="ins-row-2col">
                     <span className="ins-label">LH</span>
-                    <input
-                        type="number"
-                        className="ins-input"
+                    <NumberInput
                         value={element.lineHeight || 1.4}
-                        onChange={(e) => handleChange("lineHeight", parseFloat(e.target.value) || 1.4)}
+                        onChange={(val) => handleChange("lineHeight", val)}
                         step={0.1}
                         min={0.5}
                     />
                     <span className="ins-label">LS</span>
-                    <input
-                        type="number"
-                        className="ins-input"
+                    <NumberInput
                         value={element.letterSpacing || 0}
-                        onChange={(e) => handleChange("letterSpacing", parseFloat(e.target.value) || 0)}
+                        onChange={(val) => handleChange("letterSpacing", val)}
                         step={0.5}
                     />
                 </div>
@@ -231,13 +226,11 @@ export function TextTab({
                                 value={element.stroke?.color || "#000000"}
                                 onChange={(e) => handleStrokeChange("color", e.target.value)}
                             />
-                            <input
-                                type="number"
-                                className="ins-input"
+                            <NumberInput
                                 value={element.stroke?.width ?? 2}
-                                onChange={(e) => handleStrokeChange("width", parseFloat(e.target.value) || 0)}
+                                onChange={(val) => handleStrokeChange("width", val)}
                                 min={0}
-                                style={{ width: "50px" }}
+                                className="w-16"
                             />
                         </div>
                     </div>
@@ -277,27 +270,21 @@ export function TextTab({
                         </div>
                         <div className="ins-row-2col">
                             <span className="ins-label">X</span>
-                            <input
-                                type="number"
-                                className="ins-input"
+                            <NumberInput
                                 value={element.shadowOffsetX ?? 2}
-                                onChange={(e) => handleChange("shadowOffsetX", parseFloat(e.target.value) || 0)}
+                                onChange={(val) => handleChange("shadowOffsetX", val)}
                             />
                             <span className="ins-label">Y</span>
-                            <input
-                                type="number"
-                                className="ins-input"
+                            <NumberInput
                                 value={element.shadowOffsetY ?? 2}
-                                onChange={(e) => handleChange("shadowOffsetY", parseFloat(e.target.value) || 0)}
+                                onChange={(val) => handleChange("shadowOffsetY", val)}
                             />
                         </div>
                         <div className="ins-row">
                             <span className="ins-label">Blur</span>
-                            <input
-                                type="number"
-                                className="ins-input"
+                            <NumberInput
                                 value={element.shadowBlur ?? 4}
-                                onChange={(e) => handleChange("shadowBlur", parseFloat(e.target.value) || 0)}
+                                onChange={(val) => handleChange("shadowBlur", val)}
                                 min={0}
                             />
                         </div>
@@ -338,11 +325,9 @@ export function TextTab({
                         </div>
                         <div className="ins-row">
                             <span className="ins-label">Blur</span>
-                            <input
-                                type="number"
-                                className="ins-input"
+                            <NumberInput
                                 value={element.glowBlur ?? 10}
-                                onChange={(e) => handleChange("glowBlur", parseFloat(e.target.value) || 0)}
+                                onChange={(val) => handleChange("glowBlur", val)}
                                 min={0}
                             />
                         </div>

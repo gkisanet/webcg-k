@@ -12,6 +12,7 @@ export interface GraphicInput {
     canvas: { width: number; height: number };
     gridTemplateId?: string;
   };
+  workspace_id?: string | null;
 }
 
 export interface CgVariation {
@@ -53,12 +54,14 @@ export async function createGraphic(input: GraphicInput): Promise<Graphic> {
 export async function cloneGraphic(
   source: { name: string; description: string | null; template_data: any },
   userId: string,
+  workspaceId?: string | null,
 ): Promise<Graphic> {
   return createGraphic({
     name: `${source.name} (복제)`,
     description: source.description || undefined,
     owner_id: userId,
     template_data: source.template_data,
+    workspace_id: workspaceId,
   });
 }
 
@@ -72,6 +75,7 @@ export async function saveAiVariation(
   variation: CgVariation,
   meta: { gridId?: string; zoneBounds?: ZoneBounds },
   userId: string,
+  workspaceId?: string | null,
 ): Promise<Graphic> {
   let finalElements = variation.elements;
   let finalCanvasSize = variation.canvasSize;
@@ -94,6 +98,7 @@ export async function saveAiVariation(
       canvas: finalCanvasSize,
       gridTemplateId: meta.gridId,
     },
+    workspace_id: workspaceId,
   });
 }
 

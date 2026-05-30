@@ -14,7 +14,7 @@
 
 import { createLazyFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
 	FileText,
 	Loader2,
@@ -39,6 +39,7 @@ import type { NrcsCuesheet } from "../../../services/cuesheetService";
 import { useCuesheetsRealtime } from "../../../services/nrcsRealtimeService";
 import { fetchBundles } from "../../../services/bundleService";
 import type { TemplateBundle } from "../../../services/bundleService";
+import { fetchWorkspaces } from "../../../services/workspaceService";
 import { CsvImportWizard } from "../../../components/CsvImportWizard";
 
 export const Route = createLazyFileRoute("/dashboard/cuesheets/")({
@@ -67,14 +68,20 @@ function CuesheetsPage() {
 	const { user, activeWorkspaceId } = useAuth();
 
 	const { data: cuesheets = [], isLoading } = useQuery({
-		queryKey: ["cuesheets", activeWorkspaceId],
-		queryFn: () => fetchCuesheets(activeWorkspaceId!),
-		enabled: !!user && !!activeWorkspaceId,
+		queryKey: ["cuesheets", "all"],
+		queryFn: () => fetchCuesheets(activeWorkspaceId, true),
+		enabled: !!user,
 	});
 
 	const { data: bundles = [] } = useQuery({
 		queryKey: ["bundles"],
 		queryFn: fetchBundles,
+	});
+
+	const { data: workspaces = [] } = useQuery({
+		queryKey: ["workspaces"],
+		queryFn: fetchWorkspaces,
+		enabled: !!user,
 	});
 
 	// 실시간 동기화
@@ -84,6 +91,9 @@ function CuesheetsPage() {
 	const [showCreate, setShowCreate] = useState(false);
 	const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 	const [showCsvImport, setShowCsvImport] = useState(false);
+	const [workspaceFilter, setWorkspaceFilter] = useState<string>("all");
+	const [didApplyDefaultWorkspaceFilter, setDidApplyDefaultWorkspaceFilter] = useState(false);
+	const [searchQuery, setSearchQuery] = useState("");
 
 	// 생성 모달 상태
 	const [createStep, setCreateStep] = useState(1);
@@ -92,23 +102,55 @@ function CuesheetsPage() {
 	const [formDate, setFormDate] = useState(new Date().toISOString().split("T")[0]);
 	const [formBundleId, setFormBundleId] = useState("");
 
+	useEffect(() => {
+		if (activeWorkspaceId && !didApplyDefaultWorkspaceFilter) {
+			setWorkspaceFilter(activeWorkspaceId);
+			setDidApplyDefaultWorkspaceFilter(true);
+		}
+	}, [activeWorkspaceId, didApplyDefaultWorkspaceFilter]);
+
 	// 탭별 큐시트 필터링
 	const filteredCuesheets = useMemo(() => {
 		return cuesheets.filter((cs: NrcsCuesheet) => {
+			if (workspaceFilter !== "all" && cs.workspace_id !== workspaceFilter) return false;
+			if (searchQuery) {
+				const q = searchQuery.toLowerCase();
+				const haystack = [
+					cs.program_name,
+					cs.program_date,
+					cs.status,
+					cs.source_type,
+				].join(" ").toLowerCase();
+				if (!haystack.includes(q)) return false;
+			}
 			const sourceType = cs.source_type || "manual";
 			if (activeTab === "standalone") return sourceType === "manual";
 			return sourceType === "nrcs" || sourceType === "csv";
 		});
-	}, [cuesheets, activeTab]);
+	}, [cuesheets, activeTab, workspaceFilter, searchQuery]);
+
+	const workspaceFilteredCuesheets = useMemo(() => {
+		return cuesheets.filter((cs: NrcsCuesheet) => {
+			if (workspaceFilter !== "all" && cs.workspace_id !== workspaceFilter) return false;
+			if (!searchQuery) return true;
+			const q = searchQuery.toLowerCase();
+			return [
+				cs.program_name,
+				cs.program_date,
+				cs.status,
+				cs.source_type,
+			].join(" ").toLowerCase().includes(q);
+		});
+	}, [cuesheets, workspaceFilter, searchQuery]);
 
 	// 탭별 카운트
 	const standaloneCuesheetCount = useMemo(
-		() => cuesheets.filter((cs: NrcsCuesheet) => (cs.source_type || "manual") === "manual").length,
-		[cuesheets],
+		() => workspaceFilteredCuesheets.filter((cs: NrcsCuesheet) => (cs.source_type || "manual") === "manual").length,
+		[workspaceFilteredCuesheets],
 	);
 	const linkedCuesheetCount = useMemo(
-		() => cuesheets.filter((cs: NrcsCuesheet) => (cs.source_type || "manual") !== "manual").length,
-		[cuesheets],
+		() => workspaceFilteredCuesheets.filter((cs: NrcsCuesheet) => (cs.source_type || "manual") !== "manual").length,
+		[workspaceFilteredCuesheets],
 	);
 
 	// 큐시트 생성
@@ -163,7 +205,7 @@ function CuesheetsPage() {
 			<div className="page-header">
 				<div className="page-header-left">
 					<h1 className="page-title">📋 큐시트</h1>
-					<p className="page-description">뉴스 프로그램별 CG 큐시트를 관리합니다</p>
+					<p className="page-description">뉴스 프로그램별 방송 그래픽 큐시트를 관리합니다</p>
 				</div>
 				<div style={{ display: "flex", gap: 8 }}>
 					<Button variant="secondary" onClick={() => setShowCsvImport(true)}>
@@ -175,10 +217,58 @@ function CuesheetsPage() {
 				</div>
 			</div>
 
+			<div style={{
+				display: "flex",
+				gap: 8,
+				alignItems: "center",
+				marginTop: 16,
+				flexWrap: "wrap",
+			}}>
+				<div style={{ position: "relative", minWidth: 240, flex: "1 1 260px" }}>
+					<Search
+						size={14}
+						style={{
+							position: "absolute",
+							left: 10,
+							top: "50%",
+							transform: "translateY(-50%)",
+							color: "var(--text-secondary)",
+						}}
+					/>
+					<Input
+						value={searchQuery}
+						onChange={(e) => setSearchQuery(e.target.value)}
+						placeholder="큐시트 검색"
+						style={{ paddingLeft: 32, fontSize: 13 }}
+					/>
+				</div>
+				<select
+					value={workspaceFilter}
+					onChange={(e) => setWorkspaceFilter(e.target.value)}
+					style={{
+						height: 36,
+						minWidth: 220,
+						background: "var(--app-bg-muted)",
+						border: "1px solid var(--border-default)",
+						borderRadius: 6,
+						color: "var(--text-primary)",
+						padding: "0 10px",
+						fontSize: 13,
+					}}
+				>
+					<option value="all">전체 워크스페이스</option>
+					{workspaces.map((ws: any) => (
+						<option key={ws.id} value={ws.id}>
+							{ws.name}{ws.id === activeWorkspaceId ? " (현재)" : ""}
+						</option>
+					))}
+				</select>
+			</div>
+
 			{/* ─── 2-탭 네비게이션 ─── */}
 			<div style={{
 				display: "flex", gap: 2, marginTop: 16,
-				borderBottom: "1px solid var(--border-primary)",
+				borderBottom: "1px solid var(--border-default)",
 				paddingBottom: 0,
 			}}>
 				<TabButton
@@ -436,7 +526,7 @@ function CreateCuesheetModal({
 		{
 			value: "manual" as const,
 			icon: "📝", label: "독립형 큐시트",
-			desc: "수동으로 CG 텍스트를 입력합니다",
+			desc: "수동으로 방송 그래픽 텍스트를 입력합니다",
 		},
 		{
 			value: "nrcs" as const,
@@ -578,7 +668,7 @@ function CreateCuesheetModal({
 						<div style={{
 							padding: 10, borderRadius: 8,
 							background: "var(--app-bg-muted)",
-							border: "1px solid var(--border-primary)",
+							border: "1px solid var(--border-default)",
 							fontSize: 12,
 						}}>
 							<div style={{ fontWeight: 600 }}>{formProgram}</div>
@@ -588,14 +678,14 @@ function CreateCuesheetModal({
 						</div>
 						<div>
 							<label style={{ fontSize: 12, color: "var(--text-secondary)", marginBottom: 4, display: "block" }}>
-								CG 매핑 번들 (선택)
+								방송 그래픽 매핑 번들 (선택)
 							</label>
 							<select
 								value={formBundleId}
 								onChange={(e) => setFormBundleId(e.target.value)}
 								style={{
 									width: "100%", background: "var(--app-bg-muted)",
-									border: "1px solid var(--border-primary)", borderRadius: 6,
+									border: "1px solid var(--border-default)", borderRadius: 6,
 									padding: "6px 8px", fontSize: 13, color: "var(--text-primary)",
 								}}
 							>

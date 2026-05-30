@@ -188,7 +188,7 @@
 /* 사이드바 구분선 */
 .sidebar-divider {
   height: 1px;
-  background: var(--border-primary);
+  background: var(--border-default);
   margin: 0.75rem 0;
 }
 
@@ -199,7 +199,7 @@
 
 .sidebar-nav-item.active {
   background-color: var(--accent-primary);
-  background: linear-gradient(135deg, rgba(0, 212, 255, 0.15), rgba(124, 58, 237, 0.15));
+  background: linear-gradient(135deg, rgba(96, 165, 250, 0.15), rgba(124, 58, 237, 0.15));
   color: var(--accent-primary);
 }
 
@@ -275,7 +275,7 @@
   width: 28px;
   height: 16px;
   border-radius: 8px;
-  background: var(--border-primary);
+  background: var(--border-default);
   position: relative;
   transition: background 0.2s ease;
   flex-shrink: 0;
@@ -513,7 +513,7 @@
   backdrop-filter: var(--glass-blur);
   -webkit-backdrop-filter: var(--glass-blur);
   border: 1px solid var(--glass-border);
-  border-radius: 10px;
+  border-radius: 0.5rem;
   padding: 1.25rem;
   transition: all var(--transition-normal);
 }

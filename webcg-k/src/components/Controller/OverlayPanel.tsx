@@ -156,18 +156,8 @@ export function OverlayPanel({
         if (overlayStates.some((o) => o.template_id === templateId)) return;
 
         try {
-            const { error } = await supabase
-                .from("overlay_state" as any)
-                .insert({
-                    session_id: sessionId,
-                    template_id: templateId,
-                    is_active: false,
-                    animation_state: "idle",
-                    conflict_mode: "overlay",
-                } as any);
-
-            if (error) throw error;
-            // Realtime 구독이 overlay_state 변경을 자동 감지 — 수동 reload 불필요
+            await overlayStore?.addOverlay(templateId);
+            // Realtime 구독 및 store의 optimistic update가 동작하므로 화면 즉시 갱신
         } catch (err) {
             console.error("Add overlay error:", err);
         }
@@ -474,7 +464,7 @@ export function OverlayPanel({
                     justifyContent: "space-between",
                     alignItems: "center",
                     padding: "0.75rem 1rem",
-                    borderBottom: "1px solid var(--border-primary)",
+                    borderBottom: "1px solid var(--border-default)",
                 }}
             >
                 <div
@@ -534,7 +524,7 @@ export function OverlayPanel({
                     display: "flex",
                     gap: "0.5rem",
                     padding: "0.5rem 1rem",
-                    borderBottom: "1px solid var(--border-primary)",
+                    borderBottom: "1px solid var(--border-default)",
                     alignItems: "center",
                 }}
             >
@@ -560,7 +550,7 @@ export function OverlayPanel({
                             width: "100%",
                             padding: "6px 8px 6px 28px",
                             borderRadius: "6px",
-                            border: "1px solid var(--border-primary)",
+                            border: "1px solid var(--border-default)",
                             backgroundColor: "var(--app-bg-alt)",
                             color: "var(--text-primary)",
                             fontSize: "0.75rem",
@@ -608,7 +598,7 @@ export function OverlayPanel({
                         style={{
                             padding: "6px 8px 6px 28px",
                             borderRadius: "6px",
-                            border: "1px solid var(--border-primary)",
+                            border: "1px solid var(--border-default)",
                             backgroundColor: "var(--app-bg-alt)",
                             color: "var(--text-primary)",
                             fontSize: "0.75rem",
@@ -816,7 +806,7 @@ export function OverlayPanel({
                             padding: "1.5rem",
                             width: "360px",
                             maxWidth: "90vw",
-                            border: "1px solid var(--border-primary)",
+                            border: "1px solid var(--border-default)",
                         }}
                     >
                         <div

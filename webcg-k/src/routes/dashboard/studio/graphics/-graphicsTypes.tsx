@@ -5,8 +5,9 @@
  * index.tsx의 줄 수를 줄이고, GraphicPreview를 다른 곳에서 재사용 가능하게 함.
  */
 
-import React from "react";
+import React, { useId } from "react";
 import { Palette } from "lucide-react";
+import { GraphicPreviewRenderer } from "@/components/GraphicPreviewRenderer"; // 🆕 중앙 집중형 공통 미리보기 렌더러 임포트
 
 // ─── 타입 정의 ──────────────────────────────────────────────────
 export type ViewMode = "gallery" | "bundles" | "grid-templates";
@@ -38,7 +39,6 @@ export interface BundleListItem {
 	_type: "bundles";
 }
 
-
 // ─── GraphicPreview (React.memo — graphic prop 변경 시에만 re-render) ──
 
 export const GraphicPreview = React.memo(function GraphicPreview({ graphic }: { graphic: Graphic }) {
@@ -55,67 +55,20 @@ export const GraphicPreview = React.memo(function GraphicPreview({ graphic }: { 
 		);
 	}
 
-	// 요소를 zIndex 순으로 정렬
-	const sortedElements = [...elements].sort((a, b) => (a.zIndex || 0) - (b.zIndex || 0));
-
 	return (
 		<div className="graphic-preview-container">
 			<span className="preview-label">PREVIEW</span>
-			<svg
-				viewBox={`0 0 ${canvasWidth} ${canvasHeight}`}
-				preserveAspectRatio="xMidYMid meet"
+			{/* 🆕 Why 복제된 낡은 코드 제거 및 Delegation 설계인가?
+			  *   이전의 GraphicPreview는 자체적으로 불완전한 도형 렌더러 루프를 들고 있어 마스크와 Boolean(Subtract)
+			  *   합성을 렌더링하지 못해 갤러리 썸네일 붕괴의 원인이 되었습니다. 이를 검증된 GraphicPreviewRenderer로
+			  *   위임하여 Single Source of Truth(SSOT) 규칙을 확립하고 100% 미려한 비주얼 Parity를 쟁취합니다.
+			  */}
+			<GraphicPreviewRenderer
+				elements={elements}
+				canvasWidth={canvasWidth}
+				canvasHeight={canvasHeight}
 				style={{ width: "100%", height: "100%", background: "#1a1a1a" }}
-			>
-				{sortedElements.map((el: any) => {
-					if (el.visible === false) return null;
-
-					const commonStyle = {
-						opacity: el.opacity ?? 1,
-					};
-
-					if (el.type === "rect") {
-						const fillColor = el.fill?.type === "solid"
-							? el.fill.color
-							: el.fill?.type === "gradient"
-								? "#666"
-								: "#333";
-						return (
-							<rect
-								key={el.id}
-								x={el.x}
-								y={el.y}
-								width={el.width}
-								height={el.height}
-								fill={fillColor}
-								stroke={el.stroke?.color}
-								strokeWidth={el.stroke?.width}
-								rx={el.borderRadius || 0}
-								style={commonStyle}
-							/>
-						);
-					}
-
-					if (el.type === "text") {
-						return (
-							<text
-								key={el.id}
-								x={el.x + (el.width / 2)}
-								y={el.y + (el.height / 2)}
-								fill={el.fill?.color || "#ffffff"}
-								fontSize={el.fontSize || 24}
-								fontFamily={el.fontFamily || "sans-serif"}
-								textAnchor="middle"
-								dominantBaseline="middle"
-								style={commonStyle}
-							>
-								{el.content || "텍스트"}
-							</text>
-						);
-					}
-
-					return null;
-				})}
-			</svg>
+			/>
 		</div>
 	);
 });

@@ -7,9 +7,12 @@
 		"allStatus": "전체 상태",
 		"draft": "초안",
 		"ready": "준비됨",
+		"rehearsal": "리허설",
 		"live": "송출중",
 		"ended": "송출완료",
-		"completed": "완료"
+		"completed": "완료",
+		"activeProjects": "활성 프로젝트",
+		"archivedProjects": "아카이브"
 	},
 	"table": {
 		"projectName": "프로젝트명",
@@ -28,20 +31,53 @@
 		"title": "OBS 브라우저 소스 URL (클릭하여 복사)"
 	},
 	"guide": {
-		"title": "📖 컨트롤러 사용법",
-		"basicFlow": "기본 흐름",
-		"step1": "프로젝트 행 클릭 →",
-		"step1Bold": "렌더러 URL 복사",
-		"step2": "OBS 브라우저 소스에 URL 붙여넣기",
-		"step3Bold": "\"송출\"",
-		"step3": "클릭 → 컨트롤러 열기",
-		"step4": "타임라인에서 그래픽 선택 후 송출",
-		"shortcuts": "⌨️ 키보드 단축키",
+		"title": "컨트롤러 사용 가이드",
+		"intro": "생방송 직전·운영 중 빠르게 확인하는 기억용 체크리스트",
+		"prepTitle": "송출 전 준비",
+		"prepItems": [
+			"OBS에 `URL` 연결",
+			"컨트롤러 오픈 → `PVW`에서 첫 그래픽 확인",
+			"`←/→` 또는 `Ctrl+휠`로 블록 경계·누락 점검"
+		],
+		"liveTitle": "방송 중 진행",
+		"liveItems": [
+			"`Space` — 현재 그래픽 `PGM` 송출",
+			"`↑` — 마지막 송출 위치로 복귀",
+			"`진행 카운터`·`▲`로 송출/스킵/잔여 확인"
+		],
+		"scrubTitle": "스크러빙 점검",
+		"scrubItems": [
+			"`S` — 스크러빙 모드 ON/OFF",
+			"스크러빙 중 `Space` 차단 → 오송출 방지",
+			"확인 후 `S` 재입력으로 일반 모드 복귀"
+		],
+		"multiTitle": "멀티 유저 작업",
+		"multiItems": [
+			"`마지막 송출자` 기준으로 주 오퍼레이터 동기화",
+			"보조 → `S`(스크러빙)로 다음 상태 점검",
+			"위치 엇갈림 → `↑`로 마지막 송출 지점 동기화"
+		],
+		"recoverTitle": "실수 복구",
+		"recoverItems": [
+			"`Ctrl+Z/Y` — 타임라인 되돌리기/다시 적용",
+			"복원된 `PGM`은 자동 재송출되지 않음",
+			"`Del` 후 playhead·마지막 송출 위치 보정"
+		],
+		"quickTitle": "단축키 목록",
 		"keyArrows": "블록 경계 이동",
-		"keyUp": "마지막 송출로 복귀",
+		"keyScrub": "스크러빙 켜기/끄기",
 		"keySpace": "PGM 송출",
-		"keyDel": "블록/갭 삭제",
-		"keyCtrlArrows": "처음/끝 이동",
-		"keyCtrlWheel": "줌인/줌아웃"
+		"keyUp": "마지막 송출 위치",
+		"keyUndo": "복구 · 재송출 여부 확인",
+		"prepSummary": "OBS 연결 → PVW 확인",
+		"liveSummary": "Space 송출 → 마지막 송출 지점 기준 확인",
+		"scrubSummary": "방송 무영향 상태 점검",
+		"multiSummary": "송출자/점검자 역할 분담",
+		"recoverSummary": "되돌리기 후 재송출 여부 확인"
+	},
+	"pagination": {
+		"summary": "{{start}}-{{end}} / {{total}}개 프로젝트",
+		"prev": "이전",
+		"next": "다음"
 	}
 }

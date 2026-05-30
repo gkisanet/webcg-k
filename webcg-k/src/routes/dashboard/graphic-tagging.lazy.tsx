@@ -360,7 +360,7 @@ ${html}
             AI 큐시트에서 생성된 HTML 방송 그래픽에 <code className="px-1 py-0.5 rounded bg-[var(--app-bg)] text-[11px]">data-semantic</code> 바인딩을 적용합니다.
           </p>
         </div>
-        <div className="p-4 rounded-xl bg-[var(--app-bg)] border border-[var(--border-primary)] text-xs text-[var(--text-muted)] max-w-sm text-left space-y-2">
+        <div className="p-4 rounded-xl bg-[var(--app-bg)] border border-[var(--border-default)] text-xs text-[var(--text-muted)] max-w-sm text-left space-y-2">
           <p className="font-semibold text-[var(--text-secondary)]">사용 방법</p>
           <ol className="list-decimal list-inside space-y-1">
             <li>AI 큐시트 → Step 3에서 방송 그래픽 생성</li>
@@ -424,7 +424,7 @@ ${html}
       {/* Main content */}
       <div className="flex-1 min-h-0 flex gap-3">
         {/* Left: iframe */}
-        <div className="flex-1 min-w-0 rounded-xl overflow-hidden border border-[var(--border-primary)] bg-black relative">
+        <div className="flex-1 min-w-0 rounded-xl overflow-hidden border border-[var(--border-default)] bg-black relative">
           <div
             className="absolute inset-0"
             style={{
@@ -446,7 +446,7 @@ ${html}
         {/* Right: Inspector Panel */}
         <div className="w-64 shrink-0 flex flex-col gap-3">
           {/* Selection Info */}
-          <div className="p-3 rounded-xl bg-[var(--app-bg)] border border-[var(--border-primary)]">
+          <div className="p-3 rounded-xl bg-[var(--app-bg)] border border-[var(--border-default)]">
             <div className="text-[10px] font-semibold text-[var(--text-muted)] uppercase tracking-wide mb-2">
               Inspector
             </div>
@@ -483,7 +483,7 @@ ${html}
           </div>
 
           {/* Tag Assignment */}
-          <div className="p-3 rounded-xl bg-[var(--app-bg)] border border-[var(--border-primary)]">
+          <div className="p-3 rounded-xl bg-[var(--app-bg)] border border-[var(--border-default)]">
             <div className="text-[10px] font-semibold text-[var(--text-muted)] uppercase tracking-wide mb-2">
               Tag as
             </div>
@@ -518,7 +518,7 @@ ${html}
           </div>
 
           {/* Text Slots from AI Cuesheet */}
-          <div className="p-3 rounded-xl bg-[var(--app-bg)] border border-[var(--border-primary)] flex-1 overflow-y-auto">
+          <div className="p-3 rounded-xl bg-[var(--app-bg)] border border-[var(--border-default)] flex-1 overflow-y-auto">
             <div className="text-[10px] font-semibold text-[var(--text-muted)] uppercase tracking-wide mb-2">
               Text Values ({taggedCount}/{slotCount} tagged)
             </div>

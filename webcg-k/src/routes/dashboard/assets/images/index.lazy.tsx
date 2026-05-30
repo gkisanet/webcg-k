@@ -631,7 +631,7 @@ function ImagesPage() {
 								justifyContent: "space-between",
 								alignItems: "center",
 								padding: "1rem",
-								borderBottom: "1px solid var(--border-primary)",
+								borderBottom: "1px solid var(--border-default)",
 							}}
 						>
 							<h2 style={{ margin: 0, fontSize: "1.125rem" }}>{t("uploadModal.title")}</h2>
@@ -715,7 +715,7 @@ function ImagesPage() {
 								<div
 									style={{
 										padding: "1rem",
-										border: "2px dashed var(--border-primary)",
+										border: "2px dashed var(--border-default)",
 										borderRadius: "8px",
 										textAlign: "center",
 										cursor: "pointer",
@@ -766,7 +766,7 @@ function ImagesPage() {
 								<div
 									style={{
 										padding: "1rem",
-										border: "2px dashed var(--border-primary)",
+										border: "2px dashed var(--border-default)",
 										borderRadius: "8px",
 										textAlign: "center",
 										cursor: "pointer",
@@ -838,7 +838,7 @@ function ImagesPage() {
 								justifyContent: "flex-end",
 								gap: "0.5rem",
 								padding: "1rem",
-								borderTop: "1px solid var(--border-primary)",
+								borderTop: "1px solid var(--border-default)",
 							}}
 						>
 							<Button
@@ -895,7 +895,7 @@ function ImagesPage() {
 						onClick={(e) => e.stopPropagation()}
 					>
 						{/* 모달 헤더 */}
-						<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "1rem", borderBottom: "1px solid var(--border-primary)" }}>
+						<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "1rem", borderBottom: "1px solid var(--border-default)" }}>
 							<h2 style={{ margin: 0, fontSize: "1.125rem", display: "flex", alignItems: "center", gap: 8 }}>
 								<Sparkles size={20} style={{ color: "var(--accent-primary)" }} />
 								{t("aiSvgModal.title")}
@@ -919,7 +919,7 @@ function ImagesPage() {
 										placeholder={t("aiSvgModal.promptPlaceholder")}
 										value={svgModal.prompt}
 										onChange={(e) => setSvgModal({ ...svgModal, prompt: e.target.value })}
-										style={{ width: "100%", resize: "vertical", backgroundColor: "rgba(255, 255, 255, 0.05)", border: "1px solid var(--border-primary)" }}
+										style={{ width: "100%", resize: "vertical", backgroundColor: "rgba(255, 255, 255, 0.05)", border: "1px solid var(--border-default)" }}
 									/>
 								</div>
 								<div>
@@ -930,7 +930,7 @@ function ImagesPage() {
 										className="form-input"
 										value={svgModal.category}
 										onChange={(e) => setSvgModal({ ...svgModal, category: e.target.value })}
-										style={{ width: "100%", backgroundColor: "rgba(255, 255, 255, 0.05)", border: "1px solid var(--border-primary)" }}
+										style={{ width: "100%", backgroundColor: "rgba(255, 255, 255, 0.05)", border: "1px solid var(--border-default)" }}
 									>
 										{categories.map((cat) => {
 											const categoriesMap: Record<string, string> = {
@@ -1027,7 +1027,7 @@ function ImagesPage() {
 							{/* ── 크기 결정 모드 탭 ── */}
 							<div>
 								<div style={{
-									display: "flex", gap: 0, borderBottom: "2px solid var(--border-primary)",
+									display: "flex", gap: 0, borderBottom: "2px solid var(--border-default)",
 									marginBottom: "0.75rem",
 								}}>
 									<button
@@ -1069,7 +1069,7 @@ function ImagesPage() {
 												<span style={{ background: "var(--accent-primary)", color: "#fff", borderRadius: "50%", width: 20, height: 20, display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: "0.7rem", fontWeight: 700 }}>1</span>
 												{t("aiSvgModal.step1")}
 											</div>
-											<div style={{ maxHeight: 180, overflowY: "auto", borderRadius: 8, border: "1px solid var(--border-primary)", padding: 8 }}>
+											<div style={{ maxHeight: 180, overflowY: "auto", borderRadius: 8, border: "1px solid var(--border-default)", padding: 8 }}>
 												<GridSelector
 													selectedGridId={svgGrid?.id ?? null}
 													onSelect={handleSvgGridSelect}
@@ -1084,7 +1084,7 @@ function ImagesPage() {
 													<span style={{ background: "var(--accent-primary)", color: "#fff", borderRadius: "50%", width: 20, height: 20, display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: "0.7rem", fontWeight: 700 }}>2</span>
 													{t("aiSvgModal.step2")}
 												</div>
-												<div style={{ borderRadius: 8, border: "1px solid var(--border-primary)", padding: 8 }}>
+												<div style={{ borderRadius: 8, border: "1px solid var(--border-default)", padding: 8 }}>
 													<ZoneSelector
 														template={svgGrid}
 														selectedZoneIds={svgZoneIds}
@@ -1200,7 +1200,7 @@ function ImagesPage() {
 						</div>
 
 						{/* 모달 푸터 */}
-						<div style={{ display: "flex", justifyContent: "flex-end", gap: 8, padding: "1rem", borderTop: "1px solid var(--border-primary)" }}>
+						<div style={{ display: "flex", justifyContent: "flex-end", gap: 8, padding: "1rem", borderTop: "1px solid var(--border-default)" }}>
 							<Button variant="secondary" onClick={() => setSvgModal({ ...svgModal, isOpen: false })}>{t("cancel")}</Button>
 
 							{/* 생성 / 재생성 */}
@@ -1260,7 +1260,7 @@ function EditImageModal({ editingImage: _editingImage, editForm, setEditForm, cl
 			onClick={closeEditModal}>
 			<div className="card" style={{ width: 400, maxWidth: "90vw", maxHeight: "80vh", display: "flex", flexDirection: "column" }}
 				onClick={(e) => e.stopPropagation()}>
-				<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "1rem", borderBottom: "1px solid var(--border-primary)" }}>
+				<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "1rem", borderBottom: "1px solid var(--border-default)" }}>
 					<h3 style={{ margin: 0, fontSize: "1rem" }}>
 						<Edit2 size={18} style={{ marginRight: 8, verticalAlign: "middle" }} />
 						{t("editModal.title")}
@@ -1305,7 +1305,7 @@ function EditImageModal({ editingImage: _editingImage, editForm, setEditForm, cl
 						<label htmlFor="is_public" style={{ fontSize: "0.8125rem", color: "var(--text-secondary)" }}>{t("editModal.isPublic")}</label>
 					</div>
 				</div>
-				<div style={{ display: "flex", justifyContent: "flex-end", gap: 8, padding: "1rem", borderTop: "1px solid var(--border-primary)" }}>
+				<div style={{ display: "flex", justifyContent: "flex-end", gap: 8, padding: "1rem", borderTop: "1px solid var(--border-default)" }}>
 					<Button variant="secondary" onClick={closeEditModal} disabled={uploading}>{t("cancel")}</Button>
 					<Button onClick={handleEditSave} disabled={uploading || !editForm.name.trim()}>
 						{uploading ? (<><Loader2 size={16} className="animate-spin" /> {t("editModal.saving")}</>) : t("editModal.save")}

@@ -4,7 +4,7 @@
  *
  * ■ 멀티유저 스크러빙 확장 (2026-05-12)
  *   스크러빙 중인 사용자: 주황 테두리 + "SCRUB" 뱃지
- *   주 오퍼레이터(lastBroadcastAt 최신): 노란 별(★) 아이콘
+ *   오퍼레이터/읽기 전용 참여자를 분리 표시
  */
 
 import { useMemo } from "react";
@@ -47,11 +47,14 @@ interface UserAvatarsProps {
 }
 
 export function UserAvatars({ users }: UserAvatarsProps) {
-	// Primary operator = lastBroadcastAt이 가장 최신인 사용자
-	const primaryOperator = useMemo(() => {
-		const broadcasters = users.filter(u => u.lastBroadcastAt);
+	const operatorCount = useMemo(() => users.filter(u => u.canBroadcast).length, [users]);
+	const readOnlyCount = users.length - operatorCount;
+
+	// 마지막 송출자는 "최근 조작자" 표시일 뿐, 주도권 소유자로 해석하지 않는다.
+	const latestPlayoutUser = useMemo(() => {
+		const broadcasters = users.filter(u => u.canBroadcast && u.lastBroadcastAt);
 		if (broadcasters.length === 0) return null;
-		return broadcasters.sort(
+		return [...broadcasters].sort(
 			(a, b) => new Date(b.lastBroadcastAt!).getTime() - new Date(a.lastBroadcastAt!).getTime()
 		)[0];
 	}, [users]);
@@ -79,6 +82,10 @@ export function UserAvatars({ users }: UserAvatarsProps) {
 			>
 				<Users size={14} />
 				<span>{users.length}</span>
+				<span style={{ color: "var(--accent-success)", fontWeight: 700 }}>OP {operatorCount}</span>
+				{readOnlyCount > 0 && (
+					<span style={{ color: "var(--text-tertiary)", fontWeight: 700 }}>RO {readOnlyCount}</span>
+				)}
 			</div>
 
 			{/* 아바타 스택 */}
@@ -89,14 +96,16 @@ export function UserAvatars({ users }: UserAvatarsProps) {
 				}}
 			>
 				{users.slice(0, 5).map((user, index) => {
-					const isPrimary = primaryOperator?.id === user.id;
+					const isLatestPlayout = latestPlayoutUser?.id === user.id;
 					let borderColor = "var(--app-bg-alt)";
 					if (user.isScrubbing) {
 						borderColor = "#f59e0b";     // 주황: 스크러빙 모드
 					} else if (user.isCurrentUser) {
-						borderColor = "var(--accent-primary)";
-					} else if (isPrimary) {
-						borderColor = "#eab308";     // 노랑: 주 오퍼레이터
+						borderColor = user.canBroadcast ? "var(--accent-primary)" : "#94a3b8";
+					} else if (user.canBroadcast) {
+						borderColor = "#10b981";
+					} else {
+						borderColor = "rgba(148, 163, 184, 0.65)";
 					}
 					return (
 						<div
@@ -121,23 +130,38 @@ export function UserAvatars({ users }: UserAvatarsProps) {
 									? "0 0 0 2px var(--app-bg-alt)"
 									: "none",
 							}}
-							title={`${user.displayName}${user.isCurrentUser ? " (나)" : ""}${isPrimary ? " ★ 운영자" : ""}${user.isScrubbing ? " [SCRUB]" : ""}${user.canBroadcast ? "" : " (읽기 전용)"}`}
+							title={`${user.displayName}${user.isCurrentUser ? " (나)" : ""}${user.canBroadcast ? " (오퍼레이터)" : " (읽기 전용)"}${isLatestPlayout ? " · 최근 송출" : ""}${user.isScrubbing ? " [SCRUB]" : ""}`}
 						>
 							{getInitials(user.email)}
-							{/* 주 오퍼레이터 별 */}
-							{isPrimary && (
+							{/* 역할 배지 */}
+							<span style={{
+								position: "absolute",
+								right: "-6px",
+								bottom: "-5px",
+								fontSize: "7px",
+								padding: "0 3px",
+								borderRadius: "3px",
+								background: user.canBroadcast ? "#10b981" : "#64748b",
+								color: "#fff",
+								fontWeight: 800,
+								lineHeight: "11px",
+								pointerEvents: "none",
+							}}>
+								{user.canBroadcast ? "OP" : "RO"}
+							</span>
+							{/* 최근 송출자 표시 */}
+							{isLatestPlayout && (
 								<span style={{
 									position: "absolute",
 									top: "-4px",
 									right: "-4px",
-									fontSize: "11px",
-									color: "#eab308",
-									textShadow: "0 0 3px rgba(0,0,0,0.9)",
-									lineHeight: 1,
+									width: "8px",
+									height: "8px",
+									borderRadius: "50%",
+									background: "#eab308",
+									boxShadow: "0 0 0 2px var(--app-bg-alt), 0 0 6px rgba(234, 179, 8, 0.6)",
 									pointerEvents: "none",
-								}}>
-									★
-								</span>
+								}} />
 							)}
 							{/* 스크러빙 뱃지 */}
 							{user.isScrubbing && (

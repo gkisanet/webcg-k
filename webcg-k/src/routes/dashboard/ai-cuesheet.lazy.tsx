@@ -142,7 +142,7 @@ function AiCuesheetSessionListView() {
         <div className="flex-1 overflow-y-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-[var(--border-primary)] text-[var(--text-secondary)] text-xs">
+              <tr className="border-b border-[var(--border-default)] text-[var(--text-secondary)] text-xs">
                 <th className="text-left py-2 font-medium">Title</th>
                 <th className="text-left py-2 font-medium">{t("aiCuesheet.sessionList.expert")}</th>
                 <th className="text-center py-2 font-medium">{t("aiCuesheet.sessionList.status")}</th>
@@ -156,7 +156,7 @@ function AiCuesheetSessionListView() {
               {sessions.map((s) => (
                 <tr
                   key={s.id}
-                  className="border-b border-[var(--border-primary)] hover:bg-[var(--app-bg)] cursor-pointer"
+                  className="border-b border-[var(--border-default)] hover:bg-[var(--app-bg)] cursor-pointer"
                   onClick={() => navigate({ search: { sessionId: s.id } as any })}
                 >
                   <td className="py-2.5 font-medium text-[var(--text-primary)]">{s.program_title}</td>
@@ -650,7 +650,7 @@ function AiCuesheetWizardView() {
               size="sm"
               variant="outline"
               onClick={handleDismissBanner}
-              className="text-xs h-8 px-3 text-[var(--text-secondary)] hover:text-[var(--text-primary)] border-[var(--border-primary)]"
+              className="text-xs h-8 px-3 text-[var(--text-secondary)] hover:text-[var(--text-primary)] border-[var(--border-default)]"
             >
               닫기
             </Button>
@@ -780,7 +780,7 @@ function StepIndicator({
                 "w-5 h-5 rounded-full flex items-center justify-center text-[10px]",
                 isPast ? "bg-green-500/20 text-green-400" :
                 isCurrent ? "bg-blue-500/30 text-blue-400" :
-                "bg-[var(--border-primary)] text-[var(--text-muted)]",
+                "bg-[var(--border-default)] text-[var(--text-muted)]",
               )}>
                 {isPast ? <Check size={10} /> : i + 1}
               </span>
@@ -789,7 +789,7 @@ function StepIndicator({
             {i < steps.length - 1 && (
               <div className={cn(
                 "w-6 h-px",
-                isPast ? "bg-green-500/40" : "bg-[var(--border-primary)]",
+                isPast ? "bg-green-500/40" : "bg-[var(--border-default)]",
               )} />
             )}
           </div>

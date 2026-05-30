@@ -4,7 +4,7 @@
  */
 
 // ─── 세션 상태 ─────────────────────────────────────────────────────
-export type SessionStatus = "draft" | "ready" | "live" | "ended" | "completed";
+export type SessionStatus = "draft" | "ready" | "rehearsal" | "live" | "ended" | "completed";
 
 // ─── 브로드캐스트 세션 (슈퍼셋) ────────────────────────────────────
 export interface BroadcastSession {
@@ -14,6 +14,7 @@ export interface BroadcastSession {
 	status: SessionStatus;
 	created_at: string;
 	updated_at: string;
+	archived_at?: string | null;
 	created_by?: string;
 	rundown_id?: string;
 	timeline_data: any[];
@@ -22,6 +23,15 @@ export interface BroadcastSession {
 	isShared?: boolean;
 	/** 송출 로그 수 (broadcast.tsx에서 런타임 추가) */
 	broadcastLogCount?: number;
+}
+
+export interface MainOperatorLease {
+	userId: string;
+	clientId: string;
+	email?: string | null;
+	displayName?: string | null;
+	claimedAt: string;
+	expiresAt: string;
 }
 
 // ─── 플레이헤드 상태 (DB 영속화용) ──────────────────────────────────
@@ -40,6 +50,19 @@ export interface PlayheadState {
 	airedBlockIds: string[];
 	skippedBlockIds: string[];
 	logoBlocks?: SavedLogoBlock[];
+	/** 판서 레이어 PVW 상태. 동적으로 만든 whiteboard block은 timeline_data에 없으므로 별도 저장한다. */
+	whiteboardPreviewId?: string | null;
+	/** 판서 레이어 PGM 상태. 렌더러/참여자 복원용. */
+	whiteboardProgramId?: string | null;
+	/** 협업 동기화용 단조 증가 버전. Realtime echo/stale snapshot 방어에 사용. */
+	revision?: number;
+	/** 변경을 만든 브라우저 인스턴스. 로컬 echo 판별 및 진단용. */
+	originClientId?: string;
+	/** 변경을 만든 사용자 ID. 감사 로그 및 주도권 UI용. */
+	updatedBy?: string;
+	updatedAt?: string;
+	/** 메인 오퍼레이터 운영권. 다중 오퍼레이터 환경에서 write owner를 1명으로 고정한다. */
+	mainOperatorLease?: MainOperatorLease | null;
 }
 
 // ─── 로고 블록 저장 타입 ─────────────────────────────────────────

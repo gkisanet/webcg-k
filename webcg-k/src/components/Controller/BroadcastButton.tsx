@@ -5,7 +5,6 @@
 
 import { Check, Copy, ExternalLink, Radio, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { supabase } from "../../lib/supabase";
 import { useAuth } from "../../lib/auth";
 import { addActionLog } from "../../stores/actionLogStore";
 import { useClipboard } from "../../hooks/useClipboard";
@@ -13,36 +12,21 @@ import { useClipboard } from "../../hooks/useClipboard";
 interface BroadcastButtonProps {
 	sessionId?: string;
 	baseUrl?: string;
-	/** 컨트롤러에서 STOP 명령을 내릴 때 호출할 콜백 (채널은 컨트롤러가 소유) */
-	onStop?: () => void;
+	/** 컨트롤러에서 송출 시작 command를 수행한다. DB status도 부모가 소유한다. */
+	onStart?: () => Promise<void> | void;
+	/** 컨트롤러에서 STOP command를 수행한다. DB status도 부모가 소유한다. */
+	onStop?: () => Promise<void> | void;
 	/** 송출 상태 (부모가 소유) */
 	isBroadcasting: boolean;
-	/** 송출 상태 변경 콜백 */
-	onBroadcastChange: (broadcasting: boolean) => void;
 }
 
-export function BroadcastButton({ sessionId, baseUrl = "", onStop, isBroadcasting, onBroadcastChange }: BroadcastButtonProps) {
+export function BroadcastButton({ sessionId, baseUrl = "", onStart, onStop, isBroadcasting }: BroadcastButtonProps) {
 	const { user } = useAuth();
 	const [showModal, setShowModal] = useState(false);
 	const [copiedLinkId, setCopiedLinkId] = useState<string | null>(null);
+	const [isPending, setIsPending] = useState(false);
 	const { copyToClipboard } = useClipboard();
 	const modalRef = useRef<HTMLDivElement>(null);
-
-	// 페이지 로드 시 DB status와 동기화 — live이면 송출 상태 복원
-	useEffect(() => {
-		if (!sessionId) return;
-		(async () => {
-			const { data } = await supabase
-				.from("broadcast_sessions")
-				.select("status")
-				.eq("id", sessionId)
-				.single();
-			if (data?.status === "live") {
-				// DB가 live → 송출 중 상태로 복원 (브라우저 재시작 후에도 유지)
-				onBroadcastChange(true);
-			}
-		})();
-	}, [sessionId]);
 
 	// 송출 상태는 유저가 직접 '송출 중지'를 누를 때만 ended로 전환
 	// beforeunload/언마운트 시 자동 종료하지 않음 (브라우저 재시작 후에도 live 유지)
@@ -110,32 +94,26 @@ export function BroadcastButton({ sessionId, baseUrl = "", onStop, isBroadcastin
 
 	// 송출 버튼 클릭
 	const handleBroadcastClick = async () => {
+		if (isPending) return;
+
 		const userName = user?.email?.split("@")[0] || "User";
 		const logUserId = user?.id || "unknown";
 
-		if (isBroadcasting) {
-			// 송출 중지 — DB 상태만 변경 (Realtime은 컨트롤러가 처리)
-			onBroadcastChange(false);
-			setShowModal(false);
-			addActionLog("broadcast_stop", logUserId, userName, sessionId || "세션", undefined, sessionId);
-
-			// 세션 상태 → ended (렌더러는 postgres_changes로 감지하여 자동 소거)
-			if (sessionId) {
-				supabase.from("broadcast_sessions").update({ status: "ended" }).eq("id", sessionId).then();
+		setIsPending(true);
+		try {
+			if (isBroadcasting) {
+				setShowModal(false);
+				await onStop?.();
+				addActionLog("broadcast_stop", logUserId, userName, sessionId || "세션", undefined, sessionId);
+			} else {
+				await onStart?.();
+				setShowModal(true);
+				addActionLog("broadcast_start", logUserId, userName, sessionId || "세션", undefined, sessionId);
 			}
-
-			// 부모 컴포넌트의 STOP 콜백 호출 (채널을 통한 명시적 STOP 발행)
-			onStop?.();
-		} else {
-			// 송출 시작 & 모달 표시
-			onBroadcastChange(true);
-			setShowModal(true);
-			addActionLog("broadcast_start", logUserId, userName, sessionId || "세션", undefined, sessionId);
-
-			// 세션 상태 → live (렌더러는 postgres_changes로 감지)
-			if (sessionId) {
-				supabase.from("broadcast_sessions").update({ status: "live" }).eq("id", sessionId).then();
-			}
+		} catch (err) {
+			console.error("[BroadcastButton] Broadcast state command failed:", err);
+		} finally {
+			setIsPending(false);
 		}
 	};
 
@@ -145,6 +123,7 @@ export function BroadcastButton({ sessionId, baseUrl = "", onStop, isBroadcastin
 			<button
 				type="button"
 				onClick={handleBroadcastClick}
+				disabled={isPending}
 				style={{
 					padding: "0.5rem 1rem",
 					fontSize: "0.8rem",
@@ -160,7 +139,8 @@ export function BroadcastButton({ sessionId, baseUrl = "", onStop, isBroadcastin
 						: "1px solid var(--border-default)",
 					borderRadius: "8px",
 					color: isBroadcasting ? "#EAB308" : "var(--text-secondary)",
-					cursor: "pointer",
+					cursor: isPending ? "wait" : "pointer",
+					opacity: isPending ? 0.7 : 1,
 					transition: "all 0.3s ease",
 				}}
 			>

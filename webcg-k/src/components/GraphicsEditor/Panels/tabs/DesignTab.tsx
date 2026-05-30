@@ -10,8 +10,11 @@
  *   다른 탭(Text/Animate/CSS)을 수정핫도 이 파일은 재컴파일되지 않는다.
  */
 
+import { useState, useRef, useEffect } from "react";
 import type { GraphicElement } from "@/routes/dashboard/studio/graphics/$graphicId";
 import { rgbaToHex } from "@/utils/colorUtils";
+import { NumberInput } from "@/components/ui/number-input";
+import { Plus, ChevronRight, Trash2 } from "lucide-react";
 
 // ─── 공통 Props 타입 ─────────────────────────────────────────────
 // 모든 탭 컴포넌트가 공유하는 핸들러 시그니처
@@ -42,38 +45,30 @@ export function DesignTab({
                 {/* 위치 */}
                 <div className="ins-row-2col">
                     <span className="ins-label" title="X 위치">X</span>
-                    <input
-                        type="number"
-                        className="ins-input"
-                        value={isMultiple ? "" : Math.round(element.x)}
-                        onChange={(e) => handleChange("x", parseFloat(e.target.value) || 0)}
+                    <NumberInput
+                        value={isMultiple ? undefined : Math.round(element.x)}
+                        onChange={(val) => handleChange("x", val)}
                         placeholder={isMultiple ? "다중" : undefined}
                     />
                     <span className="ins-label" title="Y 위치">Y</span>
-                    <input
-                        type="number"
-                        className="ins-input"
-                        value={isMultiple ? "" : Math.round(element.y)}
-                        onChange={(e) => handleChange("y", parseFloat(e.target.value) || 0)}
+                    <NumberInput
+                        value={isMultiple ? undefined : Math.round(element.y)}
+                        onChange={(val) => handleChange("y", val)}
                         placeholder={isMultiple ? "다중" : undefined}
                     />
                 </div>
                 {/* 크기 */}
                 <div className="ins-row-2col">
                     <span className="ins-label" title="너비">W</span>
-                    <input
-                        type="number"
-                        className="ins-input"
-                        value={isMultiple ? "" : Math.round(element.width)}
-                        onChange={(e) => handleChange("width", parseFloat(e.target.value) || 0)}
+                    <NumberInput
+                        value={isMultiple ? undefined : Math.round(element.width)}
+                        onChange={(val) => handleChange("width", val)}
                         placeholder={isMultiple ? "다중" : undefined}
                     />
                     <span className="ins-label" title="높이">H</span>
-                    <input
-                        type="number"
-                        className="ins-input"
-                        value={isMultiple ? "" : Math.round(element.height)}
-                        onChange={(e) => handleChange("height", parseFloat(e.target.value) || 0)}
+                    <NumberInput
+                        value={isMultiple ? undefined : Math.round(element.height)}
+                        onChange={(val) => handleChange("height", val)}
                         placeholder={isMultiple ? "다중" : undefined}
                     />
                 </div>
@@ -89,11 +84,9 @@ export function DesignTab({
                         >
                             ↺
                         </button>
-                        <input
-                            type="number"
-                            className="ins-input"
-                            value={isMultiple ? "" : element.rotation}
-                            onChange={(e) => handleChange("rotation", parseFloat(e.target.value) || 0)}
+                        <NumberInput
+                            value={isMultiple ? undefined : element.rotation}
+                            onChange={(val) => handleChange("rotation", val)}
                             placeholder={isMultiple ? "다중" : undefined}
                         />
                         <span style={{ fontSize: "11px", color: "var(--text-secondary)" }}>°</span>
@@ -296,11 +289,9 @@ export function DesignTab({
                     </div>
                     <div className="ins-row">
                         <span className="ins-label">Width</span>
-                        <input
-                            type="number"
-                            className="ins-input"
+                        <NumberInput
                             value={element.stroke?.width ?? 2}
-                            onChange={(e) => handleStrokeChange("width", parseFloat(e.target.value) || 0)}
+                            onChange={(val) => handleStrokeChange("width", val)}
                             min={0}
                         />
                     </div>
@@ -341,207 +332,33 @@ export function DesignTab({
                 <CornerRadiusSection element={element} handleChange={handleChange} onUpdate={onUpdate} />
             )}
 
-            {/* 🆕 Shadow — 도형(rect/ellipse/image)용 그림자
-                Why: 기존에는 TextTab에만 Shadow 섹션이 있어 텍스트만 그림자를 줄 수 있었음.
-                     포토샵의 Drop Shadow처럼 모든 요소 타입에 그림자를 적용할 수 있도록 확장.
-                     shadowEnabled/Color/OffsetX/Y/Blur 필드는 이미 GraphicElement 타입에 존재함. */}
-            {element.type !== "text" && (
-                <div className="ins-section">
-                    <div className="ins-section-title">
-                        <label className="toggle-label">
-                            <input
-                                type="checkbox"
-                                checked={element.shadowEnabled || false}
-                                onChange={(e) => handleChange("shadowEnabled", e.target.checked)}
-                            />
-                            <span>Shadow</span>
-                        </label>
-                    </div>
-                    {element.shadowEnabled && (
-                        <>
-                            <div className="ins-row">
-                                <span className="ins-label">색상</span>
-                                <div className="ins-color">
-                                    <input
-                                        type="color"
-                                        className="ins-color-swatch"
-                                        value={rgbaToHex(element.shadowColor || "#000000")}
-                                        onChange={(e) => handleChange("shadowColor", e.target.value)}
-                                    />
-                                    <input
-                                        type="text"
-                                        className="ins-input"
-                                        value={element.shadowColor || "#000000"}
-                                        onChange={(e) => handleChange("shadowColor", e.target.value)}
-                                    />
-                                </div>
-                            </div>
-                            <div className="ins-row-2col">
-                                <span className="ins-label">X</span>
-                                <input
-                                    type="number"
-                                    className="ins-input"
-                                    value={element.shadowOffsetX ?? 2}
-                                    onChange={(e) => handleChange("shadowOffsetX", parseFloat(e.target.value) || 0)}
-                                />
-                                <span className="ins-label">Y</span>
-                                <input
-                                    type="number"
-                                    className="ins-input"
-                                    value={element.shadowOffsetY ?? 2}
-                                    onChange={(e) => handleChange("shadowOffsetY", parseFloat(e.target.value) || 0)}
-                                />
-                            </div>
-                            <div className="ins-row">
-                                <span className="ins-label">Blur</span>
-                                <input
-                                    type="number"
-                                    className="ins-input"
-                                    value={element.shadowBlur ?? 4}
-                                    onChange={(e) => handleChange("shadowBlur", parseFloat(e.target.value) || 0)}
-                                    min={0}
-                                />
-                            </div>
-                        </>
-                    )}
-                </div>
-            )}
-
-            {/* 🆕 Glow (외부 발광) — 모든 요소(도형, 이미지)용 */}
-            {element.type !== "text" && (
-                <div className="ins-section">
-                    <div className="ins-section-title">
-                        <label className="toggle-label">
-                            <input
-                                type="checkbox"
-                                checked={element.glowEnabled || false}
-                                onChange={(e) => handleChange("glowEnabled", e.target.checked)}
-                            />
-                            <span>Glow (발광)</span>
-                        </label>
-                    </div>
-                    {element.glowEnabled && (
-                        <>
-                            <div className="ins-row">
-                                <span className="ins-label">색상</span>
-                                <div className="ins-color">
-                                    <input
-                                        type="color"
-                                        className="ins-color-swatch"
-                                        value={rgbaToHex(element.glowColor || "#00e5ff")}
-                                        onChange={(e) => handleChange("glowColor", e.target.value)}
-                                    />
-                                    <input
-                                        type="text"
-                                        className="ins-input"
-                                        value={element.glowColor || "#00e5ff"}
-                                        onChange={(e) => handleChange("glowColor", e.target.value)}
-                                    />
-                                </div>
-                            </div>
-                            <div className="ins-row">
-                                <span className="ins-label">Blur</span>
-                                <input
-                                    type="number"
-                                    className="ins-input"
-                                    value={element.glowBlur ?? 10}
-                                    onChange={(e) => handleChange("glowBlur", parseFloat(e.target.value) || 0)}
-                                    min={0}
-                                />
-                            </div>
-                        </>
-                    )}
-                </div>
-            )}
-
-            {/* 🆕 Inner Shadow (내부 그림자) — 도형(rect/ellipse) 전용 */}
-            {(element.type === "rect" || element.type === "ellipse") && (
-                <div className="ins-section">
-                    <div className="ins-section-title">
-                        <label className="toggle-label">
-                            <input
-                                type="checkbox"
-                                checked={element.innerShadowEnabled || false}
-                                onChange={(e) => handleChange("innerShadowEnabled", e.target.checked)}
-                            />
-                            <span>Inner Shadow</span>
-                        </label>
-                    </div>
-                    {element.innerShadowEnabled && (
-                        <>
-                            <div className="ins-row">
-                                <span className="ins-label">색상</span>
-                                <div className="ins-color">
-                                    <input
-                                        type="color"
-                                        className="ins-color-swatch"
-                                        value={rgbaToHex(element.innerShadowColor || "#000000")}
-                                        onChange={(e) => handleChange("innerShadowColor", e.target.value)}
-                                    />
-                                    <input
-                                        type="text"
-                                        className="ins-input"
-                                        value={element.innerShadowColor || "#000000"}
-                                        onChange={(e) => handleChange("innerShadowColor", e.target.value)}
-                                    />
-                                </div>
-                            </div>
-                            <div className="ins-row-2col">
-                                <span className="ins-label">X</span>
-                                <input
-                                    type="number"
-                                    className="ins-input"
-                                    value={element.innerShadowOffsetX ?? 2}
-                                    onChange={(e) => handleChange("innerShadowOffsetX", parseFloat(e.target.value) || 0)}
-                                />
-                                <span className="ins-label">Y</span>
-                                <input
-                                    type="number"
-                                    className="ins-input"
-                                    value={element.innerShadowOffsetY ?? 2}
-                                    onChange={(e) => handleChange("innerShadowOffsetY", parseFloat(e.target.value) || 0)}
-                                />
-                            </div>
-                            <div className="ins-row">
-                                <span className="ins-label">Blur</span>
-                                <input
-                                    type="number"
-                                    className="ins-input"
-                                    value={element.innerShadowBlur ?? 4}
-                                    onChange={(e) => handleChange("innerShadowBlur", parseFloat(e.target.value) || 0)}
-                                    min={0}
-                                />
-                            </div>
-                        </>
-                    )}
-                </div>
-            )}
-
-            {/* 🆕 Blend Mode
-                Why: 포토샵 레이어 블렌딩 모드의 핵심 기능.
-                     배경 위에 반투명 도형을 올려 색감 연출할 때 필수.
-                     mixBlendMode는 SVG <g> style에서 바로 동작함. */}
+            {/* ─── Appearance (Blend Mode) ─────────────────────── */}
             <div className="ins-section">
-                <div className="ins-section-title">Blend Mode</div>
+                <div className="ins-section-title">Appearance</div>
                 <div className="ins-row">
+                    <span className="ins-label">Blend Mode</span>
                     <select
                         className="ins-select"
                         value={element.blendMode || "normal"}
-                        onChange={(e) => handleChange("blendMode" as keyof typeof element, e.target.value)}
+                        onChange={(e) => handleChange("blendMode", e.target.value)}
                     >
                         <option value="normal">Normal</option>
-                        <option value="multiply">Multiply (어둡게 합성)</option>
-                        <option value="screen">Screen (밝게 합성)</option>
-                        <option value="overlay">Overlay (대비 강화)</option>
-                        <option value="soft-light">Soft Light (부드러운 빛)</option>
-                        <option value="hard-light">Hard Light (강한 빛)</option>
-                        <option value="color-dodge">Color Dodge (번)</option>
-                        <option value="color-burn">Color Burn (번 어둡게)</option>
-                        <option value="difference">Difference (차이)</option>
-                        <option value="luminosity">Luminosity (밝기)</option>
+                        <option value="multiply">Multiply</option>
+                        <option value="screen">Screen</option>
+                        <option value="overlay">Overlay</option>
+                        <option value="soft-light">Soft Light</option>
+                        <option value="hard-light">Hard Light</option>
+                        <option value="color-dodge">Color Dodge</option>
+                        <option value="color-burn">Color Burn</option>
+                        <option value="difference">Difference</option>
+                        <option value="luminosity">Luminosity</option>
                     </select>
                 </div>
             </div>
+
+            {/* ─── Effects (Figma-style collapsible cards) ──────── */}
+            <EffectsSection element={element} handleChange={handleChange} />
+
         </>
     );
 }
@@ -709,20 +526,18 @@ function AngleDialSection({
                     />
                     <div className="angle-dial-center" />
                 </div>
-                <input
-                    type="number"
-                    className="ins-input"
+                <NumberInput
                     value={element.fill?.gradientAngle || 0}
-                    onChange={(e) => {
+                    onChange={(val) => {
                         selectedElements.forEach((el) => {
                             onUpdate(el.id, {
-                                fill: { ...el.fill, gradientAngle: parseFloat(e.target.value) || 0 }
+                                fill: { ...el.fill, gradientAngle: val }
                             });
                         });
                     }}
                     min={0}
                     max={360}
-                    style={{ width: "48px" }}
+                    className="w-16"
                 />
                 <span style={{ fontSize: "0.75rem", color: "var(--text-secondary)" }}>°</span>
             </div>
@@ -790,12 +605,9 @@ function CornerRadiusSection({
             {element.borderRadiusLinked !== false ? (
                 <div className="ins-row">
                     <span className="ins-label" title="모든 코너">⊡</span>
-                    <input
-                        type="number"
-                        className="ins-input"
-                        value={element.borderRadius ?? ""}
-                        onChange={(e) => {
-                            const val = e.target.value === "" ? 0 : parseFloat(e.target.value);
+                    <NumberInput
+                        value={element.borderRadius ?? 0}
+                        onChange={(val) => {
                             onUpdate(element.id, {
                                 borderRadius: val,
                                 borderRadiusTL: val,
@@ -812,46 +624,359 @@ function CornerRadiusSection({
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
                     <div className="ins-row" style={{ marginBottom: 0 }}>
                         <span className="ins-label" title="Top-Left">↖</span>
-                        <input
-                            type="number"
-                            className="ins-input"
-                            value={element.borderRadiusTL ?? element.borderRadius ?? ""}
-                            onChange={(e) => handleChange("borderRadiusTL", e.target.value === "" ? 0 : parseFloat(e.target.value))}
+                        <NumberInput
+                            value={element.borderRadiusTL ?? element.borderRadius ?? 0}
+                            onChange={(val) => handleChange("borderRadiusTL", val)}
                             min={0}
                         />
                     </div>
                     <div className="ins-row" style={{ marginBottom: 0 }}>
                         <span className="ins-label" title="Top-Right">↗</span>
-                        <input
-                            type="number"
-                            className="ins-input"
-                            value={element.borderRadiusTR ?? element.borderRadius ?? ""}
-                            onChange={(e) => handleChange("borderRadiusTR", e.target.value === "" ? 0 : parseFloat(e.target.value))}
+                        <NumberInput
+                            value={element.borderRadiusTR ?? element.borderRadius ?? 0}
+                            onChange={(val) => handleChange("borderRadiusTR", val)}
                             min={0}
                         />
                     </div>
                     <div className="ins-row" style={{ marginBottom: 0 }}>
                         <span className="ins-label" title="Bottom-Left">↙</span>
-                        <input
-                            type="number"
-                            className="ins-input"
-                            value={element.borderRadiusBL ?? element.borderRadius ?? ""}
-                            onChange={(e) => handleChange("borderRadiusBL", e.target.value === "" ? 0 : parseFloat(e.target.value))}
+                        <NumberInput
+                            value={element.borderRadiusBL ?? element.borderRadius ?? 0}
+                            onChange={(val) => handleChange("borderRadiusBL", val)}
                             min={0}
                         />
                     </div>
                     <div className="ins-row" style={{ marginBottom: 0 }}>
                         <span className="ins-label" title="Bottom-Right">↘</span>
-                        <input
-                            type="number"
-                            className="ins-input"
-                            value={element.borderRadiusBR ?? element.borderRadius ?? ""}
-                            onChange={(e) => handleChange("borderRadiusBR", e.target.value === "" ? 0 : parseFloat(e.target.value))}
+                        <NumberInput
+                            value={element.borderRadiusBR ?? element.borderRadius ?? 0}
+                            onChange={(val) => handleChange("borderRadiusBR", val)}
                             min={0}
                         />
                     </div>
                 </div>
             )}
+        </div>
+    );
+}
+
+
+// ─── 서브 컴포넌트: Figma 스타일 이펙트 섹션 ──────────────────────
+// Why Figma 스타일?
+// → 체크박스 리스트는 요소가 많아질수록 시각적으로 복잡해진다.
+//   Figma/Penpot처럼 "+ 추가" → 접이식 카드 패턴은:
+//   1) 비활성 이펙트가 공간을 차지하지 않아 패널이 깔끔하다.
+//   2) 카드 헤더만으로 어떤 이펙트가 활성인지 한눈에 파악된다.
+//   3) 접기/펼치기로 세부 파라미터 영역을 선택적으로 노출한다.
+
+interface EffectDef {
+    key: string;
+    label: string;
+    enabledField: keyof GraphicElement;
+    /** 이 이펙트가 현재 요소 타입에서 사용 가능한지 */
+    isAvailable: boolean;
+    /** 현재 활성 상태인지 */
+    isActive: boolean;
+}
+
+function EffectsSection({
+    element,
+    handleChange,
+}: {
+    element: GraphicElement;
+    handleChange: (field: keyof GraphicElement, value: string | number | boolean) => void;
+}) {
+    // 1. 각 카드의 접힘/펼침 상태 — 기본값: 모두 펼침
+    const [expanded, setExpanded] = useState<Record<string, boolean>>({
+        shadow: true,
+        glow: true,
+        innerShadow: true,
+    });
+    // 2. "+ 추가" 드롭다운 열림/닫힘
+    const [menuOpen, setMenuOpen] = useState(false);
+    const menuRef = useRef<HTMLDivElement>(null);
+
+    // 드롭다운 외부 클릭 시 닫기
+    useEffect(() => {
+        if (!menuOpen) return;
+        const onClickOutside = (e: MouseEvent) => {
+            if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+                setMenuOpen(false);
+            }
+        };
+        document.addEventListener("mousedown", onClickOutside);
+        return () => document.removeEventListener("mousedown", onClickOutside);
+    }, [menuOpen]);
+
+    const toggleExpand = (key: string) => {
+        setExpanded((prev) => ({ ...prev, [key]: !prev[key] }));
+    };
+
+    // 이펙트 정의 — 요소 타입에 따라 가용성(availability) 결정
+    const isShape = element.type === "rect" || element.type === "ellipse";
+    const isNotText = element.type !== "text";
+
+    const effectDefs: EffectDef[] = [
+        {
+            key: "shadow",
+            label: "Drop Shadow",
+            enabledField: "shadowEnabled" as keyof GraphicElement,
+            isAvailable: isNotText,
+            isActive: isNotText && (element.shadowEnabled || false),
+        },
+        {
+            key: "glow",
+            label: "Glow",
+            enabledField: "glowEnabled" as keyof GraphicElement,
+            isAvailable: isNotText,
+            isActive: isNotText && (element.glowEnabled || false),
+        },
+        {
+            key: "innerShadow",
+            label: "Inner Shadow",
+            enabledField: "innerShadowEnabled" as keyof GraphicElement,
+            isAvailable: isShape,
+            isActive: isShape && (element.innerShadowEnabled || false),
+        },
+    ];
+
+    const activeEffects = effectDefs.filter((e) => e.isActive);
+    const addableEffects = effectDefs.filter((e) => e.isAvailable && !e.isActive);
+
+    return (
+        <div className="ins-section">
+            <div className="ins-section-title">
+                Effects
+                {addableEffects.length > 0 && (
+                    <div className="effect-add-wrapper" ref={menuRef}>
+                        <button
+                            type="button"
+                            className="effect-add-btn"
+                            onClick={() => setMenuOpen(!menuOpen)}
+                            title="이펙트 추가"
+                        >
+                            <Plus size={12} />
+                        </button>
+                        {menuOpen && (
+                            <div className="effect-add-menu">
+                                {addableEffects.map((ef) => (
+                                    <button
+                                        key={ef.key}
+                                        type="button"
+                                        className="effect-add-menu-item"
+                                        onClick={() => {
+                                            handleChange(ef.enabledField, true);
+                                            setExpanded((prev) => ({ ...prev, [ef.key]: true }));
+                                            setMenuOpen(false);
+                                        }}
+                                    >
+                                        {ef.label}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                )}
+            </div>
+
+            {/* ── 활성 이펙트 카드 목록 ── */}
+            <div className="effect-cards-area">
+                {activeEffects.length === 0 && (
+                    <div className="effect-empty">이펙트 없음</div>
+                )}
+
+                {/* Drop Shadow 카드 */}
+                {element.shadowEnabled && isNotText && (
+                    <div className="effect-card">
+                        <div
+                            className="effect-card-header"
+                            onClick={() => toggleExpand("shadow")}
+                        >
+                            <ChevronRight
+                                size={12}
+                                className={`effect-card-chevron ${expanded.shadow ? "expanded" : ""}`}
+                            />
+                            <span className="effect-card-name">Drop Shadow</span>
+                            <button
+                                type="button"
+                                className="effect-card-action-btn danger"
+                                title="이펙트 제거"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleChange("shadowEnabled", false);
+                                }}
+                            >
+                                <Trash2 size={11} />
+                            </button>
+                        </div>
+                        {expanded.shadow && (
+                            <div className="effect-card-body">
+                                <div className="ins-row">
+                                    <span className="ins-label">색상</span>
+                                    <div className="ins-color">
+                                        <input
+                                            type="color"
+                                            className="ins-color-swatch"
+                                            value={rgbaToHex(element.shadowColor || "#000000")}
+                                            onChange={(e) => handleChange("shadowColor", e.target.value)}
+                                        />
+                                        <input
+                                            type="text"
+                                            className="ins-input"
+                                            value={element.shadowColor || "#000000"}
+                                            onChange={(e) => handleChange("shadowColor", e.target.value)}
+                                        />
+                                    </div>
+                                </div>
+                                <div className="ins-row-2col">
+                                    <span className="ins-label">X</span>
+                                    <NumberInput
+                                        value={element.shadowOffsetX ?? 2}
+                                        onChange={(val) => handleChange("shadowOffsetX", val)}
+                                    />
+                                    <span className="ins-label">Y</span>
+                                    <NumberInput
+                                        value={element.shadowOffsetY ?? 2}
+                                        onChange={(val) => handleChange("shadowOffsetY", val)}
+                                    />
+                                </div>
+                                <div className="ins-row">
+                                    <span className="ins-label">Blur</span>
+                                    <NumberInput
+                                        value={element.shadowBlur ?? 4}
+                                        onChange={(val) => handleChange("shadowBlur", val)}
+                                        min={0}
+                                    />
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {/* Glow 카드 */}
+                {element.glowEnabled && isNotText && (
+                    <div className="effect-card">
+                        <div
+                            className="effect-card-header"
+                            onClick={() => toggleExpand("glow")}
+                        >
+                            <ChevronRight
+                                size={12}
+                                className={`effect-card-chevron ${expanded.glow ? "expanded" : ""}`}
+                            />
+                            <span className="effect-card-name">Glow</span>
+                            <button
+                                type="button"
+                                className="effect-card-action-btn danger"
+                                title="이펙트 제거"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleChange("glowEnabled", false);
+                                }}
+                            >
+                                <Trash2 size={11} />
+                            </button>
+                        </div>
+                        {expanded.glow && (
+                            <div className="effect-card-body">
+                                <div className="ins-row">
+                                    <span className="ins-label">색상</span>
+                                    <div className="ins-color">
+                                        <input
+                                            type="color"
+                                            className="ins-color-swatch"
+                                            value={rgbaToHex(element.glowColor || "#00e5ff")}
+                                            onChange={(e) => handleChange("glowColor", e.target.value)}
+                                        />
+                                        <input
+                                            type="text"
+                                            className="ins-input"
+                                            value={element.glowColor || "#00e5ff"}
+                                            onChange={(e) => handleChange("glowColor", e.target.value)}
+                                        />
+                                    </div>
+                                </div>
+                                <div className="ins-row">
+                                    <span className="ins-label">Blur</span>
+                                    <NumberInput
+                                        value={element.glowBlur ?? 10}
+                                        onChange={(val) => handleChange("glowBlur", val)}
+                                        min={0}
+                                    />
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {/* Inner Shadow 카드 */}
+                {element.innerShadowEnabled && isShape && (
+                    <div className="effect-card">
+                        <div
+                            className="effect-card-header"
+                            onClick={() => toggleExpand("innerShadow")}
+                        >
+                            <ChevronRight
+                                size={12}
+                                className={`effect-card-chevron ${expanded.innerShadow ? "expanded" : ""}`}
+                            />
+                            <span className="effect-card-name">Inner Shadow</span>
+                            <button
+                                type="button"
+                                className="effect-card-action-btn danger"
+                                title="이펙트 제거"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleChange("innerShadowEnabled", false);
+                                }}
+                            >
+                                <Trash2 size={11} />
+                            </button>
+                        </div>
+                        {expanded.innerShadow && (
+                            <div className="effect-card-body">
+                                <div className="ins-row">
+                                    <span className="ins-label">색상</span>
+                                    <div className="ins-color">
+                                        <input
+                                            type="color"
+                                            className="ins-color-swatch"
+                                            value={rgbaToHex(element.innerShadowColor || "#000000")}
+                                            onChange={(e) => handleChange("innerShadowColor", e.target.value)}
+                                        />
+                                        <input
+                                            type="text"
+                                            className="ins-input"
+                                            value={element.innerShadowColor || "#000000"}
+                                            onChange={(e) => handleChange("innerShadowColor", e.target.value)}
+                                        />
+                                    </div>
+                                </div>
+                                <div className="ins-row-2col">
+                                    <span className="ins-label">X</span>
+                                    <NumberInput
+                                        value={element.innerShadowOffsetX ?? 2}
+                                        onChange={(val) => handleChange("innerShadowOffsetX", val)}
+                                    />
+                                    <span className="ins-label">Y</span>
+                                    <NumberInput
+                                        value={element.innerShadowOffsetY ?? 2}
+                                        onChange={(val) => handleChange("innerShadowOffsetY", val)}
+                                    />
+                                </div>
+                                <div className="ins-row">
+                                    <span className="ins-label">Blur</span>
+                                    <NumberInput
+                                        value={element.innerShadowBlur ?? 4}
+                                        onChange={(val) => handleChange("innerShadowBlur", val)}
+                                        min={0}
+                                    />
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                )}
+            </div>
         </div>
     );
 }

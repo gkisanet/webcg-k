@@ -11,7 +11,7 @@
 import { ChevronLeft, ChevronRight, Image, Search, Loader2 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { SNAP_UNIT } from "../../stores/blockManipulation";
-import { timelineStore } from "../../stores/timelineStore";
+import { timelineStore, pushToHistory } from "../../stores/timelineStore";
 import { fetchImages, type ImageItem } from "../../services/imageService";
 
 interface LogoGalleryProps {
@@ -80,6 +80,9 @@ export function LogoGallery({ isOpen, onToggle }: LogoGalleryProps) {
         const state = timelineStore.state;
         const logoTrack = state.tracks.find((t) => t.isLogoTrack);
         if (!logoTrack) return;
+
+        // [의도 기반 방어 로직] 로고 변경 상태 변경 전에 히스토리에 현재 상태 기록 (Undo 가능하도록 백업)
+        pushToHistory();
 
         // 모든 비로고 블록의 최대 끝 위치 계산 → 로고 블록 너비
         const nonLogoBlocks = state.blocks.filter((b) => b.trackId !== logoTrack.id);
@@ -230,7 +233,7 @@ export function LogoGallery({ isOpen, onToggle }: LogoGalleryProps) {
                         fontSize: "0.625rem",
                         fontWeight: 500,
                         border: "none",
-                        borderRadius: "3px",
+                        borderRadius: "0.25rem",
                         cursor: "pointer",
                         background: selectedCategory === null ? "var(--accent-primary)" : "var(--app-bg-muted)",
                         color: selectedCategory === null ? "white" : "var(--text-secondary)",
@@ -249,7 +252,7 @@ export function LogoGallery({ isOpen, onToggle }: LogoGalleryProps) {
                             fontSize: "0.625rem",
                             fontWeight: 500,
                             border: "none",
-                            borderRadius: "3px",
+                            borderRadius: "0.25rem",
                             cursor: "pointer",
                             background: selectedCategory === cat ? "var(--accent-primary)" : "var(--app-bg-muted)",
                             color: selectedCategory === cat ? "white" : "var(--text-secondary)",
@@ -314,7 +317,7 @@ export function LogoGallery({ isOpen, onToggle }: LogoGalleryProps) {
                                     style={{
                                         width: "36px",
                                         height: "36px",
-                                        borderRadius: "3px",
+                                        borderRadius: "0.25rem",
                                         background: "rgba(0,0,0,0.3)",
                                         display: "flex",
                                         alignItems: "center",

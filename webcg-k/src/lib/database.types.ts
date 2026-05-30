@@ -407,6 +407,7 @@ export type Database = {
           created_by: string
           description: string | null
           id: string
+          archived_at: string | null
           playhead_state: Json | null
           rundown_id: string
           status: string | null
@@ -420,6 +421,7 @@ export type Database = {
           created_by: string
           description?: string | null
           id?: string
+          archived_at?: string | null
           playhead_state?: Json | null
           rundown_id: string
           status?: string | null
@@ -433,6 +435,7 @@ export type Database = {
           created_by?: string
           description?: string | null
           id?: string
+          archived_at?: string | null
           playhead_state?: Json | null
           rundown_id?: string
           status?: string | null

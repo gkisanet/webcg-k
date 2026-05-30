@@ -9,8 +9,8 @@ interface StepRenderVerifyProps {
 
 export function StepRenderVerify({ rundownId, onBack, onOpenRundown }: StepRenderVerifyProps) {
   return (
-    <div className="h-full rounded-xl border border-[var(--border-primary)] bg-[var(--bg-panel)] p-5 flex flex-col">
-      <div className="flex items-start justify-between gap-4 border-b border-[var(--border-primary)] pb-4">
+    <div className="h-full rounded-xl border border-[var(--border-default)] bg-[var(--bg-panel)] p-5 flex flex-col">
+      <div className="flex items-start justify-between gap-4 border-b border-[var(--border-default)] pb-4">
         <div>
           <h2 className="text-sm font-semibold text-[var(--text-primary)]">5. 송출 검증</h2>
           <p className="mt-1 text-xs text-[var(--text-secondary)]">
@@ -29,7 +29,7 @@ export function StepRenderVerify({ rundownId, onBack, onOpenRundown }: StepRende
           "PVW에서 수정값이 즉시 반영되는지 확인합니다.",
           "PGM으로 전환한 뒤 최종 render 화면에서도 같은 값이 보이는지 확인합니다.",
         ].map((label, index) => (
-          <div key={label} className="flex items-center gap-3 rounded-lg border border-[var(--border-primary)] bg-[var(--app-bg)] p-3">
+          <div key={label} className="flex items-center gap-3 rounded-lg border border-[var(--border-default)] bg-[var(--app-bg)] p-3">
             <span className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-500/15 text-xs font-semibold text-blue-300">{index + 1}</span>
             <span className="text-[var(--text-secondary)]">{label}</span>
           </div>

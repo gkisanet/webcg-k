@@ -91,6 +91,7 @@ export function BroadcastHtmlOverlay({
 			<iframe
 				ref={iframeRef}
 				srcDoc={srcdoc}
+				allowTransparency={true}
 				style={{ 
 					width: `${width}px`, 
 					height: `${height}px`, 

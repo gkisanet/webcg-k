@@ -234,7 +234,7 @@ export function ActionLogPanel() {
                                     onClick={() => toggleGroup(group.key)}
                                     style={{
                                         padding: "2px 8px", fontSize: "0.625rem", fontWeight: 500,
-                                        border: "none", borderRadius: "3px", cursor: "pointer",
+                                        border: "none", borderRadius: "0.25rem", cursor: "pointer",
                                         background: isActive ? "var(--accent-primary)" : "var(--app-bg-muted)",
                                         color: isActive ? "white" : "var(--text-secondary)",
                                         transition: "all 0.15s",
@@ -250,7 +250,7 @@ export function ActionLogPanel() {
                             onClick={() => setActiveGroups(new Set())}
                             style={{
                                 padding: "2px 6px", fontSize: "0.625rem",
-                                border: "none", borderRadius: "3px", cursor: "pointer",
+                                border: "none", borderRadius: "0.25rem", cursor: "pointer",
                                 background: activeGroups.size === 0 ? "var(--accent-primary)" : "transparent",
                                 color: activeGroups.size === 0 ? "white" : "var(--text-tertiary)",
                             }}

@@ -11,68 +11,105 @@ import type { BroadcastSession } from "../lib/types/broadcast";
 // broadcast.tsx 전용: 로그 카운트가 포함된 세션
 export interface BroadcastSessionWithLogs extends BroadcastSession {
 	broadcastLogCount: number;
+	actionLogCount: number;
+}
+
+interface FetchAllSessionsOptions {
+	archiveMode?: "active" | "archived" | "all";
 }
 
 // ─── 프로젝트(세션) 조회 ─────────────────────────────────────────
 
-/** 내 최근 프로젝트 조회 (대시보드 홈) */
+/** 최근 접근 가능한 프로젝트 조회 (대시보드 홈) */
 export async function fetchMyProjects(userId: string): Promise<BroadcastSession[]> {
 	const { data, error } = await supabase
 		.from("broadcast_sessions")
 		.select("*")
-		.eq("created_by", userId)
+		.is("archived_at", null)
 		.order("updated_at", { ascending: false })
 		.limit(6);
 	if (error) throw error;
 	return (data || []) as unknown as BroadcastSession[];
 }
 
-/** 현재 송출중인 프로젝트 조회 (대시보드 홈) */
+/** 현재 활성 playout 프로젝트 조회 (실송출 + 리허설) */
 export async function fetchLiveProjects(): Promise<BroadcastSession[]> {
 	const { data, error } = await supabase
 		.from("broadcast_sessions")
 		.select("*")
-		.eq("status", "live")
+		.in("status", ["live", "rehearsal"])
+		.is("archived_at", null)
 		.order("updated_at", { ascending: false });
 	if (error) throw error;
 	return (data || []) as unknown as BroadcastSession[];
 }
 
 /** 전체 세션 목록 + 로그 카운트 (브로드캐스트 페이지) */
-export async function fetchAllSessions(userId: string): Promise<BroadcastSessionWithLogs[]> {
-	// 1. 내 프로젝트 전체
-	const { data: myData } = await supabase
+export async function fetchAllSessions(
+	userId: string,
+	options: FetchAllSessionsOptions = {},
+): Promise<BroadcastSessionWithLogs[]> {
+	const archiveMode = options.archiveMode || "active";
+	let query = supabase
 		.from("broadcast_sessions")
 		.select("*")
-		.eq("created_by", userId)
 		.order("updated_at", { ascending: false });
 
-	// 2. 송출중인 공유 프로젝트
-	const { data: liveData } = await supabase
-		.from("broadcast_sessions")
-		.select("*")
-		.eq("status", "live")
-		.neq("created_by", userId)
-		.order("updated_at", { ascending: false });
+	if (archiveMode === "active") {
+		query = query.is("archived_at", null);
+	} else if (archiveMode === "archived") {
+		query = query.not("archived_at", "is", null);
+	}
 
-	const allRaw = [
-		...(myData || []),
-		...(liveData || []).map((s: any) => ({ ...s, isShared: true })),
-	];
+	const { data, error } = await query;
+	if (error) throw error;
+
+	const allRaw = (data || []).map((s: any) => ({
+		...s,
+		isShared: s.created_by !== userId,
+	}));
 
 	// 로그 카운트 병렬 조회
 	const sessionsWithLogs: BroadcastSessionWithLogs[] = await Promise.all(
 		allRaw.map(async (s: any) => {
-			const { count } = await supabase
-				.from("session_action_logs")
-				.select("id", { count: "exact", head: true })
-				.eq("session_id", s.id)
-				.eq("action_type", "broadcast_start");
-			return { ...s, broadcastLogCount: count || 0 };
+			const [{ count: broadcastCount }, { count: actionCount }] = await Promise.all([
+				supabase
+					.from("session_action_logs")
+					.select("id", { count: "exact", head: true })
+					.eq("session_id", s.id)
+					.eq("action_type", "broadcast_start"),
+				supabase
+					.from("session_action_logs")
+					.select("id", { count: "exact", head: true })
+					.eq("session_id", s.id),
+			]);
+			return {
+				...s,
+				broadcastLogCount: broadcastCount || 0,
+				actionLogCount: actionCount || 0,
+			};
 		}),
 	);
 
 	return sessionsWithLogs;
+}
+
+/** 세션 아카이브 — 송출/조작 기록은 보존하고 기본 목록에서 숨긴다. */
+export async function archiveSession(sessionId: string): Promise<void> {
+	const { error } = await supabase
+		.from("broadcast_sessions")
+		.update({ archived_at: new Date().toISOString() } as any)
+		.eq("id", sessionId);
+	if (error) throw error;
+}
+
+/** 세션 아카이브 해제 */
+export async function restoreArchivedSession(sessionId: string): Promise<void> {
+	const { error } = await supabase
+		.from("broadcast_sessions")
+		.update({ archived_at: null } as any)
+		.eq("id", sessionId);
+	if (error) throw error;
 }
 
 /** 세션 삭제 */

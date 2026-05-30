@@ -118,6 +118,8 @@ export interface TimelineState {
 		// ─── 멀티유저 스크러빙 ───
 		/** 사용자가 개인 PVW 탐색(스크러빙) 중인지 여부 */
 		isScrubbing: boolean;
+		/** 히스토리 변경 감지용 버전 카운터 */
+		historyVersion: number;
 }
 
 // 초기 샘플 데이터 (그리드 정규화: 50px 단위)
@@ -203,7 +205,8 @@ const initialState: TimelineState = {
 	segments: [],
 	activeSegmentTab: null,
 	autoFollow: "soft",  // 기본값: Soft-prompt (운영자 통제권 유지)
-		isScrubbing: false,
+	isScrubbing: false,
+	historyVersion: 0,
 };
 
 // 타임라인 스토어 생성
@@ -355,6 +358,33 @@ export function moveToEnd(): void {
 	});
 }
 
+function collectSkippedBlockIds(
+	state: TimelineState,
+	position: number,
+	activeBlockIds: Set<string>,
+	airedBlockIds: Set<string>,
+): Set<string> {
+	const skipped = new Set(state.skippedBlockIds);
+	const previousPosition = state.lastBroadcastPosition;
+
+	if (position <= previousPosition) return skipped;
+
+	for (const block of state.blocks) {
+		const wasCrossed =
+			block.startPosition > previousPosition && block.startPosition < position;
+		if (
+			wasCrossed &&
+			!activeBlockIds.has(block.id) &&
+			!airedBlockIds.has(block.id) &&
+			!state.completedBlockIds.has(block.id)
+		) {
+			skipped.add(block.id);
+		}
+	}
+
+	return skipped;
+}
+
 /**
  * Preview → PGM 송출 (Space 키) — 멀티트랙 위치 기반 상태 재구성
  *
@@ -373,6 +403,7 @@ export function broadcastToPGM(): void {
 		const position = state.playheadPosition;
 		const newCompleted = new Set(state.completedBlockIds);
 		const newAired = new Set(state.airedBlockIds);
+		const activeBlockIds = new Set<string>();
 		const newPgmBlockIds = new Map(state.pgmBlockIds);
 
 		// 현재 playhead 위치에 포함되는 **모든** 블록 찾기
@@ -381,10 +412,19 @@ export function broadcastToPGM(): void {
 			const end = block.startPosition + block.width;
 			return position >= start && position < end;
 		});
+		for (const block of activeBlocks) {
+			activeBlockIds.add(block.id);
+		}
+
+		const newSkipped = collectSkippedBlockIds(
+			state,
+			position,
+			activeBlockIds,
+			newAired,
+		);
 
 		// 블록이 하나도 없으면 모든 PGM 소거
 		if (activeBlocks.length === 0) {
-			if (newPgmBlockIds.size === 0) return state;
 			for (const [, blockId] of newPgmBlockIds) {
 				newCompleted.add(blockId);
 			}
@@ -394,6 +434,7 @@ export function broadcastToPGM(): void {
 				lastBroadcastPosition: position,
 				completedBlockIds: newCompleted,
 				airedBlockIds: newAired,
+				skippedBlockIds: newSkipped,
 			};
 		}
 
@@ -412,12 +453,16 @@ export function broadcastToPGM(): void {
 
 			newPgmBlockIds.set(trackId, block.id);
 			newAired.add(block.id);
+			newSkipped.delete(block.id);
 			newCompleted.delete(block.id);
 		}
 
 		// 범위가 끝난 트랙의 PGM 정리
 		// (현재 위치에 더 이상 블록이 없는 트랙의 PGM을 completed로)
 		for (const [trackId, blockId] of newPgmBlockIds) {
+			// 판서 트랙(99)은 플레이헤드 범위 자동 정리 대상에서 영구 제외하여 수동 온에어 상태를 수호한다.
+			if (trackId === 99) continue;
+
 			const stillActive = activeBlocks.some((b) => b.trackId === trackId);
 			if (!stillActive) {
 				newCompleted.add(blockId);
@@ -431,6 +476,7 @@ export function broadcastToPGM(): void {
 			lastBroadcastPosition: position,
 			completedBlockIds: newCompleted,
 			airedBlockIds: newAired,
+			skippedBlockIds: newSkipped,
 		};
 	});
 }
@@ -490,6 +536,9 @@ export function updateBlockSourceData(
 	newName?: string,
 ): boolean {
 	let isPgmBlock = false;
+
+	// 상태 수정 전에 히스토리 백업
+	pushToHistory();
 
 	timelineStore.setState((state) => {
 		// 블록을 먼저 찾아 trackId를 얻고, pgmBlockIds에서 해당 트랙의 PGM인지 확인
@@ -677,6 +726,9 @@ export function copySelectedBlock(): boolean {
 export function pasteBlock(): boolean {
 	if (!clipboardBlock) return false;
 
+	// 상태 수정 전에 히스토리 백업
+	pushToHistory();
+
 	const state = timelineStore.state;
 	
 	// 같은 트랙에서 가장 오른쪽 블록 찾기
@@ -719,6 +771,9 @@ export function moveBlockToUpperTrack(): boolean {
 	const selectedBlock = state.blocks.find((b) => b.id === state.selectedBlockId);
 	
 	if (!selectedBlock) return false;
+
+	// 상태 수정 전에 히스토리 백업
+	pushToHistory();
 
 	// ■ 로고 트랙 블록은 이동 불가
 	const currentTrack = state.tracks.find((t) => t.id === selectedBlock.trackId);
@@ -770,6 +825,9 @@ export function moveBlockToLowerTrack(): boolean {
 	const selectedBlock = state.blocks.find((b) => b.id === state.selectedBlockId);
 	
 	if (!selectedBlock) return false;
+
+	// 상태 수정 전에 히스토리 백업
+	pushToHistory();
 
 	// ■ 로고 트랙 블록은 이동 불가
 	const currentTrack = state.tracks.find((t) => t.id === selectedBlock.trackId);
@@ -827,6 +885,11 @@ export function deleteSelectedBlock(): boolean {
 	const blockToDelete = state.blocks.find((b) => b.id === state.selectedBlockId);
 	if (!blockToDelete) return false;
 
+	// 상태 수정 전에 히스토리 백업 (0번 블록은 삭제가 불가하므로 push하지 않음)
+	if (blockToDelete.startPosition !== 0) {
+		pushToHistory();
+	}
+
 	// 첫 블록(startPosition=0)은 삭제 불가
 	if (blockToDelete.startPosition === 0) {
 		// 삭제 시도 피드백 - 잠시 후 자동 해제
@@ -863,6 +926,15 @@ export function deleteSelectedBlock(): boolean {
 }
 
 /**
+ * 그리드 스냅 단위인 50px로 픽셀을 정밀 스냅
+ * ■ Why? 줌 상태에서 마우스 좌표가 소수점 단위로 분열되는 현상 및 float 연산 누적으로 인한 
+ *   sub-pixel 오차를 방지하여, 리플 삭제 후에도 방송 그래픽 타임라인 눈금에 완벽히 딱 떨어지도록 보장한다.
+ */
+function snapToGrid(position: number): number {
+	return Math.round(position / 50) * 50;
+}
+
+/**
  * 특정 트랙의 갭을 선택 (클릭 위치 기반)
  * @param trackId 트랙 ID
  * @param clickPosition 클릭 위치 (픽셀)
@@ -892,17 +964,20 @@ export function selectGapAtPosition(trackId: number, clickPosition: number): boo
 		if (i < trackBlocks.length - 1) {
 			const nextBlock = trackBlocks[i + 1];
 			if (clickPosition >= currentEnd && clickPosition < nextBlock.startPosition) {
-				// 갭 발견
+				// 갭 발견 - 50px 그리드로 딱 떨어지도록 경계 보정하여 선택
+				const snappedStart = snapToGrid(currentEnd);
+				const snappedEnd = snapToGrid(nextBlock.startPosition);
+				
 				timelineStore.setState((state) => ({
 					...state,
 					selectedBlockId: null, // 블록 선택 해제
 					selectedGap: {
 						trackId,
-						startPosition: currentEnd,
-						endPosition: nextBlock.startPosition,
+						startPosition: snappedStart,
+						endPosition: snappedEnd,
 					},
 				}));
-				console.log("Gap selected:", { start: currentEnd, end: nextBlock.startPosition });
+				console.log("Gap selected:", { start: snappedStart, end: snappedEnd });
 				return true;
 			}
 		}
@@ -910,16 +985,17 @@ export function selectGapAtPosition(trackId: number, clickPosition: number): boo
 
 	// 첫 번째 블록 앞의 갭
 	if (trackBlocks.length > 0 && clickPosition < trackBlocks[0].startPosition && clickPosition >= 0) {
+		const snappedEnd = snapToGrid(trackBlocks[0].startPosition);
 		timelineStore.setState((state) => ({
 			...state,
 			selectedBlockId: null,
 			selectedGap: {
 				trackId,
 				startPosition: 0,
-				endPosition: trackBlocks[0].startPosition,
+				endPosition: snappedEnd,
 			},
 		}));
-		console.log("Gap selected (before first block):", { start: 0, end: trackBlocks[0].startPosition });
+		console.log("Gap selected (before first block):", { start: 0, end: snappedEnd });
 		return true;
 	}
 
@@ -935,33 +1011,68 @@ export function rippleDeleteGap(): boolean {
 	const state = timelineStore.state;
 	if (!state.selectedGap) return false;
 
-	const { trackId, startPosition, endPosition } = state.selectedGap;
-	const gapSize = endPosition - startPosition;
+	const { startPosition, endPosition } = state.selectedGap;
+	
+	// [1단계] 소수점 오차가 발생하지 않도록 50px 경계를 완전히 Quantize
+	const snappedStart = snapToGrid(startPosition);
+	const snappedEnd = snapToGrid(endPosition);
+	const gapSize = snapToGrid(snappedEnd - snappedStart);
 
 	if (gapSize <= 0) return false;
 
-	// 첫 번째 gap(startPosition=0)은 삭제 불가
-	if (startPosition === 0) {
+	// [의도 기반 방어 로직] 첫 번째 gap(startPosition=0)은 삭제 불가 (타임라인 기준점 보호)
+	if (snappedStart === 0) {
 		console.log("첫 번째 gap은 삭제할 수 없습니다.");
 		return false;
 	}
 
-	timelineStore.setState((state) => ({
-		...state,
-		blocks: state.blocks.map((block) => {
-			// 같은 트랙이고 갭 뒤에 있는 블록만 이동
-			if (block.trackId === trackId && block.startPosition >= endPosition) {
+	// [2단계] 상태 변경 전에 히스토리에 현재 상태 기록 (Undo 가능하도록 백업)
+	pushToHistory();
+
+	const shiftPosition = (position: number) => {
+		if (position >= snappedEnd) return snapToGrid(position - gapSize);
+		if (position > snappedStart) return snappedStart;
+		return position;
+	};
+
+	timelineStore.setState((state) => {
+		const nextBlocks = state.blocks.map((block) => {
+			// [3단계] Multi-track Ripple 연동 당기기
+			// ■ Why? 기존의 'block.trackId === trackId' 단일 트랙 조건은 자막, 배경, 로고 등의
+			//   시간적 싱크(Sync)를 붕괴시켜 탭 재정렬 등 다른 조작 시 스냅 정렬을 깨뜨리는 버그를 야기했습니다.
+			//   따라서 갭의 종료지점(snappedEnd)보다 같거나 뒤에 위치하는 모든 트랙의 블록들을 다 함께
+			//   gapSize만큼 앞으로 당겨 트랙 간 싱크 붕괴를 원천 방지합니다.
+			if (block.startPosition >= snappedEnd) {
 				return {
 					...block,
-					startPosition: block.startPosition - gapSize,
+					// 50px 스냅이 소수점 누적 없이 칼같이 맞아떨어지도록 snapToGrid 재적용
+					startPosition: snapToGrid(block.startPosition - gapSize),
 				};
 			}
 			return block;
-		}),
-		selectedGap: null, // 갭 선택 해제
-	}));
+		});
+		const nextPlayheadPosition = shiftPosition(state.playheadPosition);
+		const existingBlockIds = new Set(nextBlocks.map((block) => block.id));
+		const nextPgmBlockIds = new Map(
+			[...state.pgmBlockIds].filter(([, blockId]) => existingBlockIds.has(blockId)),
+		);
+		const previewBlock = getBlockAtPosition(
+			{ ...state, blocks: nextBlocks },
+			nextPlayheadPosition,
+		);
 
-	console.log("Ripple delete completed:", { gapSize });
+		return {
+			...state,
+			blocks: nextBlocks,
+			playheadPosition: nextPlayheadPosition,
+			lastBroadcastPosition: shiftPosition(state.lastBroadcastPosition),
+			previewBlockId: previewBlock?.id ?? null,
+			pgmBlockIds: nextPgmBlockIds,
+			selectedGap: null, // 갭 선택 해제
+		};
+	});
+
+	console.log("Multi-track Ripple delete completed:", { gapSize });
 	return true;
 }
 
@@ -1044,6 +1155,9 @@ export function expandLogoToSegment(logoBlockId: string, segmentId: string): voi
 	);
 	if (segBlocks.length === 0) return;
 
+	// 상태 수정 전에 히스토리 백업
+	pushToHistory();
+
 	const segMinStart = Math.min(...segBlocks.map((b) => b.startPosition));
 	const segMaxEnd = Math.max(...segBlocks.map((b) => b.startPosition + b.width));
 
@@ -1077,6 +1191,9 @@ export function expandLogoToSegment(logoBlockId: string, segmentId: string): voi
  */
 export function reorderBlocksBySegments(newSegments: Segment[]): void {
 	const GAP = 50; // 세그먼트 간 간격 (px)
+
+	// 상태 수정 전에 히스토리 백업
+	pushToHistory();
 
 	timelineStore.setState((state) => {
 		const sorted = [...newSegments].sort((a, b) => a.order - b.order);
@@ -1133,4 +1250,204 @@ export function toggleScrubbing(): void {
 /** 스크러빙 모드 즉시 종료 (Escape 키) */
 export function exitScrubbing(): void {
 	timelineStore.setState((s) => ({ ...s, isScrubbing: false }));
+}
+
+// =========================================================================
+// ■ 📜 방송 그래픽 타임라인 실행 취소/다시 실행(Undo/Redo) 히스토리 엔진 (ADR)
+// =========================================================================
+// [ADR - 2026-05-22 수석 아키텍트 결정]
+// - Why?: TanStack Store 상태 내부에 히스토리 스택(pastStates, futureStates)을
+//   직접 보관하면, 매번 스토어 변경 시 스택 복제 오버헤드가 발생하고 불필요한
+//   React 리렌더링 루프가 발생하여 성능이 저하된다.
+// - Solution: 히스토리 스택은 모듈 스코프의 은닉 변수로 격리하고,
+//   대신 `historyVersion`이라는 경량 카운터를 Store에 두어 히스토리 갱신 시
+//   React UI가 reactive하게 트리거되도록 설계한다.
+// - Limit: 최신 50개까지의 동작만 보관하여 메모리 릭을 방지한다.
+// =========================================================================
+
+export interface TimelineSnapshot {
+	blocks: GraphicBlock[];
+	pgmBlockIds: Map<number, string>;
+	completedBlockIds: Set<string>;
+	airedBlockIds: Set<string>;
+	skippedBlockIds: Set<string>;
+	playheadPosition: number;
+	previewBlockId: string | null;
+	selectedBlockId: string | null;
+	selectedGap: {
+		trackId: number;
+		startPosition: number;
+		endPosition: number;
+	} | null;
+}
+
+const MAX_HISTORY_LIMIT = 50;
+export let pastStates: TimelineSnapshot[] = [];
+export let futureStates: TimelineSnapshot[] = [];
+
+/**
+ * 현재 타임라인 상태의 스냅샷 생성 (깊은 복사)
+ */
+function createSnapshot(state: TimelineState): TimelineSnapshot {
+	return {
+		blocks: state.blocks.map((b) => ({
+			...b,
+			sourceData: b.sourceData ? structuredClone(b.sourceData) : undefined,
+		})),
+		pgmBlockIds: new Map(state.pgmBlockIds),
+		completedBlockIds: new Set(state.completedBlockIds),
+		airedBlockIds: new Set(state.airedBlockIds),
+		skippedBlockIds: new Set(state.skippedBlockIds),
+		playheadPosition: state.playheadPosition,
+		previewBlockId: state.previewBlockId,
+		selectedBlockId: state.selectedBlockId,
+		selectedGap: state.selectedGap ? { ...state.selectedGap } : null,
+	};
+}
+
+/**
+ * 두 스냅샷이 기능적으로 완벽히 일치하는지 비교 (중복 저장 방지용)
+ */
+function areSnapshotsEqual(s1: TimelineSnapshot, s2: TimelineSnapshot): boolean {
+	if (s1.playheadPosition !== s2.playheadPosition) return false;
+	if (s1.previewBlockId !== s2.previewBlockId) return false;
+	if (s1.selectedBlockId !== s2.selectedBlockId) return false;
+	if (JSON.stringify(s1.selectedGap) !== JSON.stringify(s2.selectedGap)) return false;
+	
+	if (s1.blocks.length !== s2.blocks.length) return false;
+	for (let i = 0; i < s1.blocks.length; i++) {
+		const b1 = s1.blocks[i];
+		const b2 = s2.blocks[i];
+		if (
+			b1.id !== b2.id ||
+			b1.name !== b2.name ||
+			b1.trackId !== b2.trackId ||
+			b1.startPosition !== b2.startPosition ||
+			b1.width !== b2.width ||
+			b1.transitionIn !== b2.transitionIn ||
+			b1.transitionOut !== b2.transitionOut ||
+			JSON.stringify(b1.sourceData) !== JSON.stringify(b2.sourceData)
+		) {
+			return false;
+		}
+	}
+	
+	return true;
+}
+
+/**
+ * 1. 현재 상태를 Undo 히스토리에 기록 (조작 직전 복원용)
+ */
+export function pushToHistory(): void {
+	const currentState = timelineStore.state;
+	const snapshot = createSnapshot(currentState);
+	
+	// 중복 저장 방지: 최상단 스냅샷과 완전히 동일한 상태는 푸시 안함
+	if (pastStates.length > 0) {
+		const last = pastStates[pastStates.length - 1];
+		if (areSnapshotsEqual(last, snapshot)) {
+			return;
+		}
+	}
+	
+	pastStates.push(snapshot);
+	if (pastStates.length > MAX_HISTORY_LIMIT) {
+		pastStates.shift();
+	}
+	
+	// 새로운 사용자 작업이 발생했으므로 Redo 스택 전체 소거
+	futureStates = [];
+	
+	// Reactive 리렌더링을 위해 버전 카운터 증가
+	timelineStore.setState((s) => ({
+		...s,
+		historyVersion: s.historyVersion + 1,
+	}));
+	
+	console.log(`[History] State pushed. Undo: ${pastStates.length}, Redo: ${futureStates.length}`);
+}
+
+/**
+ * 2. 실행 취소 (Undo)
+ */
+export function undo(): boolean {
+	if (pastStates.length === 0) {
+		console.log("[History] Undo not available");
+		return false;
+	}
+	
+	const currentState = timelineStore.state;
+	const currentSnapshot = createSnapshot(currentState);
+	futureStates.push(currentSnapshot);
+	
+	const previousState = pastStates.pop()!;
+	
+	timelineStore.setState((state) => ({
+		...state,
+		blocks: previousState.blocks.map((b) => ({
+			...b,
+			sourceData: b.sourceData ? structuredClone(b.sourceData) : undefined,
+		})),
+		pgmBlockIds: new Map(previousState.pgmBlockIds),
+		completedBlockIds: new Set(previousState.completedBlockIds),
+		airedBlockIds: new Set(previousState.airedBlockIds),
+		skippedBlockIds: new Set(previousState.skippedBlockIds),
+		playheadPosition: previousState.playheadPosition,
+		previewBlockId: previousState.previewBlockId,
+		selectedBlockId: previousState.selectedBlockId,
+		selectedGap: previousState.selectedGap ? { ...previousState.selectedGap } : null,
+		historyVersion: state.historyVersion + 1, // 리렌더링 트리거
+	}));
+	
+	console.log(`[History] Undo executed. Undo: ${pastStates.length}, Redo: ${futureStates.length}`);
+	return true;
+}
+
+/**
+ * 3. 다시 실행 (Redo)
+ */
+export function redo(): boolean {
+	if (futureStates.length === 0) {
+		console.log("[History] Redo not available");
+		return false;
+	}
+	
+	const currentState = timelineStore.state;
+	const currentSnapshot = createSnapshot(currentState);
+	pastStates.push(currentSnapshot);
+	
+	const nextState = futureStates.pop()!;
+	
+	timelineStore.setState((state) => ({
+		...state,
+		blocks: nextState.blocks.map((b) => ({
+			...b,
+			sourceData: b.sourceData ? structuredClone(b.sourceData) : undefined,
+		})),
+		pgmBlockIds: new Map(nextState.pgmBlockIds),
+		completedBlockIds: new Set(nextState.completedBlockIds),
+		airedBlockIds: new Set(nextState.airedBlockIds),
+		skippedBlockIds: new Set(nextState.skippedBlockIds),
+		playheadPosition: nextState.playheadPosition,
+		previewBlockId: nextState.previewBlockId,
+		selectedBlockId: nextState.selectedBlockId,
+		selectedGap: nextState.selectedGap ? { ...nextState.selectedGap } : null,
+		historyVersion: state.historyVersion + 1, // 리렌더링 트리거
+	}));
+	
+	console.log(`[History] Redo executed. Undo: ${pastStates.length}, Redo: ${futureStates.length}`);
+	return true;
+}
+
+/**
+ * 4. 히스토리 전체 초기화
+ */
+export function clearHistory(): void {
+	pastStates = [];
+	futureStates = [];
+	timelineStore.setState((s) => ({
+		...s,
+		historyVersion: s.historyVersion + 1,
+	}));
+	console.log("[History] History stacks cleared");
 }

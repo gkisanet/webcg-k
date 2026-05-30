@@ -19,6 +19,7 @@ import {
 	selectBlock,
 	type TransitionType,
 	toggleBlockTransition,
+	pushToHistory,
 } from "../../stores/timelineStore";
 import {
 	type BlockEdgeState,
@@ -54,6 +55,7 @@ interface DraggableBlockProps {
 	setOverlappingDuringDrag: (ids: string[]) => void;
 	/** 블록 더블클릭 시 핫 수정 드로어 열기 */
 	onDoubleClick?: (block: GraphicBlock) => void;
+	readOnly?: boolean;
 }
 
 // ─── 컴포넌트 ───────────────────────────────────────────────────
@@ -67,6 +69,7 @@ export function DraggableBlock({
 	edgeState,
 	setOverlappingDuringDrag,
 	onDoubleClick,
+	readOnly = false,
 }: DraggableBlockProps) {
 	const [isDragging, setIsDragging] = useState(false);
 	const [isResizing, setIsResizing] = useState<"left" | "right" | null>(null);
@@ -90,21 +93,27 @@ export function DraggableBlock({
 	// ref로 최신 줌 레벨 참조 (이벤트 핸들러 클로저용)
 	const zoomLevelRef = useRef(zoom);
 	zoomLevelRef.current = zoom;
+	const renderedWidth = block.width * zoom;
+	const compactLabel = renderedWidth < 80;
 
 	// 트랜지션 영역 클릭
 	const handleTransitionClick = useCallback(
 		(side: "in" | "out", e: React.MouseEvent) => {
 			e.stopPropagation();
 			e.preventDefault();
+			if (readOnly) return;
+			pushToHistory(); // 트랜지션 변경 전 상태를 히스토리에 백업
 			toggleBlockTransition(block.id, side);
 		},
-		[block.id],
+		[block.id, readOnly],
 	);
 
 	const handleDragStart = useCallback(
 		(e: React.MouseEvent) => {
 			e.stopPropagation();
 			e.preventDefault();
+			if (readOnly) return;
+			pushToHistory(); // 드래그 시작 전 상태를 히스토리에 백업
 			selectBlock(block.id);
 			setIsDragging(true);
 			setWillRevert(false);
@@ -175,6 +184,7 @@ export function DraggableBlock({
 			block.startPosition,
 			block.width,
 			block.trackId,
+			readOnly,
 			setOverlappingDuringDrag,
 		],
 	);
@@ -183,6 +193,8 @@ export function DraggableBlock({
 		(e: React.MouseEvent, handle: "left" | "right") => {
 			e.stopPropagation();
 			e.preventDefault();
+			if (readOnly) return;
+			pushToHistory(); // 리사이즈 시작 전 상태를 히스토리에 백업
 			selectBlock(block.id);
 			setIsResizing(handle);
 
@@ -206,7 +218,7 @@ export function DraggableBlock({
 			window.addEventListener("mousemove", handleMouseMove);
 			window.addEventListener("mouseup", handleMouseUp);
 		},
-		[block.id],
+		[block.id, readOnly],
 	);
 
 	// 스타일 계산
@@ -247,7 +259,7 @@ export function DraggableBlock({
 				backgroundColor: isDeleteAttempt ? undefined : bgColor,
 				position: "absolute",
 				overflow: "visible",
-				cursor: isDragging ? "grabbing" : "grab",
+				cursor: readOnly ? "default" : isDragging ? "grabbing" : "grab",
 				opacity: isDragging && !willRevert ? 0.8 : opacity,
 				zIndex: isDragging || isSelected ? 10 : 1,
 				border: borderStyle,
@@ -260,9 +272,9 @@ export function DraggableBlock({
 			onDoubleClick={(e) => {
 				// 트랜지션/리사이즈 영역 더블클릭은 무시
 				e.stopPropagation();
-				if (onDoubleClick) onDoubleClick(block);
+				if (!readOnly && onDoubleClick) onDoubleClick(block);
 			}}
-			title={`${block.name} (${gridCells}칸) — 더블클릭: 텍스트 편집`}
+			title={readOnly ? `${block.name} (${gridCells}칸)` : `${block.name} (${gridCells}칸) — 더블클릭: 텍스트 편집`}
 		>
 			{/* Left Transition Zone (In) */}
 			<div
@@ -275,7 +287,7 @@ export function DraggableBlock({
 					background:
 						hoveringZone === "in" ? "rgba(0,0,0,0.4)" : "rgba(0,0,0,0.2)",
 					borderRadius: "4px 0 0 4px",
-					cursor: "pointer",
+					cursor: readOnly ? "default" : "pointer",
 					display: "flex",
 					alignItems: "center",
 					justifyContent: "center",
@@ -286,7 +298,7 @@ export function DraggableBlock({
 				onMouseLeave={() => setHoveringZone(null)}
 				onClick={(e) => handleTransitionClick("in", e)}
 				onMouseDown={(e) => e.stopPropagation()}
-				title={`In: ${block.transitionIn} (클릭하여 전환)`}
+				title={readOnly ? `In: ${block.transitionIn}` : `In: ${block.transitionIn} (클릭하여 전환)`}
 			>
 				<TransitionIcon type={block.transitionIn} />
 			</div>
@@ -318,7 +330,7 @@ export function DraggableBlock({
 					top: 0,
 					bottom: 0,
 					width: "8px",
-					cursor: "ew-resize",
+					cursor: readOnly ? "default" : "ew-resize",
 					backgroundColor:
 						isResizing === "left" ? "rgba(96, 165, 250, 0.5)" : "transparent",
 					borderRadius: "4px 0 0 4px",
@@ -340,14 +352,15 @@ export function DraggableBlock({
 					whiteSpace: "nowrap",
 					overflow: "hidden",
 					textOverflow: "ellipsis",
-					fontSize: "11px",
-					maxWidth: `${block.width - transitionZoneWidth * 2 - 10}px`,
+					fontSize: compactLabel ? "10px" : "11px",
+					fontWeight: compactLabel ? 700 : 500,
+					maxWidth: `${Math.max(20, renderedWidth - transitionZoneWidth * 2 - 10)}px`,
 					display: "flex",
 					alignItems: "center",
 					gap: "4px",
 				}}
 			>
-				{block.name}
+				{compactLabel ? `T${block.trackId}` : block.name}
 				{/* 송출 완료 표시 */}
 				{isCompleted && (
 					<span style={{ color: "rgba(255,255,255,0.6)", fontSize: "10px" }}>✓</span>
@@ -369,7 +382,7 @@ export function DraggableBlock({
 					top: 0,
 					bottom: 0,
 					width: "8px",
-					cursor: "ew-resize",
+					cursor: readOnly ? "default" : "ew-resize",
 					backgroundColor:
 						isResizing === "right" ? "rgba(96, 165, 250, 0.5)" : "transparent",
 					borderRadius: "0 4px 4px 0",
@@ -408,7 +421,7 @@ export function DraggableBlock({
 					background:
 						hoveringZone === "out" ? "rgba(0,0,0,0.4)" : "rgba(0,0,0,0.2)",
 					borderRadius: "0 4px 4px 0",
-					cursor: "pointer",
+					cursor: readOnly ? "default" : "pointer",
 					display: "flex",
 					alignItems: "center",
 					justifyContent: "center",
@@ -419,7 +432,7 @@ export function DraggableBlock({
 				onMouseLeave={() => setHoveringZone(null)}
 				onClick={(e) => handleTransitionClick("out", e)}
 				onMouseDown={(e) => e.stopPropagation()}
-				title={`Out: ${block.transitionOut} (클릭하여 전환)`}
+				title={readOnly ? `Out: ${block.transitionOut}` : `Out: ${block.transitionOut} (클릭하여 전환)`}
 			>
 				<TransitionIcon type={block.transitionOut} />
 			</div>

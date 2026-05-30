@@ -34,7 +34,7 @@ export function StepSystemPrompt({ systemPrompt, onNext }: StepSystemPromptProps
             {copied ? t("aiCuesheet.step1.copied", "Copied") : t("aiCuesheet.step1.copyPrompt", "Copy")}
           </Button>
         </div>
-        <pre className="h-full overflow-y-auto p-4 rounded-lg bg-[var(--app-bg)] border border-[var(--border-primary)] text-xs text-[var(--text-secondary)] whitespace-pre-wrap leading-relaxed font-mono">
+        <pre className="h-full overflow-y-auto p-4 rounded-lg bg-[var(--app-bg)] border border-[var(--border-default)] text-xs text-[var(--text-secondary)] whitespace-pre-wrap leading-relaxed font-mono">
           {systemPrompt}
         </pre>
       </div>

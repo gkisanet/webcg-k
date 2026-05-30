@@ -18,8 +18,8 @@ export function StepRundownEdit({
   const excludedCount = readiness.totalScenes - readiness.readyScenes;
 
   return (
-    <div className="h-full rounded-xl border border-[var(--border-primary)] bg-[var(--bg-panel)] p-5 flex flex-col">
-      <div className="flex items-start justify-between gap-4 border-b border-[var(--border-primary)] pb-4">
+    <div className="h-full rounded-xl border border-[var(--border-default)] bg-[var(--bg-panel)] p-5 flex flex-col">
+      <div className="flex items-start justify-between gap-4 border-b border-[var(--border-default)] pb-4">
         <div>
           <h2 className="text-sm font-semibold text-[var(--text-primary)]">4. 런다운 편집</h2>
           <p className="mt-1 text-xs text-[var(--text-secondary)]">
@@ -33,7 +33,7 @@ export function StepRundownEdit({
       </div>
 
       <div className="grid grid-cols-3 gap-3 mt-5">
-        <div className="rounded-lg border border-[var(--border-primary)] bg-[var(--app-bg)] p-4">
+        <div className="rounded-lg border border-[var(--border-default)] bg-[var(--app-bg)] p-4">
           <div className="text-[10px] uppercase tracking-wide text-[var(--text-muted)]">전체 장면</div>
           <div className="mt-2 text-2xl font-semibold text-[var(--text-primary)]">{readiness.totalScenes}</div>
         </div>

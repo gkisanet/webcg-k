@@ -3,7 +3,7 @@
  * FancyZones 스타일 클릭 기반 영역 분할 편집기
  */
 
-import { useState, useRef, useCallback, useEffect, MouseEvent } from "react";
+import { useState, useRef, useCallback, useEffect, useMemo, MouseEvent } from "react";
 import { Scissors, Ruler } from "lucide-react";
 
 // 분할선 타입
@@ -182,6 +182,16 @@ export function GridSplitEditor({
         startMousePos: number;
     } | null>(null);
 
+    // 🆕 로컬 분할선 상태 관리 (마우스 드래그 중 고주파 리렌더가 부모로 실시간 전파되어 CPU가 100% 임계를 침범하는 현상 방지)
+    const [localSplits, setLocalSplits] = useState<SplitLine[]>(splits);
+
+    // 🆕 부모 splits와 로컬 동기화 (단, 드래그 중에는 부모의 laggy한 Prop에 덮어씌워지지 않도록 배제)
+    useEffect(() => {
+        if (!draggingSplit) {
+            setLocalSplits(splits);
+        }
+    }, [splits, draggingSplit]);
+
     // 🆕 그리드 가이드 상태 (예: "2x4")
     const [gridGuide, setGridGuide] = useState<string>("");
     // 🎨 그리드 가이드 선택기 팝오버 상태
@@ -194,7 +204,29 @@ export function GridSplitEditor({
     const guideCols = guideMatch ? Math.max(1, parseInt(guideMatch[1])) : 1;
     const guideRows = guideMatch ? Math.max(1, parseInt(guideMatch[2])) : 1;
 
-    // Undo/Redo 히스토리
+    // 🆕 동적 그리드 가이드 스냅 헬퍼 (스냅 범위: 4%)
+    const snapToGuideline = useCallback((value: number, orientation: "vertical" | "horizontal"): number => {
+        const snapThreshold = 4; // 자석 효과 강화 (3 -> 4)
+        const divisions = orientation === "vertical" ? guideCols : guideRows;
+        
+        if (divisions <= 1) {
+            // 기본 50% 스냅
+            if (Math.abs(value - 50) < snapThreshold) return 50;
+            return value;
+        }
+
+        const step = 100 / divisions;
+        // 가장 가까운 스냅 포인트 찾기
+        const closestStepIndex = Math.round(value / step);
+        const closestSnapValue = closestStepIndex * step;
+
+        if (Math.abs(value - closestSnapValue) < snapThreshold) {
+            return closestSnapValue;
+        }
+        return value;
+    }, [guideCols, guideRows]);
+
+    // Undo/Redo 히스토리 (localSplits 기반)
     const [history, setHistory] = useState<SplitLine[][]>([splits]);
     const [historyIndex, setHistoryIndex] = useState(0);
 
@@ -210,8 +242,9 @@ export function GridSplitEditor({
         setHistoryIndex(prev => Math.min(prev + 1, 49));
     }, [historyIndex]);
 
-    // 분할선 변경 시 히스토리 추가
+    // 분할선 변경 시 히스토리 추가 및 로컬/부모 상태 동기화
     const handleSplitsChange = useCallback((newSplits: SplitLine[]) => {
+        setLocalSplits(newSplits);
         pushHistory(newSplits);
         onSplitsChange(newSplits);
     }, [pushHistory, onSplitsChange]);
@@ -221,7 +254,9 @@ export function GridSplitEditor({
         if (historyIndex > 0) {
             const newIndex = historyIndex - 1;
             setHistoryIndex(newIndex);
-            onSplitsChange(history[newIndex]);
+            const targetSplits = history[newIndex];
+            setLocalSplits(targetSplits);
+            onSplitsChange(targetSplits);
         }
     }, [historyIndex, history, onSplitsChange]);
 
@@ -230,7 +265,9 @@ export function GridSplitEditor({
         if (historyIndex < history.length - 1) {
             const newIndex = historyIndex + 1;
             setHistoryIndex(newIndex);
-            onSplitsChange(history[newIndex]);
+            const targetSplits = history[newIndex];
+            setLocalSplits(targetSplits);
+            onSplitsChange(targetSplits);
         }
     }, [historyIndex, history, onSplitsChange]);
 
@@ -251,7 +288,7 @@ export function GridSplitEditor({
             }
 
             if (e.key === "Delete" && selectedSplitId) {
-                handleSplitsChange(splits.filter((s) => s.id !== selectedSplitId));
+                handleSplitsChange(localSplits.filter((s) => s.id !== selectedSplitId));
                 setSelectedSplitId(null);
             }
         };
@@ -265,7 +302,7 @@ export function GridSplitEditor({
             window.removeEventListener("keydown", handleKeyDown);
             window.removeEventListener("keyup", handleKeyUp);
         };
-    }, [selectedSplitId, splits, handleSplitsChange, undo, redo]);
+    }, [selectedSplitId, localSplits, handleSplitsChange, undo, redo]);
 
     // 가이드 팝오버 위치 계산 — .grid-split-info의 overflow-x:auto가
     // CSS spec에 따라 overflow-y:auto로 계산되어 팝오버를 클리핑하므로,
@@ -326,7 +363,7 @@ export function GridSplitEditor({
 
             // 드래그 중인 분할선 이동
             if (draggingSplit && pos) {
-                const split = splits.find((s) => s.id === draggingSplit.id);
+                const split = localSplits.find((s) => s.id === draggingSplit.id);
                 if (split) {
                     const delta =
                         split.orientation === "vertical"
@@ -339,58 +376,37 @@ export function GridSplitEditor({
                     const oldPos = split.position;
 
                     // 이 선과 교차하는 다른 선들의 start/end 업데이트
-                    onSplitsChange(
-                        splits.map((s) => {
-                            if (s.id === draggingSplit.id) {
-                                return { ...s, position: newPos };
-                            }
-                            // 교차하는 선: 반대 방향이고 start 또는 end가 oldPos와 같거나 가까우면 업데이트
-                            if (s.orientation !== split.orientation) {
-                                const tolerance = 0.5; // 0.5% 오차 허용
-                                let updatedStart = s.start;
-                                let updatedEnd = s.end;
+                    const updatedSplits = localSplits.map((s) => {
+                        if (s.id === draggingSplit.id) {
+                            return { ...s, position: newPos };
+                        }
+                        // 교차하는 선: 반대 방향이고 start 또는 end가 oldPos와 같거나 가까우면 업데이트
+                        if (s.orientation !== split.orientation) {
+                            const tolerance = 0.5; // 0.5% 오차 허용
+                            let updatedStart = s.start;
+                            let updatedEnd = s.end;
 
-                                if (Math.abs(s.start - oldPos) < tolerance) {
-                                    updatedStart = newPos;
-                                }
-                                if (Math.abs(s.end - oldPos) < tolerance) {
-                                    updatedEnd = newPos;
-                                }
-
-                                if (updatedStart !== s.start || updatedEnd !== s.end) {
-                                    return { ...s, start: updatedStart, end: updatedEnd };
-                                }
+                            if (Math.abs(s.start - oldPos) < tolerance) {
+                                updatedStart = newPos;
                             }
-                            return s;
-                        }),
-                    );
+                            if (Math.abs(s.end - oldPos) < tolerance) {
+                                updatedEnd = newPos;
+                            }
+
+                            if (updatedStart !== s.start || updatedEnd !== s.end) {
+                                return { ...s, start: updatedStart, end: updatedEnd };
+                            }
+                        }
+                        return s;
+                    });
+
+                    // 마우스 무브당 parent를 갱신하지 않고 오직 localSplits만 고빈도로 갱신
+                    setLocalSplits(updatedSplits);
                 }
             }
         },
-        [getMousePercent, draggingSplit, splits, onSplitsChange, guideCols, guideRows], // 🆕 스냅 헬퍼 의존성 추가 대비
+        [getMousePercent, draggingSplit, localSplits, setLocalSplits, snapToGuideline],
     );
-
-    // 🆕 동적 그리드 가이드 스냅 헬퍼 (스냅 범위: 4%)
-    const snapToGuideline = useCallback((value: number, orientation: "vertical" | "horizontal"): number => {
-        const snapThreshold = 4; // 자석 효과 강화 (3 -> 4)
-        const divisions = orientation === "vertical" ? guideCols : guideRows;
-        
-        if (divisions <= 1) {
-            // 기본 50% 스냅
-            if (Math.abs(value - 50) < snapThreshold) return 50;
-            return value;
-        }
-
-        const step = 100 / divisions;
-        // 가장 가까운 스냅 포인트 찾기
-        const closestStepIndex = Math.round(value / step);
-        const closestSnapValue = closestStepIndex * step;
-
-        if (Math.abs(value - closestSnapValue) < snapThreshold) {
-            return closestSnapValue;
-        }
-        return value;
-    }, [guideCols, guideRows]);
 
     // 캔버스 클릭 - 새 분할선 생성 (split 모드에서만)
     const handleCanvasClick = useCallback(
@@ -420,10 +436,10 @@ export function GridSplitEditor({
                 parentId: null,
             };
 
-            handleSplitsChange([...splits, newSplit]);
+            handleSplitsChange([...localSplits, newSplit]);
             setSelectedSplitId(null);
         },
-        [getMousePercent, isShiftPressed, splits, handleSplitsChange, draggingSplit, toolMode, snapToGuideline],
+        [getMousePercent, isShiftPressed, localSplits, handleSplitsChange, draggingSplit, toolMode, snapToGuideline],
     );
 
     // 분할선 드래그 시작
@@ -443,22 +459,26 @@ export function GridSplitEditor({
         [getMousePercent],
     );
 
-    // 마우스 업 - 드래그 완료 시 히스토리 기록
+    // 마우스 업 - 드래그 완료 시 히스토리 기록 및 부모 상태로 최종 1회 동기화
     const handleMouseUp = useCallback(() => {
         if (draggingSplit) {
-            // 드래그 완료 시 히스토리에 기록
-            pushHistory(splits);
+            pushHistory(localSplits);
+            onSplitsChange(localSplits);
         }
         setDraggingSplit(null);
-    }, [draggingSplit, splits, pushHistory]);
+    }, [draggingSplit, localSplits, pushHistory, onSplitsChange]);
 
-    // 영역 계산
-    const zones = calculateZones(splits);
+    // 🆕 영역 계산을 useMemo로 캐싱하여 무의미한 중복 재귀 탐색 연산 배제 (localSplits 기반)
+    const zones = useMemo(() => calculateZones(localSplits), [localSplits]);
 
-    // zones 변경 시 부모에게 알림
+    // 🆕 zones 변경 시 부모에게 알림
+    // mousemove 고주파 드래그 중(draggingSplit !== null)에는 부모 상태인 setZones 호출을 보류(Hold)하여
+    // 리액트 전체 렌더 트리가 매 픽셀마다 동반 리렌더링되는 재앙을 방지하고 60fps를 수호함.
+    // 드래그 종료(mouseUp) 시점에 딱 1회만 최종 계산된 zones를 부모 상태에 반영.
     useEffect(() => {
+        if (draggingSplit) return;
         onZonesChange?.(zones);
-    }, [splits, onZonesChange]);
+    }, [zones, onZonesChange, draggingSplit]);
 
     // 선택된 Zone 찾기
     const selectedZone = selectedZoneId ? zones.find(z => z.id === selectedZoneId) : null;
@@ -709,14 +729,14 @@ export function GridSplitEditor({
                 })}
 
                 {/* 분할선들 */}
-                {splits.map((split) => {
+                {localSplits.map((split) => {
                     // 선택된 선일 경우 교차점 계산
                     const isSelected = selectedSplitId === split.id;
                     let segments: { start: number; end: number }[] = [];
 
                     if (isSelected) {
                         // 교차하는 선들의 위치 찾기
-                        const crossingPositions = splits
+                        const crossingPositions = localSplits
                             .filter(s => {
                                 if (s.id === split.id || s.orientation === split.orientation) return false;
                                 // 교차하는 선(s)이 현재 선(split)의 범위를 실제로(물리적으로) 관통하는지 확인
@@ -763,14 +783,14 @@ export function GridSplitEditor({
                                         if (segments.length === 2) {
                                             // 2구간이면 해당 구간만 삭제 후 남은 구간으로 대체
                                             const remaining = segments[idx === 0 ? 1 : 0];
-                                            handleSplitsChange(splits.map(s =>
+                                            handleSplitsChange(localSplits.map(s =>
                                                 s.id === split.id
                                                     ? { ...s, start: remaining.start, end: remaining.end }
                                                     : s
                                             ));
                                         } else {
                                             // 3구간 이상이면 선 분할
-                                            const newSplits = splits.filter(s => s.id !== split.id);
+                                            const newSplits = localSplits.filter(s => s.id !== split.id);
                                             segments.forEach((s, i) => {
                                                 if (i !== idx) {
                                                     newSplits.push({

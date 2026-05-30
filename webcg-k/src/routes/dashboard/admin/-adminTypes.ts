@@ -46,7 +46,7 @@ export interface ApiKey {
 	created_at: string;
 }
 
-export type AdminTab = "users" | "workspaces" | "ai" | "api-keys";
+export type AdminTab = "users" | "workspaces" | "ai" | "naming" | "api-keys";
 
 // ─── 워크스페이스 타입 ──────────────────────────────────────────
 
@@ -75,14 +75,19 @@ export interface MembershipInfo {
 	role: "owner" | "admin" | "member" | "viewer";
 }
 
-export type ProfileWithMemberships = Profile & { memberships: MembershipInfo[] };
+export type ProfileWithMemberships = Profile & {
+	memberships: MembershipInfo[];
+};
 
 // ─── 상수 ─────────────────────────────────────────────────────────
 
 export const AVATAR_GRADIENT_COUNT = 8;
 
 /** 역할 라벨/색상 매핑 */
-export const ROLE_META: Record<UserRole, { label: string; color: string; icon: string }> = {
+export const ROLE_META: Record<
+	UserRole,
+	{ label: string; color: string; icon: string }
+> = {
 	system_admin: { label: "시스템 관리자", color: "#ef4444", icon: "🛡️" },
 	cg_designer: { label: "CG 디자이너", color: "#8b5cf6", icon: "🎨" },
 	cuesheet_editor: { label: "큐시트 편집자", color: "#3b82f6", icon: "📝" },
@@ -101,7 +106,16 @@ export const PROVIDERS: Record<string, { label: string; color: string }> = {
 	cerebras: { label: "Cerebras", color: "#00bcd4" },
 };
 
-export const SERVICE_OPTIONS = ["gemini", "gemini-svg", "deepseek", "groq", "github", "openrouter", "cerebras", "custom"];
+export const SERVICE_OPTIONS = [
+	"gemini",
+	"gemini-svg",
+	"deepseek",
+	"groq",
+	"github",
+	"openrouter",
+	"cerebras",
+	"custom",
+];
 
 // ─── 헬퍼 ─────────────────────────────────────────────────────────
 
@@ -137,9 +151,12 @@ export function computeUserStats(profiles: Profile[]) {
 	const admins = profiles.filter((p) => p.role === "system_admin").length;
 	const designers = profiles.filter((p) => p.role === "cg_designer").length;
 	const editors = profiles.filter((p) => p.role === "cuesheet_editor").length;
-	const operators = profiles.filter((p) => p.role === "playout_operator").length;
+	const operators = profiles.filter(
+		(p) => p.role === "playout_operator",
+	).length;
 	const recentWeek = profiles.filter(
-		(p) => new Date(p.created_at) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+		(p) =>
+			new Date(p.created_at) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
 	).length;
 	return { total, admins, designers, editors, operators, recentWeek };
 }

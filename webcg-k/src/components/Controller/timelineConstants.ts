@@ -27,6 +27,7 @@ export interface RemotePlayheadData {
 	displayName: string;
 	color: string;
 	position: number;
+	canBroadcast?: boolean;
 	isScrubbing?: boolean;
 }
 

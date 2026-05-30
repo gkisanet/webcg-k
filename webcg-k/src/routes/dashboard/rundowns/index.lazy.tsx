@@ -27,10 +27,11 @@ import {
     Trash2,
     X,
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "../../../lib/auth";
 import { supabase } from "../../../lib/supabase";
+import { fetchWorkspaces } from "../../../services/workspaceService";
 
 import "../dashboard-common.css";
 
@@ -45,6 +46,7 @@ interface Rundown {
     updated_at: string;
     created_at: string;
     project_id: string;
+    workspace_id: string | null;
     is_public?: boolean;
     created_by: string | null;
 }
@@ -58,8 +60,16 @@ function RundownListPage() {
     const [globalFilter, setGlobalFilter] = useState("");
     const [isCreating, setIsCreating] = useState(false);
     const [visibilityFilter, setVisibilityFilter] = useState<"all" | "public" | "private">("all");
+    const [workspaceFilter, setWorkspaceFilter] = useState("all");
+    const [didApplyDefaultWorkspaceFilter, setDidApplyDefaultWorkspaceFilter] = useState(false);
     const [dateFrom, setDateFrom] = useState("");
     const [dateTo, setDateTo] = useState("");
+
+    const { data: workspaces = [] } = useQuery({
+        queryKey: ["workspaces"],
+        queryFn: fetchWorkspaces,
+        enabled: !!user,
+    });
 
     // 큐시트 목록 불러오기
     const { data = [], isLoading } = useQuery({
@@ -74,9 +84,9 @@ function RundownListPage() {
                     updated_at, 
                     created_at,
                     project_id,
+                    workspace_id,
                     is_public,
-                    created_by,
-                    projects!inner(owner_id)
+                    created_by
                 `)
                 .order("updated_at", { ascending: false });
 
@@ -87,6 +97,13 @@ function RundownListPage() {
         staleTime: 0,
         refetchOnMount: "always",  // 페이지 복귀 시 항상 최신 데이터 재요청
     });
+
+    useEffect(() => {
+        if (activeWorkspaceId && !didApplyDefaultWorkspaceFilter) {
+            setWorkspaceFilter(activeWorkspaceId);
+            setDidApplyDefaultWorkspaceFilter(true);
+        }
+    }, [activeWorkspaceId, didApplyDefaultWorkspaceFilter]);
 
     // 삭제 mutation (RLS 정책에 의해 조용히 실패 가능 → count로 확인)
     const deleteMutation = useMutation({
@@ -156,7 +173,7 @@ function RundownListPage() {
                     description: "",
                     created_by: user.id,
                     workspace_id: activeWorkspaceId,
-                    is_public: false,
+                    is_public: true,
                 } as any)
                 .select()
                 .single()) as any;
@@ -294,6 +311,7 @@ function RundownListPage() {
     // 필터링된 데이터 (검색 + 공개/비공개 + 날짜)
     const filteredData = useMemo(() => {
         return data.filter((r) => {
+            if (workspaceFilter !== "all" && r.workspace_id !== workspaceFilter) return false;
             // 공개/비공개 필터
             if (visibilityFilter === "public" && !r.is_public) return false;
             if (visibilityFilter === "private" && r.is_public) return false;
@@ -307,7 +325,7 @@ function RundownListPage() {
             }
             return true;
         });
-    }, [data, visibilityFilter, dateFrom, dateTo]);
+    }, [data, workspaceFilter, visibilityFilter, dateFrom, dateTo]);
 
     const table = useReactTable({
         data: filteredData,
@@ -395,6 +413,23 @@ function RundownListPage() {
                 </div>
 
                 {/* 공개/비공개 필터 */}
+                <select
+                    value={workspaceFilter}
+                    onChange={(e) => setWorkspaceFilter(e.target.value)}
+                    style={{
+                        padding: "0.375rem 0.75rem", fontSize: "0.8125rem",
+                        background: "var(--app-bg-muted)", border: "1px solid var(--border-subtle)",
+                        borderRadius: "6px", color: "var(--text-primary)", cursor: "pointer",
+                    }}
+                >
+                    <option value="all">전체 워크스페이스</option>
+                    {workspaces.map((ws: any) => (
+                        <option key={ws.id} value={ws.id}>
+                            {ws.name}{ws.id === activeWorkspaceId ? " (현재)" : ""}
+                        </option>
+                    ))}
+                </select>
+
                 <select
                     value={visibilityFilter}
                     onChange={(e) => setVisibilityFilter(e.target.value as "all" | "public" | "private")}

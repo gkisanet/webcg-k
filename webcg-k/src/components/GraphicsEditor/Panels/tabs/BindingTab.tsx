@@ -12,14 +12,19 @@
 
 import { Trash2 } from "lucide-react";
 import type { GraphicElement } from "@/routes/dashboard/studio/graphics/$graphicId";
+import { NumberInput } from "@/components/ui/number-input";
 import {
 	createDefaultBindingContainer,
 	createDefaultSlot,
+	createDefaultTextFrame,
 	type BindingContainer,
 	type BindingTextSlot,
 } from "@/lib/types/bindingTypes";
 import { SYSTEM_FONTS } from "@/lib/fontRegistry";
-import { checkTextOverflow } from "@/lib/textMeasure";
+import {
+	BINDING_AUTO_FIT_OPTIONS,
+	resolveBindingTextLayout,
+} from "@/lib/textFitPolicy";
 
 interface BindingTabProps {
 	element: GraphicElement;
@@ -92,7 +97,6 @@ export function BindingTab({ element, onUpdate }: BindingTabProps) {
 							onChange={(e) => {
 								if (e.target.checked && !bc) {
 									// 최초 활성화: 기본 컨테이너 + 슬롯 1개 자동 생성
-									// Text Frame을 Shape 안쪽 16px margin으로 초기화
 									const container = createDefaultBindingContainer();
 									container.slots = [createDefaultSlot(
 										{ label: "텍스트 1", bindingKey: "personName" },
@@ -121,25 +125,26 @@ export function BindingTab({ element, onUpdate }: BindingTabProps) {
 					{/* 오버플로우 모드 (라디오 — 택일) */}
 					<div className="ins-section">
 						<div className="ins-section-title">오버플로우 모드</div>
-						{(["shrink", "wrap", "none"] as const).map((mode) => (
+						{BINDING_AUTO_FIT_OPTIONS.map((mode) => (
 							<label
-								key={mode}
+								key={mode.value}
 								className="toggle-label"
 								style={{
 									gap: 8, cursor: "pointer",
 									padding: "3px 12px",
 									fontSize: "0.75rem",
-									color: bc.autoFit === mode ? "var(--accent-blue)" : "var(--text-secondary)",
+									color: bc.autoFit === mode.value ? "var(--accent-blue)" : "var(--text-secondary)",
 								}}
+								title={mode.description}
 							>
 								<input
 									type="radio"
 									name="autoFit"
-									value={mode}
-									checked={bc.autoFit === mode}
-									onChange={() => updateContainer({ autoFit: mode })}
+									value={mode.value}
+									checked={bc.autoFit === mode.value}
+									onChange={() => updateContainer({ autoFit: mode.value })}
 								/>
-								{mode === "shrink" ? "자동 축소 (Shrink)" : mode === "wrap" ? "줄바꿈 (Wrap)" : "없음 (None)"}
+								{mode.label}
 							</label>
 						))}
 					</div>
@@ -287,14 +292,7 @@ function SlotEditor({
 						type="button"
 						className="icon-btn"
 						onClick={() => {
-							// Shape 안쪽 16px margin으로 리셋
-							const m = 16;
-							onUpdate({
-								frameX: m,
-								frameY: m,
-								frameWidth: Math.max(element.width - m * 2, 40),
-								frameHeight: Math.max(element.height - m * 2, 20),
-							});
+							onUpdate(createDefaultTextFrame(element.width, element.height));
 						}}
 						title="Shape에 맞춰 리셋"
 						style={{ marginLeft: 8, padding: "1px 6px", fontSize: "0.65rem", color: "var(--text-tertiary)" }}
@@ -304,30 +302,30 @@ function SlotEditor({
 				</div>
 				<div className="ins-row-2col">
 					<span className="ins-label">X</span>
-					<input
-						type="number" className="ins-input" min={0}
+					<NumberInput
 						value={Math.round(slot.frameX)}
-						onChange={(e) => onUpdate({ frameX: Number(e.target.value) || 0 })}
+						onChange={(val) => onUpdate({ frameX: val })}
+						min={0}
 					/>
 					<span className="ins-label">Y</span>
-					<input
-						type="number" className="ins-input" min={0}
+					<NumberInput
 						value={Math.round(slot.frameY)}
-						onChange={(e) => onUpdate({ frameY: Number(e.target.value) || 0 })}
+						onChange={(val) => onUpdate({ frameY: val })}
+						min={0}
 					/>
 				</div>
 				<div className="ins-row-2col">
 					<span className="ins-label">W</span>
-					<input
-						type="number" className="ins-input" min={20}
+					<NumberInput
 						value={Math.round(slot.frameWidth)}
-						onChange={(e) => onUpdate({ frameWidth: Number(e.target.value) || 40 })}
+						onChange={(val) => onUpdate({ frameWidth: val })}
+						min={20}
 					/>
 					<span className="ins-label">H</span>
-					<input
-						type="number" className="ins-input" min={10}
+					<NumberInput
 						value={Math.round(slot.frameHeight)}
-						onChange={(e) => onUpdate({ frameHeight: Number(e.target.value) || 20 })}
+						onChange={(val) => onUpdate({ frameHeight: val })}
+						min={10}
 					/>
 				</div>
 			</div>
@@ -356,10 +354,10 @@ function SlotEditor({
 				</div>
 				<div className="ins-row-2col">
 					<span className="ins-label">크기</span>
-					<input
-						type="number" className="ins-input" min={1}
+					<NumberInput
 						value={slot.fontSize}
-						onChange={(e) => onUpdate({ fontSize: Number(e.target.value) || 24 })}
+						onChange={(val) => onUpdate({ fontSize: val })}
+						min={1}
 					/>
 					<span className="ins-label">Wt</span>
 					<select
@@ -415,7 +413,7 @@ function SlotEditor({
 			</div>
 
 			{/* 🆕 오버플로우 경고 */}
-			<OverflowWarning slot={slot} autoFit={autoFit} />
+			<OverflowWarning slot={slot} autoFit={autoFit} element={element} />
 		</>
 	);
 }
@@ -427,34 +425,28 @@ function SlotEditor({
 interface OverflowWarningProps {
 	slot: BindingTextSlot;
 	autoFit: BindingContainer["autoFit"];
+	element: GraphicElement;
 }
 
-function OverflowWarning({ slot, autoFit }: OverflowWarningProps) {
+function OverflowWarning({ slot, autoFit, element }: OverflowWarningProps) {
 	if (!slot.content) return null;
 
-	const result = checkTextOverflow(
-		slot.content,
-		slot.fontSize,
-		slot.fontFamily,
-		slot.fontWeight,
-		slot.frameWidth,
-		slot.frameHeight,
+	const result = resolveBindingTextLayout({
+		content: slot.content,
 		autoFit,
-	);
+		shape: { x: element.x, width: element.width, height: element.height },
+		slot,
+	});
 
-	// 정상: ratio ≤ 1.0
-	if (!result.overflow) {
+	if (result.severity === "ok") {
 		return (
 			<div style={{ padding: "4px 12px", color: "#22c55e", fontSize: "0.7rem" }}>
-				✅ 텍스트가 프레임 안에 맞습니다
+				{result.message}
 			</div>
 		);
 	}
 
-	const pct = Math.round((result.ratio - 1) * 100);
-
-	// 심각: ratio > 1.5 — 분리 권장
-	if (result.ratio > 1.5) {
+	if (result.severity === "error") {
 		return (
 			<div style={{
 				padding: "6px 12px",
@@ -466,13 +458,12 @@ function OverflowWarning({ slot, autoFit }: OverflowWarningProps) {
 				lineHeight: 1.5,
 				margin: "0 8px 8px",
 			}}>
-				🔴 텍스트가 프레임을 <strong>{pct}%</strong> 초과합니다.<br />
-				그래픽을 <strong>2개 이상으로 분리</strong>하는 것을 권장합니다.
+				<strong>주의:</strong> {result.message}<br />
+				필요하면 모드를 오른쪽 확장 또는 확장 후 축소로 바꾸세요.
 			</div>
 		);
 	}
 
-	// 경고: 1.0 < ratio ≤ 1.5
 	return (
 		<div style={{
 			padding: "4px 12px",
@@ -482,7 +473,7 @@ function OverflowWarning({ slot, autoFit }: OverflowWarningProps) {
 			fontSize: "0.7rem",
 			margin: "0 8px 8px",
 		}}>
-			⚠️ 텍스트가 프레임을 {pct}% 초과합니다.
+			{result.message}
 		</div>
 	);
 }

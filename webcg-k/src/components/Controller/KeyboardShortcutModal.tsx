@@ -27,7 +27,7 @@ const SHORTCUT_DATA: ShortcutCategory[] = [
 		title: "탐색",
 		icon: "🧭",
 		items: [
-			{ keys: ["←", "→"], description: "플레이헤드 이동 (블록 경계)" },
+			{ keys: ["←", "→"], description: "블록 경계 단위로 플레이헤드 이동" },
 			{ keys: ["↑"], description: "마지막 송출 위치로 복귀" },
 			{ keys: ["Ctrl", "←"], description: "타임라인 맨 처음" },
 			{ keys: ["Ctrl", "→"], description: "타임라인 맨 끝" },
@@ -38,27 +38,36 @@ const SHORTCUT_DATA: ShortcutCategory[] = [
 		title: "송출",
 		icon: "📡",
 		items: [
-			{ keys: ["Space"], description: "PGM 송출 (송출 중일 때)" },
+			{ keys: ["Space"], description: "현재 위치의 방송 그래픽을 PGM 송출" },
+			{ keys: ["S"], description: "스크러빙 모드 전환: 확인 중에는 Space 송출 차단" },
+		],
+	},
+	{
+		title: "복구",
+		icon: "↩",
+		items: [
+			{ keys: ["Ctrl", "Z"], description: "실행 취소. 방송 중 PGM 복원은 재송출 확인 필요" },
+			{ keys: ["Ctrl", "Y"], description: "다시 실행. 방송 중 PGM 복원은 재송출 확인 필요" },
+			{ keys: ["Esc"], description: "선택 해제 및 스크러빙 해제" },
 		],
 	},
 	{
 		title: "편집",
 		icon: "✏️",
 		items: [
-			{ keys: ["Delete"], description: "블록 또는 갭 삭제" },
+			{ keys: ["Delete"], description: "블록 또는 선택된 갭 삭제" },
 			{ keys: ["Ctrl", "C"], description: "블록 복사" },
 			{ keys: ["Ctrl", "V"], description: "블록 붙여넣기" },
 			{ keys: ["Ctrl", "↑", "↓"], description: "트랙 간 블록 이동" },
 			{ keys: ["Ctrl", "Shift", "L"], description: "로고 블록 세그먼트 확장" },
-			{ keys: ["Esc"], description: "선택 해제" },
 		],
 	},
 	{
 		title: "줌",
 		icon: "🔍",
 		items: [
-			{ keys: ["Ctrl", "Wheel ↑"], description: "줌인 (확대)" },
-			{ keys: ["Ctrl", "Wheel ↓"], description: "줌아웃 (축소)" },
+			{ keys: ["Ctrl", "Wheel ↑"], description: "줌인: 세밀한 위치 확인" },
+			{ keys: ["Ctrl", "Wheel ↓"], description: "줌아웃: 전체 런다운 확인" },
 		],
 	},
 ];

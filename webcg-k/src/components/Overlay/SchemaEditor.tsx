@@ -245,7 +245,7 @@ export function SchemaEditor({ schema, onChange }: SchemaEditorProps) {
 					{entries.length > 0 && (
 						<div style={S.hintSection}>
 							<div style={S.hintHeader}>
-								<Zap size={12} style={{ color: "#22d3ee" }} />
+								<Zap size={12} style={{ color: "#60a5fa" }} />
 								<span>HTML 선언형 바인딩 힌트 (자동 생성)</span>
 								<button type="button" onClick={handleCopyHint} style={S.copyBtn}>
 									<Copy size={10} /> 복사
@@ -346,7 +346,7 @@ function FieldCard({
 						type="color"
 						value={String(prop.default || "#ffffff")}
 						onChange={(e) => onPropChange(fieldKey, { default: e.target.value })}
-						style={{ width: "32px", height: "24px", border: "none", cursor: "pointer", borderRadius: "3px" }}
+						style={{ width: "32px", height: "24px", border: "none", cursor: "pointer", borderRadius: "0.25rem" }}
 					/>
 				) : effectiveType === "enum" ? (
 					<select
@@ -476,10 +476,10 @@ const S: Record<string, React.CSSProperties> = {
 		alignItems: "center",
 		gap: "4px",
 		padding: "4px 10px",
-		borderRadius: "5px",
+		borderRadius: "0.375rem",
 		border: "1px dashed rgba(6,182,212,0.4)",
 		background: "rgba(6,182,212,0.08)",
-		color: "#22d3ee",
+		color: "#60a5fa",
 		cursor: "pointer",
 		fontSize: "0.6875rem",
 		fontWeight: 600,
@@ -514,7 +514,7 @@ const S: Record<string, React.CSSProperties> = {
 	},
 	input: {
 		padding: "3px 6px",
-		borderRadius: "3px",
+		borderRadius: "0.25rem",
 		border: "1px solid rgba(255,255,255,0.1)",
 		backgroundColor: "rgba(0,0,0,0.3)",
 		color: "#e2e8f0",
@@ -532,7 +532,7 @@ const S: Record<string, React.CSSProperties> = {
 		display: "flex",
 		alignItems: "center",
 		padding: "3px",
-		borderRadius: "3px",
+		borderRadius: "0.25rem",
 		border: "none",
 		background: "none",
 		color: "#64748b",
@@ -561,7 +561,7 @@ const S: Record<string, React.CSSProperties> = {
 		alignItems: "center",
 		gap: "3px",
 		padding: "2px 8px",
-		borderRadius: "3px",
+		borderRadius: "0.25rem",
 		border: "1px solid rgba(255,255,255,0.1)",
 		background: "rgba(255,255,255,0.04)",
 		color: "#94a3b8",

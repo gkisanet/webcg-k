@@ -177,7 +177,7 @@ export function DataViewer({
 
 	return (
 		<div className="dataviewer-container" style={{
-			border: "1px solid var(--border-primary)",
+			border: "1px solid var(--border-default)",
 			borderRadius: 10,
 			background: "var(--app-bg-secondary)",
 			overflow: "hidden",
@@ -187,7 +187,7 @@ export function DataViewer({
 			{/* ─── 헤더 바 ─── */}
 			<div style={{
 				padding: "10px 14px",
-				borderBottom: "1px solid var(--border-primary)",
+				borderBottom: "1px solid var(--border-default)",
 				display: "flex", alignItems: "center", gap: 8,
 				flexShrink: 0,
 			}}>
@@ -251,7 +251,7 @@ export function DataViewer({
 			{!collapsed && (
 				<div style={{
 					padding: "8px 14px",
-					borderBottom: "1px solid var(--border-primary)",
+					borderBottom: "1px solid var(--border-default)",
 					flexShrink: 0,
 				}}>
 					<div style={{ position: "relative" }}>
@@ -286,7 +286,7 @@ export function DataViewer({
 											style={{
 												padding: "8px 10px",
 												textAlign: "left",
-												borderBottom: "2px solid var(--border-primary)",
+												borderBottom: "2px solid var(--border-default)",
 												background: "var(--app-bg-muted)",
 												position: "sticky",
 												top: 0,
@@ -337,7 +337,7 @@ export function DataViewer({
 												key={cell.id}
 												style={{
 													padding: "6px 10px",
-													borderBottom: "1px solid var(--border-primary)",
+													borderBottom: "1px solid var(--border-default)",
 													maxWidth: 250,
 													overflow: "hidden",
 													textOverflow: "ellipsis",
@@ -359,7 +359,7 @@ export function DataViewer({
 			{!collapsed && (
 				<div style={{
 					padding: "6px 14px",
-					borderTop: "1px solid var(--border-primary)",
+					borderTop: "1px solid var(--border-default)",
 					display: "flex", justifyContent: "space-between",
 					fontSize: 10, color: "var(--text-tertiary)",
 					flexShrink: 0,

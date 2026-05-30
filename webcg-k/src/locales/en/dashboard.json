@@ -10,8 +10,8 @@
 		"editCuesheets": "Edit Cuesheets",
 		"editCuesheetsDesc": "Edit broadcast order"
 	},
-	"liveProjects": "Live Projects",
-	"noLiveProjects": "No projects currently broadcasting",
+	"liveProjects": "Live/Rehearsal Projects",
+	"noLiveProjects": "No projects currently live or rehearsing",
 	"recentProjects": "Recent Projects",
 	"noProjects": "No projects created yet.",
 	"createFromCuesheet": "Cuesheet Editor",

@@ -39,6 +39,7 @@ import {
   ensureOverlayFolder,
 } from "./overlayFolderService";
 import { supabase } from "../lib/supabase";
+import { sanitizeGraphicCss } from "../lib/aiGraphicUtils";
 
 // ═══════════════════════════════════════════════════════════════════
 // Step 1: 시스템 프롬프트 (SceneContent[] 생성용)
@@ -950,6 +951,7 @@ ${buildRoleGraphicPromptFragment()}
 실제 방송 송출 및 OBS에서 방송 그래픽(Broadcast Graphics)을 실시간 영상 위에 오버레이로 합성하기 위한 핵심 사항입니다.
 - "bottom_bar", "top_bar", "center", "left_third":
   - body 또는 #overlay 요소를 불투명하게 만들지 마세요. 반드시 \`background: transparent !important;\`로 투명화해야 합니다.
+  - **[강제 규칙]** 전체 화면(1920x1080)을 감싸는 최상위 컨테이너 요소(예: \`.container\`, \`.wrapper\`, \`.overlay\` 등)에는 절대 \`background\`나 \`background-color\` 속성을 직접 혹은 \`var(--cg-bg)\`를 통해 불투명하게 지정하지 마십시오. 배경색은 오직 실제로 글자가 담기는 개별 자막 박스(예: \`.subtitle-box\`, \`.label-wrap\`) 등에만 반투명(\`rgba\`) 또는 블러 필터 형태로 국소 적용해야 합니다.
   - 개별 텍스트 컨테이너(예: 자막 박스, 라벨)는 반투명 배경(예: \`rgba(15, 23, 42, 0.85)\`, \`backdrop-filter: blur(8px)\`)을 사용하여 가독성을 확보하세요.
   - 그래픽 외부 영역이 투명하지 않으면 실시간 영상이 가려지는 대형 방송 사고가 발생합니다.
 - "fullscreen"만 예외: 전체 화면을 덮는 연출이므로 불투명 배경을 허용합니다.
@@ -1323,11 +1325,12 @@ export function buildAiCuesheetOverlayArtifacts({
 
   // 1. 비-풀스크린 방송 그래픽(Broadcast Graphics) 투명 배경 완벽성 강제 안전 장치
   const isFullscreen = scene.text_slots.every((s) => s.zone_hint === "fullscreen");
-  let finalCss = css;
+  let finalCss = sanitizeGraphicCss(css, isFullscreen);
   if (!isFullscreen) {
-    if (!css.includes("background: transparent !important")) {
-      finalCss = css + "\n\n/* [Safety Defense] 방송 그래픽 투명성 강제 안전 장치 */\nbody, #overlay { background: transparent !important; }\n";
-    }
+    // 15년 차 시니어 아키텍트의 무결성 가드 (ADR):
+    // Includes 조건 검색의 취약점(LLM이 badge 등 엉뚱한 곳에 transparent를 선언했을 때 통과해버리는 현상)을 원천 차단하기 위해,
+    // 비-풀스크린 씬일 경우 항상 CSS 맨 마지막에 바디 투명화 강제 스타일을 추가 주입하여 캐스케이딩 우선순위를 강제 점유합니다.
+    finalCss = finalCss + "\n\n/* [Safety Defense] 방송 그래픽 투명성 강제 안전 장치 */\nbody, #overlay { background: transparent !important; }\n";
   }
 
   const bindingManifest: AiCuesheetBindingManifestEntry[] = scene.text_slots.map((slot, slotIdx) => {

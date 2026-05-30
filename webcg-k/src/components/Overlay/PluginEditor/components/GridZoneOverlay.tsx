@@ -29,8 +29,8 @@ export function GridZoneOverlay({
               position: "absolute",
               left: `${left}%`, top: `${top}%`,
               width: `${width}%`, height: `${height}%`,
-              border: isSelected ? "2px solid #00d4ff" : "1px dashed rgba(0, 212, 255, 0.4)",
-              backgroundColor: isSelected ? "rgba(0, 212, 255, 0.15)" : "rgba(0, 212, 255, 0.05)",
+              border: isSelected ? "2px solid var(--accent-primary)" : "1px dashed rgba(96, 165, 250, 0.4)",
+              backgroundColor: isSelected ? "rgba(96, 165, 250, 0.15)" : "rgba(96, 165, 250, 0.05)",
               cursor: "pointer", transition: "all 0.15s",
               display: "flex", alignItems: "center", justifyContent: "center",
               borderRadius: "2px", boxSizing: "border-box",
@@ -38,7 +38,7 @@ export function GridZoneOverlay({
           >
             <span style={{
               fontSize: "9px", fontWeight: 600,
-              color: isSelected ? "#fff" : "rgba(0, 212, 255, 0.8)",
+              color: isSelected ? "#fff" : "rgba(96, 165, 250, 0.8)",
               textShadow: "0 1px 2px rgba(0,0,0,0.8)",
               pointerEvents: "none", whiteSpace: "nowrap",
               overflow: "hidden", textOverflow: "ellipsis", padding: "0 4px",

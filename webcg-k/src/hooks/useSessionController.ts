@@ -6,7 +6,7 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { supabase } from "../lib/supabase";
 import { sendRealtimeBroadcast } from "../lib/realtimeBroadcast";
-import type { BroadcastSession, PlayheadState } from "../lib/types/broadcast";
+import type { BroadcastSession, PlayheadState, SessionStatus } from "../lib/types/broadcast";
 import {
   createHeartbeatMonitor,
   type RendererState,
@@ -203,6 +203,35 @@ export function useSessionController(sessionId: string) {
     };
   }, [sessionId]);
 
+  // ─── 2.1 세션 DB 변경 실시간 구독 (postgres_changes) ─────────────────
+  useEffect(() => {
+    if (!sessionId) return;
+
+    const dbChannel = supabase.channel(`db-session:${sessionId}`);
+    dbChannel
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "broadcast_sessions",
+          filter: `id=eq.${sessionId}`,
+        },
+        (payload) => {
+          const updated = payload.new as BroadcastSession;
+          if (updated) {
+            console.log("[SessionController] Session DB updated in realtime:", updated);
+            setSession(updated);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      dbChannel.unsubscribe();
+    };
+  }, [sessionId]);
+
   // ─── 2. Broadcast 채널 ────────────────────────────────────────────
 
   useEffect(() => {
@@ -278,28 +307,60 @@ export function useSessionController(sessionId: string) {
   const savePlayheadState = useCallback(
     async (playheadState: PlayheadState) => {
       if (!sessionId) return;
-      await supabase
+      const { data } = await supabase
         .from("broadcast_sessions")
         .update({ playhead_state: playheadState as any })
-        .eq("id", sessionId);
+        .eq("id", sessionId)
+        .select("*")
+        .single();
+      if (data) setSession(data as unknown as BroadcastSession);
+    },
+    [sessionId],
+  );
+
+  const saveSessionPlayoutState = useCallback(
+    async (playheadState: PlayheadState, status?: SessionStatus) => {
+      if (!sessionId) return null;
+      const patch: { playhead_state: any; status?: SessionStatus } = {
+        playhead_state: playheadState as any,
+      };
+      if (status) patch.status = status;
+
+      const { data, error } = await supabase
+        .from("broadcast_sessions")
+        .update(patch as any)
+        .eq("id", sessionId)
+        .select("*")
+        .single();
+
+      if (error) throw error;
+      if (data) {
+        const updated = data as unknown as BroadcastSession;
+        setSession(updated);
+        return updated;
+      }
+      return null;
     },
     [sessionId],
   );
 
   const updateStatus = useCallback(
-    async (status: string) => {
+    async (status: SessionStatus) => {
       if (!sessionId) return;
-      await supabase
+      const { data } = await supabase
         .from("broadcast_sessions")
         .update({ status } as any)
-        .eq("id", sessionId);
-      setSession((prev) => (prev ? { ...prev, status } as BroadcastSession : prev));
+        .eq("id", sessionId)
+        .select("*")
+        .single();
+      if (data) setSession(data as unknown as BroadcastSession);
     },
     [sessionId],
   );
 
   return {
     session,
+    setSession, // 🆕 로컬 상태 강제 갱신용 세터 노출
     segments,
     loading,
     error,
@@ -307,6 +368,7 @@ export function useSessionController(sessionId: string) {
     rendererStatus,
     broadcast,
     savePlayheadState,
+    saveSessionPlayoutState,
     updateStatus,
   };
 }

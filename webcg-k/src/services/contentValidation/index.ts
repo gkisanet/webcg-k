@@ -13,10 +13,14 @@
  *   4. 시제·날짜 일관성
  */
 
-import { checkSpelling } from "./spellCheckService";
+import {
+	buildCuesheetCheckContext,
+	type CuesheetCheckContext,
+} from "../cuesheetCheckService";
 import { filterProfanity } from "./profanityFilter";
-import { validateTitleFormat } from "./titleValidator";
+import { checkSpelling } from "./spellCheckService";
 import { validateTemporal } from "./temporalValidator";
+import { validateTitleFormat } from "./titleValidator";
 
 // ─── 공통 타입 ────────────────────────────────────────────────────
 
@@ -77,10 +81,14 @@ export interface ValidatableItem {
  */
 export async function validateCgContent(
 	items: ValidatableItem[],
-	programDate: string,
+	checkContextOrProgramDate: CuesheetCheckContext | string,
 	_useAiSpellCheck = false,
 ): Promise<ContentValidationResult[]> {
 	const results: ContentValidationResult[] = [];
+	const checkContext =
+		typeof checkContextOrProgramDate === "string"
+			? buildCuesheetCheckContext({ programDate: checkContextOrProgramDate })
+			: checkContextOrProgramDate;
 
 	for (const item of items) {
 		const issues: ContentIssue[] = [];
@@ -130,7 +138,11 @@ export async function validateCgContent(
 				issues.push(...titleIssues);
 
 				// ── 4단계: 시제·날짜 일관성 ──
-				const temporalIssues = validateTemporal(plainText, programDate, fieldKey);
+				const temporalIssues = validateTemporal(
+					plainText,
+					checkContext,
+					fieldKey,
+				);
 				issues.push(...temporalIssues);
 			}
 		}

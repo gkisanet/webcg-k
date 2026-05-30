@@ -229,7 +229,7 @@ export function CsvImportWizard({
 			>
 				{/* 헤더 */}
 				<div style={{
-					padding: "14px 20px", borderBottom: "1px solid var(--border-primary)",
+					padding: "14px 20px", borderBottom: "1px solid var(--border-default)",
 					display: "flex", justifyContent: "space-between", alignItems: "center",
 				}}>
 					<div>
@@ -246,11 +246,11 @@ export function CsvImportWizard({
 				</div>
 
 				{/* 스텝 인디케이터 */}
-				<div style={{ display: "flex", padding: "10px 20px", gap: 4, borderBottom: "1px solid var(--border-primary)" }}>
+				<div style={{ display: "flex", padding: "10px 20px", gap: 4, borderBottom: "1px solid var(--border-default)" }}>
 					{[1, 2, 3].map((s) => (
 						<div key={s} style={{
 							flex: 1, height: 3, borderRadius: 2,
-							background: s <= step ? "var(--accent-primary)" : "var(--border-primary)",
+							background: s <= step ? "var(--accent-primary)" : "var(--border-default)",
 							transition: "background 0.2s",
 						}} />
 					))}
@@ -264,7 +264,7 @@ export function CsvImportWizard({
 							{!csvResult ? (
 								<label style={{
 									display: "flex", flexDirection: "column", alignItems: "center",
-									gap: 12, padding: 40, border: "2px dashed var(--border-primary)",
+									gap: 12, padding: 40, border: "2px dashed var(--border-default)",
 									borderRadius: 10, cursor: "pointer", transition: "border-color 0.2s",
 								}}>
 									<Upload size={32} style={{ color: "var(--text-tertiary)" }} />
@@ -286,12 +286,12 @@ export function CsvImportWizard({
 										>다시 선택</button>
 									</div>
 									{/* 미리보기 테이블 (최대 5행) */}
-									<div style={{ overflowX: "auto", border: "1px solid var(--border-primary)", borderRadius: 8 }}>
+									<div style={{ overflowX: "auto", border: "1px solid var(--border-default)", borderRadius: 8 }}>
 										<table style={{ width: "100%", fontSize: 11, borderCollapse: "collapse" }}>
 											<thead>
 												<tr>
 													{csvResult.headers.map((h, i) => (
-														<th key={i} style={{ padding: "6px 8px", textAlign: "left", background: "var(--app-bg-muted)", borderBottom: "1px solid var(--border-primary)", fontWeight: 600, whiteSpace: "nowrap" }}>
+														<th key={i} style={{ padding: "6px 8px", textAlign: "left", background: "var(--app-bg-muted)", borderBottom: "1px solid var(--border-default)", fontWeight: 600, whiteSpace: "nowrap" }}>
 															{h}
 														</th>
 													))}
@@ -301,7 +301,7 @@ export function CsvImportWizard({
 												{csvResult.rows.slice(0, 5).map((row, ri) => (
 													<tr key={ri}>
 														{row.map((cell, ci) => (
-															<td key={ci} style={{ padding: "4px 8px", borderBottom: "1px solid var(--border-primary)", maxWidth: 150, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+															<td key={ci} style={{ padding: "4px 8px", borderBottom: "1px solid var(--border-default)", maxWidth: 150, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
 																{cell}
 															</td>
 														))}
@@ -323,7 +323,7 @@ export function CsvImportWizard({
 								onClick={() => setShowHelp(!showHelp)}
 								style={{
 									display: "flex", alignItems: "center", gap: 6,
-									background: "none", border: "1px solid var(--border-primary)",
+									background: "none", border: "1px solid var(--border-default)",
 									borderRadius: 6, padding: "6px 12px", cursor: "pointer",
 									color: "var(--text-secondary)", fontSize: 12,
 									width: "100%", justifyContent: "center",
@@ -336,7 +336,7 @@ export function CsvImportWizard({
 
 							{showHelp && (
 								<div style={{
-									background: "var(--app-bg-muted)", border: "1px solid var(--border-primary)",
+									background: "var(--app-bg-muted)", border: "1px solid var(--border-default)",
 									borderRadius: 8, padding: 16, fontSize: 12, lineHeight: 1.7,
 									color: "var(--text-secondary)",
 								}}>
@@ -357,9 +357,9 @@ export function CsvImportWizard({
 										<table style={{ fontSize: 11, borderCollapse: "collapse", width: "100%" }}>
 											<thead>
 												<tr style={{ background: "var(--app-bg-secondary)" }}>
-													<th style={{ padding: "4px 8px", textAlign: "left", borderBottom: "1px solid var(--border-primary)" }}>컨럼 이름</th>
-													<th style={{ padding: "4px 8px", textAlign: "left", borderBottom: "1px solid var(--border-primary)" }}>자동 매핑 대상</th>
-													<th style={{ padding: "4px 8px", textAlign: "left", borderBottom: "1px solid var(--border-primary)" }}>설명</th>
+													<th style={{ padding: "4px 8px", textAlign: "left", borderBottom: "1px solid var(--border-default)" }}>컨럼 이름</th>
+													<th style={{ padding: "4px 8px", textAlign: "left", borderBottom: "1px solid var(--border-default)" }}>자동 매핑 대상</th>
+													<th style={{ padding: "4px 8px", textAlign: "left", borderBottom: "1px solid var(--border-default)" }}>설명</th>
 												</tr>
 											</thead>
 											<tbody>
@@ -374,9 +374,9 @@ export function CsvImportWizard({
 													['"출처" / "source"', 'CG: source', 'CG 텍스트 — 출처 표시'],
 												].map(([col, target, desc], i) => (
 													<tr key={i}>
-														<td style={{ padding: "3px 8px", borderBottom: "1px solid var(--border-primary)", fontFamily: "monospace" }}>{col}</td>
-														<td style={{ padding: "3px 8px", borderBottom: "1px solid var(--border-primary)", color: "#60a5fa" }}>{target}</td>
-														<td style={{ padding: "3px 8px", borderBottom: "1px solid var(--border-primary)" }}>{desc}</td>
+														<td style={{ padding: "3px 8px", borderBottom: "1px solid var(--border-default)", fontFamily: "monospace" }}>{col}</td>
+														<td style={{ padding: "3px 8px", borderBottom: "1px solid var(--border-default)", color: "#60a5fa" }}>{target}</td>
+														<td style={{ padding: "3px 8px", borderBottom: "1px solid var(--border-default)" }}>{desc}</td>
 													</tr>
 												))}
 											</tbody>
@@ -387,7 +387,7 @@ export function CsvImportWizard({
 									<pre style={{
 										background: "var(--app-bg-secondary)", padding: 10, borderRadius: 6,
 										fontSize: 10, fontFamily: "monospace", overflow: "auto",
-										border: "1px solid var(--border-primary)", margin: "0 0 10px",
+										border: "1px solid var(--border-default)", margin: "0 0 10px",
 										whiteSpace: "pre", lineHeight: 1.5,
 									}}>{`제목,구분,기자,유형,이름,텍스트
 속보: 폭설 주의보,속보-001,김철수,super,김철수,기상캠스터
@@ -399,7 +399,7 @@ export function CsvImportWizard({
 										{["super", "band", "lowthird", "headline", "subheadline", "source", "crawl", "locator", "fullcg", "credit", "soundbite", "reporter", "flash"].map((t) => (
 											<span key={t} style={{
 												padding: "2px 6px", borderRadius: 3, fontSize: 10,
-												background: "var(--app-bg-secondary)", border: "1px solid var(--border-primary)",
+												background: "var(--app-bg-secondary)", border: "1px solid var(--border-default)",
 												fontFamily: "monospace",
 											}}>{t}</span>
 										))}
@@ -433,7 +433,7 @@ export function CsvImportWizard({
 										value={mapping[header] || ""}
 										onChange={(e) => setMapping({ ...mapping, [header]: e.target.value })}
 										style={{
-											flex: 1, background: "var(--app-bg-muted)", border: "1px solid var(--border-primary)",
+											flex: 1, background: "var(--app-bg-muted)", border: "1px solid var(--border-default)",
 											borderRadius: 6, padding: "5px 8px", fontSize: 12,
 										}}
 									>
@@ -465,7 +465,7 @@ export function CsvImportWizard({
 										value={programName}
 										onChange={(e) => setProgramName(e.target.value)}
 										placeholder="예: KBS 뉴스 9"
-										style={{ width: "100%", background: "var(--app-bg-muted)", border: "1px solid var(--border-primary)", borderRadius: 6, padding: "6px 8px", fontSize: 12 }}
+										style={{ width: "100%", background: "var(--app-bg-muted)", border: "1px solid var(--border-default)", borderRadius: 6, padding: "6px 8px", fontSize: 12 }}
 									/>
 								</div>
 								<div style={{ flex: "0 0 130px" }}>
@@ -474,7 +474,7 @@ export function CsvImportWizard({
 										type="date"
 										value={programDate}
 										onChange={(e) => setProgramDate(e.target.value)}
-										style={{ width: "100%", background: "var(--app-bg-muted)", border: "1px solid var(--border-primary)", borderRadius: 6, padding: "6px 8px", fontSize: 12 }}
+										style={{ width: "100%", background: "var(--app-bg-muted)", border: "1px solid var(--border-default)", borderRadius: 6, padding: "6px 8px", fontSize: 12 }}
 									/>
 								</div>
 							</div>
@@ -485,7 +485,7 @@ export function CsvImportWizard({
 								<select
 									value={selectedBundleId}
 									onChange={(e) => setSelectedBundleId(e.target.value)}
-									style={{ width: "100%", background: "var(--app-bg-muted)", border: "1px solid var(--border-primary)", borderRadius: 6, padding: "6px 8px", fontSize: 12 }}
+									style={{ width: "100%", background: "var(--app-bg-muted)", border: "1px solid var(--border-default)", borderRadius: 6, padding: "6px 8px", fontSize: 12 }}
 								>
 									<option value="">번들 없이 생성</option>
 									{bundles.map((b) => (
@@ -497,14 +497,14 @@ export function CsvImportWizard({
 							</div>
 
 							{/* 변환 미리보기 */}
-							<div style={{ border: "1px solid var(--border-primary)", borderRadius: 8, overflow: "hidden" }}>
-								<div style={{ padding: "6px 10px", background: "var(--app-bg-muted)", fontSize: 11, fontWeight: 600, borderBottom: "1px solid var(--border-primary)" }}>
+							<div style={{ border: "1px solid var(--border-default)", borderRadius: 8, overflow: "hidden" }}>
+								<div style={{ padding: "6px 10px", background: "var(--app-bg-muted)", fontSize: 11, fontWeight: 600, borderBottom: "1px solid var(--border-default)" }}>
 									변환 미리보기 ({previewItems.length}건)
 								</div>
 								<div style={{ maxHeight: 200, overflowY: "auto" }}>
 									{previewItems.slice(0, 10).map((item, i) => (
 										<div key={i} style={{
-											padding: "6px 10px", borderBottom: "1px solid var(--border-primary)",
+											padding: "6px 10px", borderBottom: "1px solid var(--border-default)",
 											display: "flex", alignItems: "center", gap: 6, fontSize: 11,
 										}}>
 											<span style={{ fontWeight: 600, color: "var(--text-primary)" }}>#{i + 1}</span>
@@ -542,7 +542,7 @@ export function CsvImportWizard({
 
 				{/* 하단 버튼 */}
 				<div style={{
-					padding: "12px 20px", borderTop: "1px solid var(--border-primary)",
+					padding: "12px 20px", borderTop: "1px solid var(--border-default)",
 					display: "flex", justifyContent: "space-between",
 				}}>
 					<Button variant="ghost" onClick={step === 1 ? onCancel : () => setStep((step - 1) as 1 | 2)}>

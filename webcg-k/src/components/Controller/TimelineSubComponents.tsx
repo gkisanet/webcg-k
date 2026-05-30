@@ -6,7 +6,7 @@
  */
 
 import { useMemo } from "react";
-import { Play, Plus, Wind, Zap, ZoomIn, ZoomOut } from "lucide-react";
+import { HelpCircle, Keyboard, Play, Plus, Redo2, Undo2, Wind, Zap, ZoomIn, ZoomOut } from "lucide-react";
 import { SNAP_UNIT } from "../../stores/blockManipulation";
 import {
 	addTrack,
@@ -27,30 +27,78 @@ import {
 // ─── TimelineHeader ─────────────────────────────────────────────
 
 export function TimelineHeader({
-	zoomLevel,
-	onZoomIn,
-	onZoomOut,
-	onZoomReset,
+	playheadReadout,
 	autoFollow,
 	hasSegments,
+	showEditActions = false,
+	undoAvailable = false,
+	redoAvailable = false,
+	onUndo,
+	onRedo,
+	onOpenShortcutHelp,
 }: {
-	zoomLevel: number;
-	onZoomIn: () => void;
-	onZoomOut: () => void;
-	onZoomReset: () => void;
+	playheadReadout: string;
 	autoFollow?: AutoFollowMode;
 	hasSegments?: boolean;
+	showEditActions?: boolean;
+	undoAvailable?: boolean;
+	redoAvailable?: boolean;
+	onUndo?: () => void;
+	onRedo?: () => void;
+	onOpenShortcutHelp?: () => void;
 }) {
 	return (
 		<div className="timeline-header">
-			<span
-				className="text-sm font-medium"
-				style={{ color: "var(--text-secondary)" }}
-			>
-				타임라인
-			</span>
+			<div className="flex items-center gap-3">
+				<span
+					className="text-sm font-medium"
+					style={{ color: "var(--text-secondary)" }}
+				>
+					타임라인
+				</span>
+				<span
+					className="text-xs"
+					style={{
+						color: "var(--text-tertiary)",
+						maxWidth: "220px",
+						overflow: "hidden",
+						textOverflow: "ellipsis",
+						whiteSpace: "nowrap",
+					}}
+					title={playheadReadout}
+				>
+					{playheadReadout}
+				</span>
+			</div>
 			<div className="ml-auto flex items-center gap-4">
 				<TransitionLegend />
+
+				{showEditActions && (
+					<div
+						className="flex items-center gap-1"
+						style={{
+							background: "var(--surface-card)",
+							border: "1px solid var(--border-subtle)",
+							padding: 2,
+							borderRadius: "0.375rem",
+						}}
+					>
+						<TimelineIconButton
+							disabled={!undoAvailable}
+							onClick={onUndo}
+							title="실행 취소 (Ctrl+Z)"
+						>
+							<Undo2 size={13} />
+						</TimelineIconButton>
+						<TimelineIconButton
+							disabled={!redoAvailable}
+							onClick={onRedo}
+							title="다시 실행 (Ctrl+Y)"
+						>
+							<Redo2 size={13} />
+						</TimelineIconButton>
+					</div>
+				)}
 
 				{/* Auto-follow 토글 — 세그먼트가 있을 때만 표시 */}
 				{hasSegments && (
@@ -61,8 +109,8 @@ export function TimelineHeader({
 						style={{
 							padding: "2px 8px",
 							borderRadius: "4px",
-							border: `1px solid ${autoFollow === "off" ? "var(--border-default)" : autoFollow === "soft" ? "rgba(245, 158, 11, 0.5)" : "rgba(0, 212, 255, 0.5)"}`,
-							background: autoFollow === "off" ? "transparent" : autoFollow === "soft" ? "rgba(245, 158, 11, 0.12)" : "rgba(0, 212, 255, 0.12)",
+							border: `1px solid ${autoFollow === "off" ? "var(--border-default)" : autoFollow === "soft" ? "rgba(245, 158, 11, 0.5)" : "rgba(96, 165, 250, 0.5)"}`,
+							background: autoFollow === "off" ? "transparent" : autoFollow === "soft" ? "rgba(245, 158, 11, 0.12)" : "rgba(96, 165, 250, 0.12)",
 							color: autoFollow === "off" ? "var(--text-tertiary)" : autoFollow === "soft" ? "#f59e0b" : "var(--accent-primary)",
 							cursor: "pointer",
 							transition: "all 0.15s",
@@ -80,45 +128,135 @@ export function TimelineHeader({
 					</button>
 				)}
 
-				{/* 줌 컨트롤 */}
-				<div className="zoom-controls">
-					<button
-						type="button"
-						onClick={onZoomOut}
-						disabled={zoomLevel <= ZOOM_MIN}
-						className="zoom-btn"
-						title="줌 아웃 (Ctrl+스크롤↓)"
-					>
-						<ZoomOut size={13} />
-					</button>
-					<button
-						type="button"
-						onClick={onZoomReset}
-						disabled={zoomLevel === ZOOM_MAX}
-						className="zoom-btn zoom-btn-label"
-						title="기본 줌으로 복원"
-					>
-						{Math.round(zoomLevel * 100)}%
-					</button>
-					<button
-						type="button"
-						onClick={onZoomIn}
-						disabled={zoomLevel >= ZOOM_MAX}
-						className="zoom-btn"
-						title="줌 인 (Ctrl+스크롤↑) — 기본 줌까지"
-					>
-						<ZoomIn size={13} />
-					</button>
-				</div>
-
 				<KeyboardHint keys={["←", "→"]} label="탐색" />
 				<KeyboardHint keys={["Space"]} label="송출" />
 				<KeyboardHint keys={["Del"]} label="삭제/갭 닫기" />
 				<KeyboardHint keys={["Ctrl+C/V"]} label="복사" />
 				<KeyboardHint keys={["Ctrl+↑↓"]} label="트랙 이동" />
 				<KeyboardHint keys={["Ctrl+←→"]} label="처음/끝" />
+				{onOpenShortcutHelp && (
+					<button
+						type="button"
+						onClick={onOpenShortcutHelp}
+						className="flex items-center gap-1"
+						style={{
+							padding: "0.25rem 0.5rem",
+							borderRadius: "0.375rem",
+							border: "1px solid var(--border-subtle)",
+							background: "var(--surface-card)",
+							color: "var(--text-secondary)",
+							fontSize: "0.6875rem",
+							fontWeight: 600,
+							cursor: "pointer",
+							transition: "background var(--transition-fast), color var(--transition-fast)",
+						}}
+						title="단축키 도움말"
+					>
+						<Keyboard size={12} />
+						<HelpCircle size={12} />
+					</button>
+				)}
 			</div>
 		</div>
+	);
+}
+
+// ─── ZoomControls (standalone) ───────────────────────────────────
+
+export function ZoomControls({
+	zoomLevel,
+	onZoomIn,
+	onZoomOut,
+	onZoomReset,
+}: {
+	zoomLevel: number;
+	onZoomIn: () => void;
+	onZoomOut: () => void;
+	onZoomReset: () => void;
+}) {
+	return (
+		<div
+			className="zoom-controls"
+			style={{
+				display: "flex",
+				alignItems: "center",
+				justifyContent: "center",
+				gap: "4px",
+				padding: "4px 8px",
+				background: "var(--surface-card)",
+				border: "1px solid var(--border-subtle)",
+				borderRadius: "6px",
+				width: "fit-content",
+				margin: "8px auto 4px auto", // 트랙 추가 버튼 위에 살짝 띄우기 위한 정교한 마진
+				backdropFilter: "var(--glass-blur)",
+				boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+			}}
+		>
+			<button
+				type="button"
+				onClick={onZoomOut}
+				disabled={zoomLevel <= ZOOM_MIN}
+				className="zoom-btn"
+				title="줌 아웃 (Ctrl+스크롤↓)"
+			>
+				<ZoomOut size={13} />
+			</button>
+			<button
+				type="button"
+				onClick={onZoomReset}
+				disabled={zoomLevel === ZOOM_MAX}
+				className="zoom-btn zoom-btn-label"
+				style={{ fontSize: "11px", fontWeight: "bold" }}
+				title="기본 줌으로 복원"
+			>
+				{Math.round(zoomLevel * 100)}%
+			</button>
+			<button
+				type="button"
+				onClick={onZoomIn}
+				disabled={zoomLevel >= ZOOM_MAX}
+				className="zoom-btn"
+				title="줌 인 (Ctrl+스크롤↑) — 기본 줌까지"
+			>
+				<ZoomIn size={13} />
+			</button>
+		</div>
+	);
+}
+
+function TimelineIconButton({
+	disabled,
+	onClick,
+	title,
+	children,
+}: {
+	disabled: boolean;
+	onClick?: () => void;
+	title: string;
+	children: React.ReactNode;
+}) {
+	return (
+		<button
+			type="button"
+			onClick={onClick}
+			disabled={disabled}
+			title={title}
+			style={{
+				width: 26,
+				height: 26,
+				display: "inline-flex",
+				alignItems: "center",
+				justifyContent: "center",
+				border: "none",
+				borderRadius: "0.25rem",
+				background: "transparent",
+				color: disabled ? "var(--text-tertiary)" : "var(--accent-primary)",
+				opacity: disabled ? 0.45 : 1,
+				cursor: disabled ? "not-allowed" : "pointer",
+			}}
+		>
+			{children}
+		</button>
 	);
 }
 
@@ -171,6 +309,7 @@ export function TrackRow({
 	maxBlockEnd,
 	onBlockDoubleClick,
 	activeSegmentTab,
+	readOnly = false,
 }: {
 	track: Track;
 	blocks: GraphicBlock[];
@@ -186,6 +325,7 @@ export function TrackRow({
 	onBlockDoubleClick?: (block: GraphicBlock) => void;
 	/** 현재 활성 세그먼트 탭 (딤 처리용) */
 	activeSegmentTab?: string | null;
+	readOnly?: boolean;
 }) {
 	const edgeStates = useMemo(() => getBlockEdgeStates(blocks), [blocks]);
 
@@ -199,8 +339,10 @@ export function TrackRow({
 			</div>
 			<div
 				className="track-content"
-				onClick={(e) => onTrackClick(track.id, e)}
-				style={{ cursor: "crosshair" }}
+				onClick={(e) => {
+					if (!readOnly) onTrackClick(track.id, e);
+				}}
+				style={{ cursor: readOnly ? "default" : "crosshair" }}
 			>
 				<GridLines maxBlockEnd={maxBlockEnd} />
 
@@ -233,6 +375,7 @@ export function TrackRow({
 							}
 							setOverlappingDuringDrag={setOverlappingDuringDrag}
 							onDoubleClick={onBlockDoubleClick}
+							readOnly={readOnly}
 						/>
 					);
 				})}
@@ -318,9 +461,9 @@ export function Playhead({ position, color, isScrubbing = false }: { position: n
 				"--playhead-glow": isScrubbing
 					? "rgba(251, 191, 36, 0.5)"
 					: `${color}80`,
-				height: isScrubbing ? "60%" : "100%",
-				top: isScrubbing ? "20%" : "0",
-				opacity: isScrubbing ? 0.85 : 1,
+				height: "100%",
+				top: 0,
+				opacity: 1,
 			} as React.CSSProperties}
 			title={isScrubbing ? "스크러빙 모드" : undefined}
 		/>
@@ -341,36 +484,47 @@ export function RemotePlayhead({ position, color, displayName, isScrubbing = fal
 			style={{
 				position: "absolute",
 				left: `${position * zoom + TRACK_HEADER_WIDTH}px`,
-				top: 0,
-				bottom: 0,
-				width: isScrubbing ? "3px" : "2px",
-				backgroundColor: isScrubbing ? "#f59e0b" : color,
-				boxShadow: isScrubbing
-					? "0 0 6px 2px rgba(251, 191, 36, 0.35)"
-					: `0 0 4px 1px ${color}80`,
-				borderLeft: isScrubbing ? "2px dashed rgba(251, 191, 36, 0.5)" : "none",
-				zIndex: 4,
+				top: "10px",
+				height: "34px",
+				width: "0",
+				borderLeft: `2px ${isScrubbing ? "dashed" : "solid"} ${isScrubbing ? "#f59e0b" : color}`,
+				zIndex: 7,
 				pointerEvents: "none",
 			}}
-			title={`${displayName}${isScrubbing ? " (스크러빙)" : ""}의 플레이헤드`}
+			title={`${displayName}${isScrubbing ? " (스크러빙)" : ""} 오퍼레이터 위치`}
 		>
-			{/* 사용자 이름 라벨 */}
 			<div
 				style={{
 					position: "absolute",
-					top: "-18px",
-					left: "50%",
-					transform: "translateX(-50%)",
-					padding: "2px 6px",
-					backgroundColor: isScrubbing ? "#f59e0b" : color,
-					borderRadius: "3px",
+					top: "-7px",
+					left: "-5px",
+					width: "10px",
+					height: "10px",
+					borderRadius: "50%",
+					background: isScrubbing ? "#f59e0b" : color,
+					boxShadow: `0 0 0 2px var(--app-bg), 0 0 8px ${isScrubbing ? "rgba(245, 158, 11, 0.45)" : `${color}80`}`,
+				}}
+			/>
+			<div
+				style={{
+					position: "absolute",
+					top: "-24px",
+					left: "8px",
+					padding: "1px 5px",
+					backgroundColor: "var(--surface-card)",
+					border: `1px solid ${isScrubbing ? "#f59e0b" : color}`,
+					borderRadius: "4px",
 					fontSize: "9px",
-					color: "#fff",
+					color: "var(--text-secondary)",
 					whiteSpace: "nowrap",
-					fontWeight: 600,
+					fontWeight: 700,
+					display: "flex",
+					alignItems: "center",
+					gap: "4px",
 				}}
 			>
-				{displayName}{isScrubbing ? " (SCRUB)" : ""}
+				<span style={{ color: isScrubbing ? "#f59e0b" : color }}>OP</span>
+				{displayName}
 			</div>
 		</div>
 	);

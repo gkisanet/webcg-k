@@ -125,7 +125,7 @@ export function AdminWorkspacesTab() {
 
 	// Mutations
 	const createMut = useMutation({
-		mutationFn: () => createWorkspace(newName, newDesc),
+		mutationFn: () => createWorkspace(newName, newDesc, { addCreatorAsOwner: false }),
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ["admin", "workspaces"] });
 			setShowCreate(false);

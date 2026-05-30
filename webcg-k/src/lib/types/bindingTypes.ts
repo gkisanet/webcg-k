@@ -27,6 +27,8 @@
  * 동일한 Text Frame 바운더리를 기준으로 동작한다.
  */
 
+import type { BindingAutoFit } from "@/lib/textFitPolicy";
+
 // ─── 텍스트 슬롯 (Shape 내부의 Text Frame 영역) ─────────────────
 
 /** Shape 내부에 배치되는 텍스트 슬롯 하나 (1 Shape = 1 슬롯) */
@@ -87,26 +89,69 @@ export interface BindingContainer {
 	slots: BindingTextSlot[];
 
 	/**
-	 * 오버플로우 대응 전략 (택일 — shrink와 wrap은 양립 불가)
+	 * 오버플로우 대응 전략 (택일)
 	 * - "shrink": 텍스트가 Text Frame 폭을 초과하면 fontSize 자동 축소
+	 * - "expandRight": 텍스트 길이에 맞춰 Shape의 오른쪽 폭 자동 확장
+	 * - "expandRightThenShrink": 안전 폭까지 확장 후 남는 초과분만 수평 축소
 	 * - "wrap": 텍스트가 Text Frame 폭을 초과하면 줄바꿈 (line-break)
 	 * - "none": 오버플로우 무시 (넘치면 잘림)
 	 */
-	autoFit: "shrink" | "wrap" | "none";
+	autoFit: BindingAutoFit;
 }
 
 // ─── 기본값 팩토리 ─────────────────────────────────────────────
 
 /**
+ * 기본 Text Frame inset.
+ *
+ * Why 15% + clamp?
+ * - Shape resize handle은 Shape 외곽에 붙고 Text Frame handle은 내부에 있어야 선택 충돌이 적다.
+ * - 순수 15%는 큰 Shape에서 과하게 넓어지므로 방송 그래픽(Broadcast Graphics) 제작에서
+ *   흔한 여백 범위로 상한을 둔다.
+ */
+const DEFAULT_TEXT_FRAME_MARGIN_RATIO = 0.15;
+const DEFAULT_TEXT_FRAME_MIN_MARGIN = 12;
+const DEFAULT_TEXT_FRAME_MAX_MARGIN = 48;
+const DEFAULT_TEXT_FRAME_MIN_WIDTH = 40;
+const DEFAULT_TEXT_FRAME_MIN_HEIGHT = 20;
+
+function resolveDefaultFrameMargin(axisSize: number, minContentSize: number): number {
+	const maxAllowedMargin = Math.max(0, (axisSize - minContentSize) / 2);
+	const preferredMargin = axisSize * DEFAULT_TEXT_FRAME_MARGIN_RATIO;
+	return Math.round(
+		Math.min(
+			Math.max(preferredMargin, DEFAULT_TEXT_FRAME_MIN_MARGIN),
+			DEFAULT_TEXT_FRAME_MAX_MARGIN,
+			maxAllowedMargin,
+		),
+	);
+}
+
+export function createDefaultTextFrame(
+	parentWidth = 300,
+	parentHeight = 80,
+): Pick<BindingTextSlot, "frameX" | "frameY" | "frameWidth" | "frameHeight"> {
+	const marginX = resolveDefaultFrameMargin(parentWidth, DEFAULT_TEXT_FRAME_MIN_WIDTH);
+	const marginY = resolveDefaultFrameMargin(parentHeight, DEFAULT_TEXT_FRAME_MIN_HEIGHT);
+
+	return {
+		frameX: marginX,
+		frameY: marginY,
+		frameWidth: Math.max(parentWidth - marginX * 2, DEFAULT_TEXT_FRAME_MIN_WIDTH),
+		frameHeight: Math.max(parentHeight - marginY * 2, DEFAULT_TEXT_FRAME_MIN_HEIGHT),
+	};
+}
+
+/**
  * 새 텍스트 슬롯 기본값 생성
- * parentWidth/Height를 받아 Text Frame을 Shape 안쪽 16px margin으로 초기화
+ * parentWidth/Height를 받아 Text Frame을 Shape 안쪽 기본 inset으로 초기화
  */
 export function createDefaultSlot(
 	overrides?: Partial<BindingTextSlot>,
 	parentWidth = 300,
 	parentHeight = 80,
 ): BindingTextSlot {
-	const margin = 16;
+	const frame = createDefaultTextFrame(parentWidth, parentHeight);
 	return {
 		id: `slot-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
 		bindingKey: "",
@@ -117,11 +162,8 @@ export function createDefaultSlot(
 		fontWeight: 400,
 		color: "#ffffff",
 		textAlign: "center",
-		// Text Frame: Shape 안쪽으로 margin만큼 들어간 영역
-		frameX: margin,
-		frameY: margin,
-		frameWidth: Math.max(parentWidth - margin * 2, 40),
-		frameHeight: Math.max(parentHeight - margin * 2, 20),
+		// Text Frame: Shape 안쪽으로 기본 inset만큼 들어간 영역
+		...frame,
 		...overrides,
 	};
 }
