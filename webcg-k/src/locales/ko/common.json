@@ -1,0 +1,110 @@
+{
+	"nav": {
+		"menu": "메뉴",
+		"admin": "관리",
+		"graphics": "그래픽",
+		"images": "이미지",
+		"fonts": "폰트",
+		"overlays": "오버레이",
+		"aiCharacters": "AI 캐릭터",
+		"dataSources": "데이터 소스",
+		"cuesheets": "큐시트",
+		"nrcs": "NRCS",
+		"projectBroadcast": "프로젝트 송출",
+		"administrator": "관리자",
+		"aiCuesheet": "AI 큐시트 (Beta)",
+		"graphicTagging": "방송 그래픽 워크벤치",
+		"graphicsSvg": "그래픽 (SVG)",
+		"overlaysHtml": "오버레이 (HTML)",
+		"gridTemplates": "그리드 템플릿",
+		"whiteboards": "화이트보드",
+		"imageManage": "이미지 관리",
+		"fontManage": "폰트 관리",
+		"sections": {
+			"creation": "제작 (Creation)",
+			"library": "라이브러리 (Library)",
+			"advanced": "프로 기능 (Advanced)"
+		}
+	},
+	"auth": {
+		"admin": "관리자 (Admin)",
+		"user": "일반 사용자",
+		"logout": "로그아웃",
+		"refresh": "새로고침 (F5)",
+		"fullRefresh": "전체 새로고침",
+		"loginRequired": "로그인이 필요합니다"
+	},
+	"status": {
+		"loading": "로딩 중...",
+		"draft": "초안",
+		"ready": "준비됨",
+		"rehearsal": "리허설",
+		"live": "송출중",
+		"ended": "송출완료",
+		"completed": "완료",
+		"shared": "공유",
+		"archived": "보관됨"
+	},
+	"actions": {
+		"save": "저장",
+		"saving": "저장 중...",
+		"saved": "저장됨",
+		"cancel": "취소",
+		"delete": "삭제",
+		"confirm": "확인",
+		"create": "생성",
+		"creating": "생성 중...",
+		"edit": "편집",
+		"back": "돌아가기",
+		"search": "검색",
+		"broadcast": "송출",
+		"controller": "컨트롤러",
+		"archive": "아카이브",
+		"restore": "복원",
+		"close": "닫기"
+	},
+	"date": {
+		"justNow": "방금 전",
+		"minutesAgo": "{{count}}분 전",
+		"hoursAgo": "{{count}}시간 전",
+		"days": {
+			"sun": "일",
+			"mon": "월",
+			"tue": "화",
+			"wed": "수",
+			"thu": "목",
+			"fri": "금",
+			"sat": "토"
+		}
+	},
+	"actionLog": {
+		"broadcastStart": "송출 시작",
+		"broadcastStop": "송출 중단",
+		"pgmOn": "PGM 송출",
+		"pgmOff": "PGM 해제",
+		"overlayOn": "오버레이 ON",
+		"overlayOff": "오버레이 OFF",
+		"overlayUpdate": "오버레이 변경",
+		"title": "액션 로그",
+		"noLogs": "기록된 로그가 없습니다",
+		"records": "{{count}}개 기록",
+		"noBroadcast": "📋 송출한적이 없습니다.\n이 프로젝트는 아직 송출된 기록이 없습니다.",
+		"cannotDeleteWithLogs": "⚠️ 운영 기록이 있는 프로젝트는 삭제할 수 없습니다.\n로그 보존을 위해 아카이브를 사용하세요.",
+		"confirmDelete": "이 프로젝트를 삭제하시겠습니까?",
+		"confirmArchive": "이 프로젝트를 아카이브하시겠습니까?\n송출 기록은 보존되고 기본 목록에서 숨겨집니다.",
+		"confirmRestore": "이 프로젝트를 아카이브에서 복원하시겠습니까?",
+		"cannotDelete": "송출 기록이 있어 삭제 불가",
+		"cannotArchiveActive": "송출중이거나 리허설 중인 프로젝트는 아카이브할 수 없습니다.",
+		"broadcastCount": "액션 로그 ({{count}}회 송출)",
+		"noBroadcastHistory": "송출한적 없음"
+	},
+	"errors": {
+		"saveFailed": "저장에 실패했습니다",
+		"createFailed": "생성에 실패했습니다",
+		"notFound": "찾을 수 없습니다",
+		"unsavedChanges": "저장하지 않은 변경사항이 있습니다. 나가시겠습니까?"
+	},
+	"items": "{{count}}개",
+	"itemsCount": "{{count}}개 아이템",
+	"projects": "{{count}}개 프로젝트"
+}

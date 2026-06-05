@@ -1,0 +1,29 @@
+.cuesheet-detail-layout {
+	display: grid;
+	grid-template-columns:
+		minmax(260px, 380px) minmax(320px, 1fr)
+		minmax(280px, 340px);
+	gap: 16px;
+	min-height: 0;
+	min-width: 0;
+	width: 100%;
+	overflow: hidden;
+}
+
+.cuesheet-detail-surface,
+.cuesheet-check-panel {
+	min-width: 0;
+	min-height: 0;
+}
+
+@media (max-width: 1180px) {
+	.cuesheet-detail-layout {
+		grid-template-columns: minmax(260px, 0.95fr) minmax(320px, 1.05fr);
+		grid-template-rows: minmax(0, 1fr) minmax(260px, 0.5fr);
+		overflow-y: auto;
+	}
+
+	.cuesheet-check-panel {
+		grid-column: 1 / -1;
+	}
+}

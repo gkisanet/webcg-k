@@ -1,0 +1,15 @@
+{
+	"pageTitle": "데이터 소스 관리",
+	"pageSubtitle": "자동화 그래픽 생성에 필요한 외부 데이터 연동을 관리합니다",
+	"tabs": {
+		"liveSources": "라이브 소스",
+		"nrcs": "NRCS 연동"
+	},
+	"builtinSources": "빌트인 데이터 소스",
+	"customSources": "커스텀 데이터 소스",
+	"addSource": "소스 추가",
+	"apiTest": "API 테스트",
+	"testing": "테스트 중...",
+	"responseTime": "응답: {{ms}}ms",
+	"sourceCount": "{{count}}개"
+}

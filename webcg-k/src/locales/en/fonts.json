@@ -1,0 +1,119 @@
+{
+	"pageTitle": "Font Management",
+	"pageSubtitle": "System bundle {count} types + user uploaded fonts",
+	"upload": "Upload Font",
+	"noFonts": "No fonts uploaded",
+	"fontFamily": "Font Family",
+	"preview": "Preview",
+	"sampleText": "The quick brown fox jumps over the lazy dog 12345",
+	"all": "All",
+	"categories": {
+		"system": "System",
+		"broadcast": "Broadcast",
+		"custom": "Custom"
+	},
+	"isKorean": "🇰🇷 Korean",
+	"systemBundleTitle": "System Bundle Fonts ({count} types)",
+	"uploadedFontsTitle": "Uploaded Fonts ({count} families)",
+	"uploadEmptyDesc": "Add WOFF2/OTF/TTF files using the \"Upload Font\" button",
+	"licenseGuide": "License Guide",
+	"licenseColors": {
+		"OFL": "OFL",
+		"Apache 2.0": "Apache 2.0",
+		"Commercial": "Commercial",
+		"unknown": "Unknown"
+	},
+	"licenseWarning": "Fonts with desktop-only license cannot use @font-face. Please upload Web license or OFL/Apache fonts only.",
+	"modal": {
+		"title": "Upload Font",
+		"familyName": "Font Family Name *",
+		"familyNamePlaceholder": "e.g., Noto Sans KR",
+		"displayName": "Display Name",
+		"displayNamePlaceholder": "e.g., Noto Sans Korean",
+		"weight": "Weight",
+		"style": "Style",
+		"styleNormal": "Normal",
+		"styleItalic": "Italic",
+		"category": "Category",
+		"license": "License",
+		"licenseOfl": "OFL (Free)",
+		"licenseApache": "Apache 2.0 (Free)",
+		"licenseCommercial": "Commercial (Purchased)",
+		"licenseUnknown": "Need Verification",
+		"licenseNotes": "License Notes",
+		"licenseNotesPlaceholder": "Where purchased, expiry date, etc.",
+		"fontFile": "Font File *",
+		"selected": "Selected",
+		"cancel": "Cancel",
+		"uploading": "Uploading...",
+		"upload": "Upload"
+	},
+	"previewHover": "Preview Text — Hover or click weight to reflect immediately",
+	"variantsCount": "{count} variants",
+	"deleteConfirm": "Delete?",
+	"confirm": "Confirm",
+	"cancel": "Cancel",
+	"alerts": {
+		"uploadFailed": "Upload failed",
+		"unknownError": "Unknown error",
+		"deleteFailed": "Delete failed"
+	},
+	"systemFonts": {
+		"Inter": {
+			"label": "Inter",
+			"previewText": "The quick brown fox jumps over 1234567890"
+		},
+		"Pretendard": {
+			"label": "Pretendard",
+			"previewText": "Sleek and modern Korean neo-gothic typeface"
+		},
+		"JetBrains Mono": {
+			"label": "JetBrains Mono",
+			"previewText": "const fn = () => { return 42; }"
+		},
+		"Spoqa Han Sans Neo": {
+			"label": "Spoqa Han Sans Neo",
+			"previewText": "Clear and structural Korean sans-serif"
+		},
+		"SUIT": {
+			"label": "SUIT",
+			"previewText": "Neat and polished geometric neo-gothic ABCDE"
+		},
+		"Noto Sans KR": {
+			"label": "Noto Sans KR",
+			"previewText": "Universal standard gothic typeface ABC 123"
+		},
+		"Gmarket Sans": {
+			"label": "Gmarket Sans",
+			"previewText": "Bold geometric titles BREAKING NEWS"
+		},
+		"NanumSquare Neo": {
+			"label": "NanumSquare Neo",
+			"previewText": "Modern squared layout news graphics LIVE 2026"
+		},
+		"S-Core Dream": {
+			"label": "S-Core Dream",
+			"previewText": "Premium sans-serif gothic for HEADLINE news"
+		},
+		"Roboto": {
+			"label": "Roboto",
+			"previewText": "Google Material Design ABC 123"
+		},
+		"Roboto Condensed": {
+			"label": "Roboto Condensed",
+			"previewText": "CONDENSED NARROW TEXT FOR TABLES"
+		},
+		"Montserrat": {
+			"label": "Montserrat",
+			"previewText": "MODERN GEOMETRIC TITLE 2026"
+		},
+		"Oswald": {
+			"label": "Oswald",
+			"previewText": "SPORTS NEWS TICKER LIVE SCORE"
+		},
+		"Poppins": {
+			"label": "Poppins",
+			"previewText": "Friendly Round Web Graphics 42"
+		}
+	}
+}

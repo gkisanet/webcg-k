@@ -1,0 +1,484 @@
+/* ============================================
+   WebCG-K 로컬 폰트 선언
+   사내망(에어갭) 환경용 — CDN 의존성 제거
+   모든 폰트는 /public/fonts/ 에서 로딩
+   ============================================ */
+
+/* --- Inter (UI 기본 라틴 폰트, OFL 라이선스) --- */
+@font-face {
+    font-family: "Inter";
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url("/fonts/inter/Inter-Regular.woff2") format("woff2");
+}
+
+@font-face {
+    font-family: "Inter";
+    font-style: normal;
+    font-weight: 500;
+    font-display: swap;
+    src: url("/fonts/inter/Inter-Medium.woff2") format("woff2");
+}
+
+@font-face {
+    font-family: "Inter";
+    font-style: normal;
+    font-weight: 600;
+    font-display: swap;
+    src: url("/fonts/inter/Inter-SemiBold.woff2") format("woff2");
+}
+
+@font-face {
+    font-family: "Inter";
+    font-style: normal;
+    font-weight: 700;
+    font-display: swap;
+    src: url("/fonts/inter/Inter-Bold.woff2") format("woff2");
+}
+
+/* --- Pretendard (한글 폰트, OFL 라이선스) --- */
+/* unicode-range: 한글 음절(AC00-D7A3) + 자모(3130-318F) + 구두점/기호 */
+@font-face {
+    font-family: "Pretendard";
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url("/fonts/pretendard/Pretendard-Regular.subset.woff2") format("woff2");
+    unicode-range: U+AC00-D7A3, U+3130-318F, U+2000-206F, U+3000-303F;
+}
+
+@font-face {
+    font-family: "Pretendard";
+    font-style: normal;
+    font-weight: 500;
+    font-display: swap;
+    src: url("/fonts/pretendard/Pretendard-Medium.subset.woff2") format("woff2");
+    unicode-range: U+AC00-D7A3, U+3130-318F, U+2000-206F, U+3000-303F;
+}
+
+@font-face {
+    font-family: "Pretendard";
+    font-style: normal;
+    font-weight: 600;
+    font-display: swap;
+    src: url("/fonts/pretendard/Pretendard-SemiBold.subset.woff2") format("woff2");
+    unicode-range: U+AC00-D7A3, U+3130-318F, U+2000-206F, U+3000-303F;
+}
+
+@font-face {
+    font-family: "Pretendard";
+    font-style: normal;
+    font-weight: 700;
+    font-display: swap;
+    src: url("/fonts/pretendard/Pretendard-Bold.subset.woff2") format("woff2");
+    unicode-range: U+AC00-D7A3, U+3130-318F, U+2000-206F, U+3000-303F;
+}
+
+/* --- JetBrains Mono (코드 폰트, Apache 2.0 라이선스) --- */
+@font-face {
+    font-family: "JetBrains Mono";
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url("/fonts/jetbrains-mono/JetBrainsMono-Regular.woff2") format("woff2");
+}
+
+@font-face {
+    font-family: "JetBrains Mono";
+    font-style: normal;
+    font-weight: 700;
+    font-display: swap;
+    src: url("/fonts/jetbrains-mono/JetBrainsMono-Bold.woff2") format("woff2");
+}
+
+/* ============================================
+   본문/UI용 한글 폰트 (가독성 중심)
+   ============================================ */
+
+/* --- Spoqa Han Sans Neo (데이터/숫자 화면용, OFL) --- */
+@font-face {
+    font-family: "Spoqa Han Sans Neo";
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url("/fonts/spoqa-han-sans-neo/SpoqaHanSansNeo-Regular.woff2") format("woff2");
+}
+
+@font-face {
+    font-family: "Spoqa Han Sans Neo";
+    font-style: normal;
+    font-weight: 500;
+    font-display: swap;
+    src: url("/fonts/spoqa-han-sans-neo/SpoqaHanSansNeo-Medium.woff2") format("woff2");
+}
+
+@font-face {
+    font-family: "Spoqa Han Sans Neo";
+    font-style: normal;
+    font-weight: 700;
+    font-display: swap;
+    src: url("/fonts/spoqa-han-sans-neo/SpoqaHanSansNeo-Bold.woff2") format("woff2");
+}
+
+/* --- SUIT (세련된 UI용, OFL) --- */
+@font-face {
+    font-family: "SUIT";
+    font-style: normal;
+    font-weight: 300;
+    font-display: swap;
+    src: url("/fonts/suit/SUIT-Light.woff2") format("woff2");
+}
+
+@font-face {
+    font-family: "SUIT";
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url("/fonts/suit/SUIT-Regular.woff2") format("woff2");
+}
+
+@font-face {
+    font-family: "SUIT";
+    font-style: normal;
+    font-weight: 500;
+    font-display: swap;
+    src: url("/fonts/suit/SUIT-Medium.woff2") format("woff2");
+}
+
+@font-face {
+    font-family: "SUIT";
+    font-style: normal;
+    font-weight: 600;
+    font-display: swap;
+    src: url("/fonts/suit/SUIT-SemiBold.woff2") format("woff2");
+}
+
+@font-face {
+    font-family: "SUIT";
+    font-style: normal;
+    font-weight: 700;
+    font-display: swap;
+    src: url("/fonts/suit/SUIT-Bold.woff2") format("woff2");
+}
+
+@font-face {
+    font-family: "SUIT";
+    font-style: normal;
+    font-weight: 800;
+    font-display: swap;
+    src: url("/fonts/suit/SUIT-ExtraBold.woff2") format("woff2");
+}
+
+@font-face {
+    font-family: "SUIT";
+    font-style: normal;
+    font-weight: 900;
+    font-display: swap;
+    src: url("/fonts/suit/SUIT-Heavy.woff2") format("woff2");
+}
+
+/* --- Noto Sans KR (본고딕, OFL) --- */
+@font-face {
+    font-family: "Noto Sans KR";
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url("/fonts/noto-sans-kr/NotoSansKR-Regular.woff2") format("woff2");
+}
+
+@font-face {
+    font-family: "Noto Sans KR";
+    font-style: normal;
+    font-weight: 500;
+    font-display: swap;
+    src: url("/fonts/noto-sans-kr/NotoSansKR-Medium.woff2") format("woff2");
+}
+
+@font-face {
+    font-family: "Noto Sans KR";
+    font-style: normal;
+    font-weight: 600;
+    font-display: swap;
+    src: url("/fonts/noto-sans-kr/NotoSansKR-SemiBold.woff2") format("woff2");
+}
+
+@font-face {
+    font-family: "Noto Sans KR";
+    font-style: normal;
+    font-weight: 700;
+    font-display: swap;
+    src: url("/fonts/noto-sans-kr/NotoSansKR-Bold.woff2") format("woff2");
+}
+
+/* ============================================
+   제목 및 강조용 폰트 (CG, 자막, 타이틀)
+   ============================================ */
+
+/* --- Gmarket Sans (타이틀/수퍼용, 무료 상업용) --- */
+@font-face {
+    font-family: "Gmarket Sans";
+    font-style: normal;
+    font-weight: 300;
+    font-display: swap;
+    src: url("/fonts/gmarket-sans/GmarketSans-Light.woff") format("woff");
+}
+
+@font-face {
+    font-family: "Gmarket Sans";
+    font-style: normal;
+    font-weight: 500;
+    font-display: swap;
+    src: url("/fonts/gmarket-sans/GmarketSans-Medium.woff") format("woff");
+}
+
+@font-face {
+    font-family: "Gmarket Sans";
+    font-style: normal;
+    font-weight: 700;
+    font-display: swap;
+    src: url("/fonts/gmarket-sans/GmarketSans-Bold.woff") format("woff");
+}
+
+/* --- Nanum Square Neo (뉴스/인포그래픽용, OFL) --- */
+@font-face {
+    font-family: "NanumSquare Neo";
+    font-style: normal;
+    font-weight: 300;
+    font-display: swap;
+    src: url("/fonts/nanum-square-neo/NanumSquareNeo-Light.woff2") format("woff2");
+}
+
+@font-face {
+    font-family: "NanumSquare Neo";
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url("/fonts/nanum-square-neo/NanumSquareNeo-Regular.woff2") format("woff2");
+}
+
+@font-face {
+    font-family: "NanumSquare Neo";
+    font-style: normal;
+    font-weight: 700;
+    font-display: swap;
+    src: url("/fonts/nanum-square-neo/NanumSquareNeo-Bold.woff2") format("woff2");
+}
+
+@font-face {
+    font-family: "NanumSquare Neo";
+    font-style: normal;
+    font-weight: 800;
+    font-display: swap;
+    src: url("/fonts/nanum-square-neo/NanumSquareNeo-ExtraBold.woff2") format("woff2");
+}
+
+@font-face {
+    font-family: "NanumSquare Neo";
+    font-style: normal;
+    font-weight: 900;
+    font-display: swap;
+    src: url("/fonts/nanum-square-neo/NanumSquareNeo-Heavy.woff2") format("woff2");
+}
+
+/* --- S-Core Dream (에스코어 드림, 제목용 고딕, 무료 상업용) --- */
+@font-face {
+    font-family: "S-Core Dream";
+    font-style: normal;
+    font-weight: 300;
+    font-display: swap;
+    src: url("/fonts/scdream/SCDream3-Light.woff") format("woff");
+}
+
+@font-face {
+    font-family: "S-Core Dream";
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url("/fonts/scdream/SCDream4-Regular.woff") format("woff");
+}
+
+@font-face {
+    font-family: "S-Core Dream";
+    font-style: normal;
+    font-weight: 500;
+    font-display: swap;
+    src: url("/fonts/scdream/SCDream5-Medium.woff") format("woff");
+}
+
+@font-face {
+    font-family: "S-Core Dream";
+    font-style: normal;
+    font-weight: 600;
+    font-display: swap;
+    src: url("/fonts/scdream/SCDream6-Bold.woff") format("woff");
+}
+
+@font-face {
+    font-family: "S-Core Dream";
+    font-style: normal;
+    font-weight: 700;
+    font-display: swap;
+    src: url("/fonts/scdream/SCDream7-ExtraBold.woff") format("woff");
+}
+
+@font-face {
+    font-family: "S-Core Dream";
+    font-style: normal;
+    font-weight: 800;
+    font-display: swap;
+    src: url("/fonts/scdream/SCDream8-Heavy.woff") format("woff");
+}
+
+@font-face {
+    font-family: "S-Core Dream";
+    font-style: normal;
+    font-weight: 900;
+    font-display: swap;
+    src: url("/fonts/scdream/SCDream9-Black.woff") format("woff");
+}
+
+/* ============================================
+   영문 추가 폰트 (방송 그래픽/타이틀)
+   ============================================ */
+
+/* --- Roboto (구글 기본, Apache 2.0) --- */
+@font-face {
+    font-family: "Roboto";
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url("/fonts/roboto/Roboto-Regular.woff2") format("woff2");
+}
+
+@font-face {
+    font-family: "Roboto";
+    font-style: normal;
+    font-weight: 500;
+    font-display: swap;
+    src: url("/fonts/roboto/Roboto-Medium.woff2") format("woff2");
+}
+
+@font-face {
+    font-family: "Roboto";
+    font-style: normal;
+    font-weight: 700;
+    font-display: swap;
+    src: url("/fonts/roboto/Roboto-Bold.woff2") format("woff2");
+}
+
+/* --- Roboto Condensed (좁은 공간용, Apache 2.0) --- */
+@font-face {
+    font-family: "Roboto Condensed";
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url("/fonts/roboto-condensed/RobotoCondensed-Regular.woff2") format("woff2");
+}
+
+@font-face {
+    font-family: "Roboto Condensed";
+    font-style: normal;
+    font-weight: 700;
+    font-display: swap;
+    src: url("/fonts/roboto-condensed/RobotoCondensed-Bold.woff2") format("woff2");
+}
+
+/* --- Montserrat (세련된 타이틀, OFL) --- */
+@font-face {
+    font-family: "Montserrat";
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url("/fonts/montserrat/Montserrat-Regular.woff2") format("woff2");
+}
+
+@font-face {
+    font-family: "Montserrat";
+    font-style: normal;
+    font-weight: 500;
+    font-display: swap;
+    src: url("/fonts/montserrat/Montserrat-Medium.woff2") format("woff2");
+}
+
+@font-face {
+    font-family: "Montserrat";
+    font-style: normal;
+    font-weight: 600;
+    font-display: swap;
+    src: url("/fonts/montserrat/Montserrat-SemiBold.woff2") format("woff2");
+}
+
+@font-face {
+    font-family: "Montserrat";
+    font-style: normal;
+    font-weight: 700;
+    font-display: swap;
+    src: url("/fonts/montserrat/Montserrat-Bold.woff2") format("woff2");
+}
+
+/* --- Oswald (스포츠/뉴스 티커, OFL) --- */
+@font-face {
+    font-family: "Oswald";
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url("/fonts/oswald/Oswald-Regular.woff2") format("woff2");
+}
+
+@font-face {
+    font-family: "Oswald";
+    font-style: normal;
+    font-weight: 500;
+    font-display: swap;
+    src: url("/fonts/oswald/Oswald-Medium.woff2") format("woff2");
+}
+
+@font-face {
+    font-family: "Oswald";
+    font-style: normal;
+    font-weight: 600;
+    font-display: swap;
+    src: url("/fonts/oswald/Oswald-SemiBold.woff2") format("woff2");
+}
+
+@font-face {
+    font-family: "Oswald";
+    font-style: normal;
+    font-weight: 700;
+    font-display: swap;
+    src: url("/fonts/oswald/Oswald-Bold.woff2") format("woff2");
+}
+
+/* --- Poppins (둥근 친근한, OFL) --- */
+@font-face {
+    font-family: "Poppins";
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url("/fonts/poppins/Poppins-Regular.woff2") format("woff2");
+}
+
+@font-face {
+    font-family: "Poppins";
+    font-style: normal;
+    font-weight: 500;
+    font-display: swap;
+    src: url("/fonts/poppins/Poppins-Medium.woff2") format("woff2");
+}
+
+@font-face {
+    font-family: "Poppins";
+    font-style: normal;
+    font-weight: 600;
+    font-display: swap;
+    src: url("/fonts/poppins/Poppins-SemiBold.woff2") format("woff2");
+}
+
+@font-face {
+    font-family: "Poppins";
+    font-style: normal;
+    font-weight: 700;
+    font-display: swap;
+    src: url("/fonts/poppins/Poppins-Bold.woff2") format("woff2");
+}

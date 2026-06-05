@@ -1,0 +1,17 @@
+{
+	"pageTitle": "Graphics Management",
+	"pageSubtitle": "Manage broadcast graphic assets",
+	"tabs": {
+		"gallery": "Gallery",
+		"templates": "Templates"
+	},
+	"create": "Create Graphic",
+	"editGraphic": "Edit Graphic",
+	"preview": "Preview",
+	"noGraphics": "No graphics registered",
+	"searchPlaceholder": "Search graphics...",
+	"viewMode": {
+		"grid": "Grid",
+		"list": "List"
+	}
+}

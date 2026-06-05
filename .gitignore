@@ -1,0 +1,26 @@
+media-server/node_modules/
+
+# CasparCG Server — 바이너리는 Git 추적 제외 (공식 release에서 로컬 설치)
+# https://casparcg.com/downloads — libcef.dll 등 100MB+ 파일로 push 불가
+casparcg/server/**
+!casparcg/server/
+!casparcg/server/.gitkeep
+!casparcg/server/INSTALL.md
+
+# CasparCG Server 런타임 캐시·로그
+casparcg/server/**/GPUCache/
+casparcg/server/**/DawnCache/
+casparcg/server/**/log/
+casparcg/server/debug.log
+
+# Graphify — 그래프 출력은 커밋, 캐시/venv는 제외
+graphify-out/cache/
+.graphify-venv/
+
+# Noonnu 폰트 스크래퍼 생성 파일
+noonnu-fonts.css
+
+# 환경변수 — API 키 등 비밀 정보 포함
+.env
+.env.local
+.env.*.local

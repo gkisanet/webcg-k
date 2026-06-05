@@ -1,0 +1,110 @@
+{
+	"nav": {
+		"menu": "Menu",
+		"admin": "Admin",
+		"graphics": "Graphics",
+		"images": "Images",
+		"fonts": "Fonts",
+		"overlays": "Overlays",
+		"aiCharacters": "AI Characters",
+		"dataSources": "Data Sources",
+		"cuesheets": "Cuesheets",
+		"nrcs": "NRCS",
+		"projectBroadcast": "Broadcast",
+		"administrator": "Administrator",
+		"aiCuesheet": "AI Cuesheet (Beta)",
+		"graphicTagging": "Broadcast Graphics Workbench",
+		"graphicsSvg": "Graphics (SVG)",
+		"overlaysHtml": "Overlays (HTML)",
+		"gridTemplates": "Grid Templates",
+		"whiteboards": "Whiteboards",
+		"imageManage": "Images",
+		"fontManage": "Fonts",
+		"sections": {
+			"creation": "Creation",
+			"library": "Library",
+			"advanced": "Advanced"
+		}
+	},
+	"auth": {
+		"admin": "Admin",
+		"user": "User",
+		"logout": "Logout",
+		"refresh": "Refresh (F5)",
+		"fullRefresh": "Full Refresh",
+		"loginRequired": "Login required"
+	},
+	"status": {
+		"loading": "Loading...",
+		"draft": "Draft",
+		"ready": "Ready",
+		"rehearsal": "Rehearsal",
+		"live": "Live",
+		"ended": "Ended",
+		"completed": "Completed",
+		"shared": "Shared",
+		"archived": "Archived"
+	},
+	"actions": {
+		"save": "Save",
+		"saving": "Saving...",
+		"saved": "Saved",
+		"cancel": "Cancel",
+		"delete": "Delete",
+		"confirm": "Confirm",
+		"create": "Create",
+		"creating": "Creating...",
+		"edit": "Edit",
+		"back": "Go Back",
+		"search": "Search",
+		"broadcast": "Broadcast",
+		"controller": "Controller",
+		"archive": "Archive",
+		"restore": "Restore",
+		"close": "Close"
+	},
+	"date": {
+		"justNow": "just now",
+		"minutesAgo": "{{count}}m ago",
+		"hoursAgo": "{{count}}h ago",
+		"days": {
+			"sun": "Sun",
+			"mon": "Mon",
+			"tue": "Tue",
+			"wed": "Wed",
+			"thu": "Thu",
+			"fri": "Fri",
+			"sat": "Sat"
+		}
+	},
+	"actionLog": {
+		"broadcastStart": "Broadcast Start",
+		"broadcastStop": "Broadcast Stop",
+		"pgmOn": "PGM On",
+		"pgmOff": "PGM Off",
+		"overlayOn": "Overlay ON",
+		"overlayOff": "Overlay OFF",
+		"overlayUpdate": "Overlay Update",
+		"title": "Action Log",
+		"noLogs": "No logs recorded",
+		"records": "{{count}} records",
+		"noBroadcast": "📋 No broadcast history.\nThis project has not been broadcast yet.",
+		"cannotDeleteWithLogs": "⚠️ Cannot delete projects with operation logs.\nUse archive to preserve logs and hide the project.",
+		"confirmDelete": "Are you sure you want to delete this project?",
+		"confirmArchive": "Archive this project?\nBroadcast logs will be preserved and the project will be hidden from the default list.",
+		"confirmRestore": "Restore this project from the archive?",
+		"cannotDelete": "Cannot delete (has broadcast logs)",
+		"cannotArchiveActive": "Live or rehearsal projects cannot be archived.",
+		"broadcastCount": "Action Log ({{count}} broadcasts)",
+		"noBroadcastHistory": "No broadcast history"
+	},
+	"errors": {
+		"saveFailed": "Failed to save",
+		"createFailed": "Failed to create",
+		"notFound": "Not found",
+		"unsavedChanges": "You have unsaved changes. Are you sure you want to leave?"
+	},
+	"items": "{{count}}",
+	"itemsCount": "{{count}} items",
+	"projects": "{{count}} projects"
+}

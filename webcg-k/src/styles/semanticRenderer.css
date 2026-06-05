@@ -1,0 +1,396 @@
+/**
+ * Semantic Renderer CSS Foundation
+ *
+ * 모든 값은 var(--cg-*) CSS Custom Properties 참조.
+ * ThemeProvider가 런타임에 이 변수들을 setProperty()로 주입한다.
+ *
+ * 방송 그래픽 도메인 전용 — 대시보드 UI 토큰(--app-*, --text-*)과 분리.
+ */
+
+/* ─── Scene Container ─────────────────────────────────────────── */
+
+.cg-scene {
+  position: absolute;
+  overflow: hidden;
+  pointer-events: none;
+  box-sizing: border-box;
+  container-type: inline-size;
+}
+
+/* ─── Layout Weight ────────────────────────────────────────── */
+
+/* heavy-headline: headline_primary를 시각적으로 지배적으로 */
+[data-layout-weight="heavy-headline"] .cg-text-headline_primary {
+  font-size: calc(var(--cg-font-size-headline_primary) * 1.4) !important;
+  letter-spacing: -0.04em !important;
+}
+
+[data-layout-weight="heavy-headline"] .cg-text-secondary_text,
+[data-layout-weight="heavy-headline"] .cg-text-meta_info,
+[data-layout-weight="heavy-headline"] .cg-text-description {
+  opacity: 0.55;
+  font-size: calc(var(--cg-font-size-secondary_text) * 0.75);
+}
+
+/* skewed-overlap: 텍스트 오버랩 효과 */
+[data-layout-weight="skewed-overlap"] {
+  justify-content: flex-start !important;
+  align-items: baseline !important;
+}
+
+[data-layout-weight="skewed-overlap"] > * {
+  margin-right: -0.15em;
+}
+
+/* ─── Visual Rhythm ─────────────────────────────────────────── */
+
+[data-visual-rhythm="compact"] {
+  gap: 0.25rem !important;
+}
+
+[data-visual-rhythm="breathing"] {
+  gap: var(--cg-safe-padding);
+}
+
+[data-visual-rhythm="dramatic"] .cg-text-headline_primary {
+  margin-bottom: 0.35em;
+}
+
+[data-visual-rhythm="dramatic"] .cg-text-secondary_text {
+  margin-bottom: 0.2em;
+}
+
+/* ─── Text Role Base ──────────────────────────────────────────── */
+/* 모든 텍스트 노드는 var(--cg-font-family) 상속 */
+
+.cg-text-headline_primary {
+  font-family: var(--cg-font-family);
+  font-size: var(--cg-font-size-headline_primary);
+  color: var(--cg-color-text);
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+
+.cg-text-secondary_text {
+  font-family: var(--cg-font-family);
+  font-size: var(--cg-font-size-secondary_text);
+  color: var(--cg-color-text);
+  line-height: 1.25;
+}
+
+.cg-text-meta_info {
+  font-family: var(--cg-font-family);
+  font-size: var(--cg-font-size-meta_info);
+  color: var(--cg-color-text-muted);
+  line-height: 1.35;
+}
+
+.cg-text-description {
+  font-family: var(--cg-font-family);
+  font-size: var(--cg-font-size-description);
+  color: var(--cg-color-text);
+  line-height: 1.4;
+}
+
+.cg-text-label {
+  font-family: var(--cg-font-family);
+  font-size: var(--cg-font-size-label);
+  color: var(--cg-color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  line-height: 1.2;
+}
+
+.cg-text-quote {
+  font-family: var(--cg-font-family);
+  font-size: var(--cg-font-size-quote);
+  color: var(--cg-color-text);
+  font-style: italic;
+  line-height: 1.35;
+  padding-left: var(--cg-safe-padding);
+  border-left: 2px solid var(--cg-color-accent);
+}
+
+/* ─── Style Hint Classes ──────────────────────────────────────── */
+
+.cg-style-emphasis {
+  font-weight: 700;
+  color: var(--cg-color-text);
+}
+
+.cg-style-muted {
+  opacity: 0.6;
+  color: var(--cg-color-text-muted);
+}
+
+.cg-style-warning {
+  color: var(--cg-color-accent);
+}
+
+/* ─── Child Container ─────────────────────────────────────────── */
+
+.cg-child-container {
+  box-sizing: border-box;
+  pointer-events: none;
+}
+
+/* ─── Container Queries (Text-Fit + Layout Adaptation) ────────── */
+/* 부모가 container-type: inline-size 일 때 동작 */
+
+/* ── Medium (Zone ≤ 400px): headline, secondary, description, quote 축소 */
+@container (max-width: 400px) {
+  .cg-text-headline_primary {
+    font-size: clamp(
+      calc(var(--cg-font-size-headline_primary) * 0.4),
+      calc(var(--cg-font-size-headline_primary) * 0.7),
+      var(--cg-font-size-headline_primary)
+    );
+  }
+  .cg-text-secondary_text {
+    font-size: clamp(
+      calc(var(--cg-font-size-secondary_text) * 0.45),
+      calc(var(--cg-font-size-secondary_text) * 0.75),
+      var(--cg-font-size-secondary_text)
+    );
+  }
+  .cg-text-description {
+    font-size: clamp(
+      calc(var(--cg-font-size-description) * 0.5),
+      calc(var(--cg-font-size-description) * 0.8),
+      var(--cg-font-size-description)
+    );
+  }
+  .cg-text-quote {
+    font-size: clamp(
+      calc(var(--cg-font-size-quote) * 0.45),
+      calc(var(--cg-font-size-quote) * 0.75),
+      var(--cg-font-size-quote)
+    );
+  }
+  /* 좁은 zone에서 flex-row → flex-column 전환 */
+  [data-container-logic="flex-row"] {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+  }
+}
+
+/* ── Small (Zone ≤ 250px): 모든 text role 추가 축소 */
+@container (max-width: 250px) {
+  .cg-text-headline_primary {
+    font-size: clamp(
+      calc(var(--cg-font-size-headline_primary) * 0.3),
+      calc(var(--cg-font-size-headline_primary) * 0.5),
+      var(--cg-font-size-headline_primary)
+    );
+  }
+  .cg-text-secondary_text {
+    font-size: clamp(
+      calc(var(--cg-font-size-secondary_text) * 0.35),
+      calc(var(--cg-font-size-secondary_text) * 0.55),
+      var(--cg-font-size-secondary_text)
+    );
+  }
+  .cg-text-meta_info {
+    font-size: clamp(
+      calc(var(--cg-font-size-meta_info) * 0.5),
+      calc(var(--cg-font-size-meta_info) * 0.7),
+      var(--cg-font-size-meta_info)
+    );
+  }
+  .cg-text-description {
+    font-size: clamp(
+      calc(var(--cg-font-size-description) * 0.4),
+      calc(var(--cg-font-size-description) * 0.6),
+      var(--cg-font-size-description)
+    );
+  }
+  .cg-text-label {
+    font-size: clamp(
+      calc(var(--cg-font-size-label) * 0.5),
+      calc(var(--cg-font-size-label) * 0.7),
+      var(--cg-font-size-label)
+    );
+  }
+  .cg-text-quote {
+    font-size: clamp(
+      calc(var(--cg-font-size-quote) * 0.35),
+      calc(var(--cg-font-size-quote) * 0.55),
+      var(--cg-font-size-quote)
+    );
+  }
+  /* 극단적 협소: gap 최소화 */
+  [data-container-logic] {
+    gap: 0.25rem !important;
+  }
+}
+
+/* ─── Scene Decoration: Backgrounds ────────────────────────────── */
+
+.cg-bg-solid {
+  background: var(--cg-color-bg);
+}
+
+.cg-bg-gradient_to_top {
+  background: linear-gradient(to top, var(--cg-color-bg) 40%, transparent 100%);
+}
+
+.cg-bg-gradient_to_bottom {
+  background: linear-gradient(to bottom, var(--cg-color-bg) 40%, transparent 100%);
+}
+
+.cg-bg-gradient_diagonal {
+  background: linear-gradient(135deg, var(--cg-color-bg) 50%, transparent 100%);
+}
+
+/* ─── Scene Decoration: Accent Bars ────────────────────────────── */
+
+.cg-accent-bar {
+  position: absolute;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.cg-accent-bar--left {
+  top: 0;
+  left: 0;
+  height: 100%;
+  background: var(--cg-color-accent);
+}
+
+.cg-accent-bar--bottom {
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  background: var(--cg-color-accent);
+}
+
+.cg-accent-bar--top {
+  top: 0;
+  left: 0;
+  width: 100%;
+  background: var(--cg-color-accent);
+}
+
+.cg-accent-bar--corner_bracket {
+  top: 0;
+  left: 0;
+  background: transparent;
+}
+
+.cg-accent-bar--corner_bracket::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 12px;
+  height: 2px;
+  background: var(--cg-color-accent);
+}
+
+.cg-accent-bar--corner_bracket::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 2px;
+  height: 12px;
+  background: var(--cg-color-accent);
+}
+
+.cg-accent-width-thin {
+  width: 2px;
+}
+
+.cg-accent-width-thin.cg-accent-bar--bottom,
+.cg-accent-width-thin.cg-accent-bar--top {
+  width: 100%;
+  height: 2px;
+}
+
+.cg-accent-width-medium {
+  width: 4px;
+}
+
+.cg-accent-width-medium.cg-accent-bar--bottom,
+.cg-accent-width-medium.cg-accent-bar--top {
+  width: 100%;
+  height: 4px;
+}
+
+.cg-accent-width-thick {
+  width: 8px;
+}
+
+.cg-accent-width-thick.cg-accent-bar--bottom,
+.cg-accent-width-thick.cg-accent-bar--top {
+  width: 100%;
+  height: 8px;
+}
+
+/* ─── Container Decoration: Frames ─────────────────────────────── */
+
+.cg-frame-card {
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: var(--cg-radius);
+  padding: var(--cg-safe-padding);
+}
+
+.cg-frame-bordered {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: var(--cg-radius);
+  padding: var(--cg-safe-padding);
+}
+
+.cg-frame-glass {
+  background: rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(8px);
+  border-radius: var(--cg-radius);
+  padding: var(--cg-safe-padding);
+}
+
+/* ─── Container Decoration: Dividers ───────────────────────────── */
+
+.cg-child-container[data-divider="line"] > * + * {
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  padding-top: var(--cg-safe-padding);
+  margin-top: 0;
+}
+
+.cg-child-container[data-divider="thick_line"] > * + * {
+  border-top: 3px solid var(--cg-color-accent);
+  padding-top: var(--cg-safe-padding);
+  margin-top: 0;
+}
+
+/* ─── Node Decoration: Icon ────────────────────────────────────── */
+
+.cg-icon {
+  display: inline-flex;
+  align-items: center;
+  margin-right: 0.35em;
+  vertical-align: middle;
+  flex-shrink: 0;
+}
+
+.cg-icon svg {
+  width: 1em;
+  height: 1em;
+  fill: currentColor;
+}
+
+/* ─── Node Decoration: Badge ───────────────────────────────────── */
+
+.cg-badge {
+  display: inline-block;
+  font-size: 0.6em;
+  font-weight: 700;
+  color: #ffffff;
+  background: var(--cg-color-accent);
+  border-radius: 2px;
+  padding: 0.1em 0.4em;
+  margin-left: 0.5em;
+  vertical-align: middle;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  line-height: 1.4;
+}

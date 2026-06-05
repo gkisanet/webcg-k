@@ -1,0 +1,317 @@
+/**
+ * Plugin Editor — 풀 페이지 글래스모피즘 스타일
+ *
+ * ■ 디자인 철학:
+ *   VS Code + Figma의 dark 개발 환경 느낌.
+ *   글래스모피즘 헤더 + 커맨드 팔레트로 몰입감 있는 코딩 경험.
+ */
+
+/* ─── 풀 페이지 컨테이너 ─── */
+.pe-fullpage {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 100vw;
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 100;
+  background: #08080d;
+  color: var(--text-primary, #e5e5e5);
+}
+
+.pe-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  background: #08080d;
+}
+
+/* ─── 상단 헤더 (글래스모피즘) ─── */
+.pe-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 12px;
+  background: rgba(15, 15, 22, 0.85);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  min-height: 42px;
+  z-index: 10;
+}
+
+.pe-header-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pe-header-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.pe-back-btn {
+  width: 28px;
+  height: 28px;
+  padding: 0 !important;
+  border-radius: 6px;
+  color: var(--text-tertiary, #666);
+  transition: all 0.15s;
+}
+
+.pe-back-btn:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-primary);
+}
+
+/* ─── 타이틀 그룹 ─── */
+.pe-title-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pe-title-input {
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  color: var(--text-primary, #fff);
+  font-size: 14px;
+  font-weight: 700;
+  outline: none;
+  padding: 4px 8px;
+  width: 240px;
+  transition: all 0.2s;
+}
+
+.pe-title-input:hover {
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.pe-title-input:focus {
+  border-color: var(--accent-primary, #60a5fa);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.pe-plugin-badge {
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: rgba(96, 165, 250, 0.12);
+  color: #06b6d4;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+}
+
+/* ─── 설정 버튼 ─── */
+.pe-settings-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-secondary, #aaa);
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+  backdrop-filter: blur(8px);
+}
+
+.pe-settings-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.15);
+  color: var(--text-primary);
+}
+
+.pe-shortcut-hint {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 10px;
+  color: var(--text-tertiary, #555);
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.pe-save-flash {
+  font-size: 11px;
+  color: #10b981;
+  font-weight: 600;
+  animation: peFlash 1.5s ease-out forwards;
+}
+
+@keyframes peFlash {
+  0% { opacity: 1; }
+  70% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* ─── 에디터 본문 ─── */
+.pe-body {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* ─── 커맨드 팔레트 (글로벌 설정) ─── */
+.pe-palette-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  padding-top: 80px;
+  animation: pePaletteFadeIn 0.15s ease-out;
+}
+
+@keyframes pePaletteFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.pe-palette {
+  width: min(480px, 90vw);
+  max-height: 70vh;
+  background: rgba(18, 18, 28, 0.95);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  box-shadow:
+    0 24px 48px rgba(0, 0, 0, 0.6),
+    0 0 0 1px rgba(255, 255, 255, 0.04) inset;
+  overflow: hidden;
+  align-self: flex-start;
+  animation: pePaletteSlideIn 0.2s ease-out;
+}
+
+@keyframes pePaletteSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-12px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.pe-palette-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary, #aaa);
+}
+
+.pe-palette-close {
+  margin-left: auto;
+  background: none;
+  border: none;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  padding: 2px;
+  border-radius: 4px;
+  transition: all 0.15s;
+}
+
+.pe-palette-close:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-primary);
+}
+
+.pe-palette-body {
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow-y: auto;
+  max-height: 55vh;
+}
+
+.pe-palette-field {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.pe-palette-field label {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-tertiary, #666);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.pe-palette-field input,
+.pe-palette-field select {
+  width: 100%;
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(0, 0, 0, 0.3);
+  color: var(--text-primary, #fff);
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.pe-palette-field input:focus,
+.pe-palette-field select:focus {
+  border-color: var(--accent-primary, #60a5fa);
+}
+
+.pe-palette-row {
+  display: flex;
+  gap: 8px;
+}
+
+.pe-palette-divider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.06);
+  margin: 4px 0;
+}
+
+.pe-palette-section-title {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-tertiary, #666);
+  margin-bottom: 2px;
+}
+
+/* ─── 토글 버튼 ─── */
+.pe-toggle {
+  padding: 5px 12px;
+  border-radius: 6px;
+  border: 1px solid rgba(100, 100, 100, 0.3);
+  background: rgba(100, 100, 100, 0.15);
+  color: var(--text-tertiary, #666);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  width: 100%;
+  text-align: center;
+}
+
+.pe-toggle.on {
+  border-color: rgba(16, 185, 129, 0.4);
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+}
